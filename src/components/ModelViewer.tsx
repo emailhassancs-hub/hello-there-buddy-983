@@ -138,67 +138,9 @@ const ModelViewer = ({ apiUrl }: ModelViewerProps) => {
   };
 
   return (
-    <div className="flex h-full bg-background">
-      {/* Thumbnail Grid - Left Side */}
-      <div className="w-80 border-r border-border/50 flex flex-col">
-        <div className="p-4 border-b border-border/50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Box className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">3D Models</h2>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={loadModels}
-            className="h-8 w-8"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <ScrollArea className="flex-1">
-          <div className="p-4 grid grid-cols-2 gap-3">
-            {models.length === 0 ? (
-              <div className="col-span-2 text-center py-8 text-muted-foreground">
-                No models available
-              </div>
-            ) : (
-              models.map((model) => (
-                <div
-                  key={model.filename}
-                  className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 ${
-                    selectedModel?.filename === model.filename
-                      ? 'border-primary shadow-lg'
-                      : 'border-border'
-                  }`}
-                  onClick={() => setSelectedModel(model)}
-                >
-                  {model.thumbnailUrl ? (
-                    <img 
-                      src={getThumbnailUrl(model.thumbnailUrl) || ''} 
-                      alt={model.name}
-                      className="w-full h-32 object-cover rounded-t-md"
-                    />
-                  ) : (
-                    <div className="w-full h-32 bg-muted rounded-t-md flex items-center justify-center">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {model.type.toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="p-2">
-                    <p className="text-sm font-medium truncate">{model.name}</p>
-                    <span className="text-xs text-muted-foreground">{model.type}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* 3D Viewer - Right Side */}
-      <div className="flex-1 flex flex-col">
+    <div className="flex flex-col h-full bg-background">
+      {/* 3D Viewer - Top Section */}
+      <div className="flex-1 flex flex-col" style={{ minHeight: '70%' }}>
         {selectedModel ? (
           <div className="flex-1 relative bg-background">
             {loadError && (
@@ -240,6 +182,65 @@ const ModelViewer = ({ apiUrl }: ModelViewerProps) => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Thumbnail Grid - Bottom Section */}
+      <div className="border-t border-border/50 flex flex-col" style={{ height: '30%', maxHeight: '300px' }}>
+        <div className="p-3 border-b border-border/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Box className="w-4 h-4 text-primary" />
+            <h2 className="text-base font-semibold">3D Models</h2>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={loadModels}
+            className="h-8 w-8"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <ScrollArea className="flex-1">
+          <div className="p-3 flex gap-3 overflow-x-auto">
+            {models.length === 0 ? (
+              <div className="w-full text-center py-6 text-muted-foreground">
+                No models available
+              </div>
+            ) : (
+              models.map((model) => (
+                <div
+                  key={model.filename}
+                  className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 flex-shrink-0 ${
+                    selectedModel?.filename === model.filename
+                      ? 'border-primary shadow-lg'
+                      : 'border-border'
+                  }`}
+                  onClick={() => setSelectedModel(model)}
+                  style={{ width: '140px' }}
+                >
+                  {model.thumbnailUrl ? (
+                    <img 
+                      src={getThumbnailUrl(model.thumbnailUrl) || ''} 
+                      alt={model.name}
+                      className="w-full h-24 object-cover rounded-t-md"
+                    />
+                  ) : (
+                    <div className="w-full h-24 bg-muted rounded-t-md flex items-center justify-center">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {model.type.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="p-2">
+                    <p className="text-xs font-medium truncate">{model.name}</p>
+                    <span className="text-xs text-muted-foreground">{model.type}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
       </div>
     </div>
   );
