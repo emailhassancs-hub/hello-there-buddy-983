@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import EpisodeViewer from "@/components/EpisodeViewer";
 import ImageViewer from "@/components/ImageViewer";
+import ModelViewer from "@/components/ModelViewer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, BookOpen } from "lucide-react";
+import { Image as ImageIcon, BookOpen, Box } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -212,13 +213,17 @@ const Index = () => {
         />
       </div>
 
-      {/* Right Half - Tabs for Image Viewer and Episode Viewer */}
+      {/* Right Half - Tabs for Image Viewer, 3D Model Viewer, and Episode Viewer */}
       <div className="w-1/2 flex flex-col overflow-hidden">
         <Tabs defaultValue="images" className="flex-1 flex flex-col min-h-0">
           <TabsList className="w-full justify-start rounded-none border-b bg-background h-14 px-6">
             <TabsTrigger value="images" className="gap-2">
               <ImageIcon className="w-4 h-4" />
               Image Viewer
+            </TabsTrigger>
+            <TabsTrigger value="models" className="gap-2">
+              <Box className="w-4 h-4" />
+              3D Model Viewer
             </TabsTrigger>
             <TabsTrigger value="episodes" className="gap-2">
               <BookOpen className="w-4 h-4" />
@@ -228,6 +233,10 @@ const Index = () => {
           
           <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
             <ImageViewer apiUrl={API} />
+          </TabsContent>
+          
+          <TabsContent value="models" className="flex-1 m-0 overflow-hidden">
+            <ModelViewer apiUrl={API} />
           </TabsContent>
           
           <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden">
