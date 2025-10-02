@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Send, Sparkles, BookOpen, Plus, FileText, Wand2, History } from "lucide-react";
+import { Send, Sparkles, BookOpen, Plus, Upload, FileText } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface Message {
   role: "user" | "assistant";
@@ -14,13 +15,15 @@ interface ChatInterfaceProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   isGenerating?: boolean;
+  apiUrl: string;
 }
 
-const ChatInterface = ({ messages, onSendMessage, isGenerating }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, isGenerating, apiUrl }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const welcomeMessages = [
     "Chat with me",
@@ -66,6 +69,43 @@ const ChatInterface = ({ messages, onSendMessage, isGenerating }: ChatInterfaceP
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const uploadImage = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(`${apiUrl}/upload-image`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      console.log("Uploaded:", data);
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully",
+      });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadImage(file);
+    }
+  };
+
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -157,20 +197,24 @@ const ChatInterface = ({ messages, onSendMessage, isGenerating }: ChatInterfaceP
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem onClick={triggerFileUpload}>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Image
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <FileText className="w-4 h-4 mr-2" />
-                New Episode
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Wand2 className="w-4 h-4 mr-2" />
-                Story Generator
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <History className="w-4 h-4 mr-2" />
-                Episode History
+                Upload Episode
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
           
           <Input
             value={inputValue}

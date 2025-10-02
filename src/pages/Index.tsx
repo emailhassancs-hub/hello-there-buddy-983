@@ -208,6 +208,7 @@ const Index = () => {
           messages={messages}
           onSendMessage={handleSendMessage}
           isGenerating={isGenerating}
+          apiUrl={API}
         />
       </div>
 
