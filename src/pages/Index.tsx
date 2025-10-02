@@ -201,7 +201,7 @@ const Index = () => {
   };
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden max-h-screen">
       {/* Chat Interface - Left Half */}
       <div className="w-1/2 border-r border-border/50">
         <ChatInterface
@@ -212,8 +212,8 @@ const Index = () => {
       </div>
 
       {/* Right Half - Tabs for Image Viewer and Episode Viewer */}
-      <div className="w-1/2 flex flex-col">
-        <Tabs defaultValue="images" className="flex-1 flex flex-col">
+      <div className="w-1/2 flex flex-col overflow-hidden">
+        <Tabs defaultValue="images" className="flex-1 flex flex-col min-h-0">
           <TabsList className="w-full justify-start rounded-none border-b bg-background h-14 px-6">
             <TabsTrigger value="images" className="gap-2">
               <ImageIcon className="w-4 h-4" />
@@ -225,11 +225,11 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="images" className="flex-1 m-0">
+          <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
             <ImageViewer apiUrl={API} />
           </TabsContent>
           
-          <TabsContent value="episodes" className="flex-1 m-0">
+          <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden">
             <EpisodeViewer
               storyState={storyState}
               episodes={episodes}
