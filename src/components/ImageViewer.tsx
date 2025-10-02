@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Image as ImageIcon, RefreshCw } from "lucide-react";
+import { Image as ImageIcon, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 
 interface ImageItem {
   name: string;
@@ -16,6 +17,7 @@ interface ImageViewerProps {
 const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<ImageItem | null>(null);
   const { toast } = useToast();
 
   const fetchImages = async () => {
@@ -97,7 +99,8 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
               {images.map((image, index) => (
                 <div
                   key={index}
-                  className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow"
+                  className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => setSelectedImage(image)}
                 >
                   <div className="aspect-square overflow-hidden bg-muted/20">
                     <img
@@ -120,6 +123,33 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
           )}
         </div>
       </ScrollArea>
+
+      {/* Zoom Dialog */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-5xl w-full p-0 overflow-hidden">
+          <DialogClose className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+          {selectedImage && (
+            <div className="flex flex-col">
+              <div className="relative bg-muted/20 flex items-center justify-center p-8">
+                <img
+                  src={`${apiUrl}${selectedImage.url}`}
+                  alt={selectedImage.name}
+                  className="max-h-[70vh] w-auto object-contain"
+                  onError={(e) => {
+                    e.currentTarget.src = "/placeholder.svg";
+                  }}
+                />
+              </div>
+              <div className="p-4 border-t border-border/50 bg-card">
+                <p className="text-sm font-medium text-foreground">{selectedImage.name}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
