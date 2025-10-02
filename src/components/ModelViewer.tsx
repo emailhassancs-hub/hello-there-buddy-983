@@ -20,7 +20,13 @@ interface ModelViewerProps {
   apiUrl: string;
 }
 
-function Model({ url, type, onError }: { url: string; type: string; onError: (error: string | null) => void }) {
+interface ModelProps {
+  url: string;
+  type: string;
+  onError: (error: string | null) => void;
+}
+
+function Model({ url, type, onError }: ModelProps) {
   const [model, setModel] = useState<THREE.Object3D | null>(null);
   const [error, setError] = useState<string | null>(null);
 
