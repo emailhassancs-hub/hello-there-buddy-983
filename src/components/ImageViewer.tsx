@@ -28,7 +28,14 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
         throw new Error("Failed to fetch images");
       }
       const data = await response.json();
-      setImages(data.images || []);
+      
+      // Map into objects with name + url
+      const mapped = (data.images || []).map((filename: string) => ({
+        name: filename,
+        url: `/images/${filename}`,   // relative to backend
+      }));
+
+      setImages(mapped);
     } catch (error) {
       toast({
         title: "Failed to load images",
