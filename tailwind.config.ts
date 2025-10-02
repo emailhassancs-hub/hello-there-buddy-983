@@ -22,14 +22,15 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          glow: "hsl(var(--primary-glow))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
         },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -46,6 +47,23 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        chat: {
+          background: "hsl(var(--chat-background))",
+          "user-bubble": "hsl(var(--chat-user-bubble))",
+          "user-foreground": "hsl(var(--chat-user-foreground))",
+          "assistant-bubble": "hsl(var(--chat-assistant-bubble))",
+          "assistant-foreground": "hsl(var(--chat-assistant-foreground))",
+        },
+        episode: {
+          background: "hsl(var(--episode-background))",
+          card: "hsl(var(--episode-card))",
+          "card-foreground": "hsl(var(--episode-card-foreground))",
+        },
+        story: {
+          highlight: "hsl(var(--story-highlight))",
+          character: "hsl(var(--story-character))",
+          location: "hsl(var(--story-location))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
