@@ -53,7 +53,7 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full min-h-0 bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-border/50">
         <div className="flex items-center gap-3">
@@ -78,7 +78,7 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
       </div>
 
       {/* Content Area */}
-      <ScrollArea className="flex-1 h-0">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-6">
           {isLoading && images.length === 0 ? (
             <div className="flex items-center justify-center h-64">
