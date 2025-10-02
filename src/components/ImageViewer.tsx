@@ -78,7 +78,7 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
       </div>
 
       {/* Content Area */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 h-0">
         <div className="p-6">
           {isLoading && images.length === 0 ? (
             <div className="flex items-center justify-center h-64">
