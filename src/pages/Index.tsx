@@ -11,6 +11,12 @@ interface Message {
   role: "user" | "assistant";
   text: string;
   timestamp?: Date;
+  needsConfirmation?: boolean;
+}
+
+interface ConversationState {
+  stage: "initial" | "awaiting_params_confirmation" | "awaiting_prompt_confirmation" | "executing" | "completed";
+  context?: any;
 }
 
 interface StoryState {
@@ -34,6 +40,9 @@ const Index = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [conversationState, setConversationState] = useState<ConversationState>({
+    stage: "initial"
+  });
   const { toast } = useToast();
 
   const API = "http://35.209.183.202:8000";
@@ -67,18 +76,23 @@ const Index = () => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date() }]);
   };
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, isConfirmation: boolean = false) => {
     addMessage("user", message);
     setIsGenerating(true);
 
     try {
+      // Remove the temporary "Processing..." message from previous calls
+      setMessages((prev) => prev.filter((msg) => msg.text !== "✨ Processing your message..."));
+      
       addMessage("assistant", "✨ Processing your message...");
       
       const res = await fetch(`${API}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          query: message
+          query: message,
+          conversation_state: conversationState,
+          is_confirmation: isConfirmation
         }),
       });
 
@@ -87,6 +101,11 @@ const Index = () => {
       }
 
       const data = await res.json();
+      
+      // Update conversation state from backend response
+      if (data.conversation_state) {
+        setConversationState(data.conversation_state);
+      }
       
       // Extract assistant response from messages
       const assistantMessages = data.messages?.filter((msg: any) => 
@@ -108,13 +127,27 @@ const Index = () => {
         responseText = `${assistantText}\n\n${imageElements}`;
       }
 
+      // Remove the "Processing..." message and add the actual response
+      setMessages((prev) => prev.filter((msg) => msg.text !== "✨ Processing your message..."));
       addMessage("assistant", responseText);
+      
+      // Set needsConfirmation flag if backend indicates it
+      if (data.needs_confirmation) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          if (updated.length > 0) {
+            updated[updated.length - 1].needsConfirmation = true;
+          }
+          return updated;
+        });
+      }
       
       toast({
         title: "Message Processed!",
         description: "Your message has been processed by the AI agent.",
       });
     } catch (error) {
+      setMessages((prev) => prev.filter((msg) => msg.text !== "✨ Processing your message..."));
       addMessage("assistant", "❌ Sorry, I couldn't process your message. Please check if the backend is running.");
       toast({
         title: "Processing Failed",

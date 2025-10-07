@@ -9,11 +9,12 @@ interface Message {
   role: "user" | "assistant";
   text: string;
   timestamp?: Date;
+  needsConfirmation?: boolean;
 }
 
 interface ChatInterfaceProps {
   messages: Message[];
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, confirm?: boolean) => void;
   isGenerating?: boolean;
   apiUrl: string;
 }
@@ -58,10 +59,18 @@ const ChatInterface = ({ messages, onSendMessage, isGenerating, apiUrl }: ChatIn
     return () => clearInterval(interval);
   }, [messages.length]);
 
-  const handleSend = () => {
+  const handleSend = (confirm?: boolean) => {
     if (!inputValue.trim() || isGenerating) return;
-    onSendMessage(inputValue);
+    onSendMessage(inputValue, confirm);
     setInputValue("");
+  };
+
+  const handleConfirmation = (confirmed: boolean) => {
+    if (confirmed) {
+      onSendMessage("yes", true);
+    } else {
+      onSendMessage("no", true);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -156,6 +165,26 @@ const ChatInterface = ({ messages, onSendMessage, isGenerating, apiUrl }: ChatIn
                 className="whitespace-pre-wrap"
                 dangerouslySetInnerHTML={{ __html: message.text }}
               />
+              {message.needsConfirmation && !isGenerating && (
+                <div className="flex gap-2 mt-3">
+                  <Button
+                    onClick={() => handleConfirmation(true)}
+                    variant="default"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    Yes, continue
+                  </Button>
+                  <Button
+                    onClick={() => handleConfirmation(false)}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    No, change
+                  </Button>
+                </div>
+              )}
               {message.timestamp && (
                 <div className="text-xs opacity-70 mt-2">
                   {message.timestamp.toLocaleTimeString()}
@@ -225,7 +254,7 @@ const ChatInterface = ({ messages, onSendMessage, isGenerating, apiUrl }: ChatIn
             disabled={isGenerating}
           />
           <Button
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!inputValue.trim() || isGenerating}
             variant="black"
             className="rounded-xl px-6 shadow-soft"
