@@ -43,9 +43,18 @@ const Index = () => {
   const [conversationState, setConversationState] = useState<ConversationState>({
     stage: "initial"
   });
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const API = "http://35.209.183.202:8000";
+
+  // Load session_id from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("session_id");
+    if (stored) {
+      setSessionId(stored);
+    }
+  }, []);
 
   // Load available episodes and stories on component mount
   useEffect(() => {
@@ -86,14 +95,21 @@ const Index = () => {
       
       addMessage("assistant", "✨ Processing your message...");
       
+      const requestBody: any = { 
+        query: message,
+        conversation_state: conversationState,
+        is_confirmation: isConfirmation
+      };
+      
+      // Include session_id if we have one
+      if (sessionId) {
+        requestBody.session_id = sessionId;
+      }
+      
       const res = await fetch(`${API}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          query: message,
-          conversation_state: conversationState,
-          is_confirmation: isConfirmation
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!res.ok) {
@@ -101,6 +117,12 @@ const Index = () => {
       }
 
       const data = await res.json();
+      
+      // Update session_id if backend returns one
+      if (data.session_id) {
+        setSessionId(data.session_id);
+        localStorage.setItem("session_id", data.session_id);
+      }
       
       // Update conversation state from backend response
       if (data.conversation_state) {
