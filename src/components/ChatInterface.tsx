@@ -10,6 +10,14 @@ interface Message {
   text: string;
   timestamp?: Date;
   needsConfirmation?: boolean;
+  planSummary?: {
+    action: string;
+    tool: string;
+    parameters: any;
+    enhanced_prompt?: string;
+    original_request?: string;
+    question?: string;
+  };
 }
 
 interface ChatInterfaceProps {
@@ -25,6 +33,8 @@ const ChatInterface = ({ messages, onSendMessage, isGenerating, apiUrl }: ChatIn
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [changeRequestInput, setChangeRequestInput] = useState("");
+  const [showChangeInput, setShowChangeInput] = useState<number | null>(null);
 
   const welcomeMessages = [
     "Chat with me",
@@ -65,11 +75,21 @@ const ChatInterface = ({ messages, onSendMessage, isGenerating, apiUrl }: ChatIn
     setInputValue("");
   };
 
-  const handleConfirmation = (confirmed: boolean) => {
+  const handleConfirmation = (confirmed: boolean, messageIndex: number) => {
     if (confirmed) {
       onSendMessage("yes", true);
+      setShowChangeInput(null);
+      setChangeRequestInput("");
     } else {
-      onSendMessage("no", true);
+      setShowChangeInput(messageIndex);
+    }
+  };
+
+  const handleChangeRequest = () => {
+    if (changeRequestInput.trim()) {
+      onSendMessage(`no, ${changeRequestInput}`, true);
+      setShowChangeInput(null);
+      setChangeRequestInput("");
     }
   };
 
@@ -165,24 +185,84 @@ const ChatInterface = ({ messages, onSendMessage, isGenerating, apiUrl }: ChatIn
                 className="whitespace-pre-wrap"
                 dangerouslySetInnerHTML={{ __html: message.text }}
               />
+              
+              {message.planSummary && (
+                <div className="mt-4 space-y-3 border-l-4 border-primary/50 pl-4 bg-muted/30 rounded-r-lg p-3">
+                  <div>
+                    <p className="font-semibold text-sm">Action:</p>
+                    <p className="text-sm">{message.planSummary.action}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Tool:</p>
+                    <p className="text-sm font-mono">{message.planSummary.tool}</p>
+                  </div>
+                  {message.planSummary.enhanced_prompt && (
+                    <div>
+                      <p className="font-semibold text-sm">Enhanced Prompt:</p>
+                      <p className="text-sm italic">{message.planSummary.enhanced_prompt}</p>
+                    </div>
+                  )}
+                  {message.planSummary.parameters && (
+                    <details className="text-sm">
+                      <summary className="font-semibold cursor-pointer">Parameters</summary>
+                      <pre className="mt-2 text-xs bg-background p-2 rounded overflow-auto">
+                        {JSON.stringify(message.planSummary.parameters, null, 2)}
+                      </pre>
+                    </details>
+                  )}
+                </div>
+              )}
+              
               {message.needsConfirmation && !isGenerating && (
-                <div className="flex gap-2 mt-3">
-                  <Button
-                    onClick={() => handleConfirmation(true)}
-                    variant="default"
-                    size="sm"
-                    className="text-xs"
-                  >
-                    Yes, continue
-                  </Button>
-                  <Button
-                    onClick={() => handleConfirmation(false)}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs"
-                  >
-                    No, change
-                  </Button>
+                <div className="mt-4 space-y-3">
+                  {showChangeInput !== index ? (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleConfirmation(true, index)}
+                        variant="default"
+                        size="sm"
+                        className="gap-1.5"
+                      >
+                        ✅ Approve
+                      </Button>
+                      <Button
+                        onClick={() => handleConfirmation(false, index)}
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                      >
+                        ✏️ Request Changes
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <textarea
+                        value={changeRequestInput}
+                        onChange={(e) => setChangeRequestInput(e.target.value)}
+                        placeholder="Describe the changes you'd like..."
+                        className="w-full min-h-[80px] px-3 py-2 text-sm border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleChangeRequest}
+                          size="sm"
+                          variant="default"
+                        >
+                          Send Changes
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setShowChangeInput(null);
+                            setChangeRequestInput("");
+                          }}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {message.timestamp && (

@@ -12,6 +12,14 @@ interface Message {
   text: string;
   timestamp?: Date;
   needsConfirmation?: boolean;
+  planSummary?: {
+    action: string;
+    tool: string;
+    parameters: any;
+    enhanced_prompt?: string;
+    original_request?: string;
+    question?: string;
+  };
 }
 
 interface ConversationState {
@@ -129,39 +137,37 @@ const Index = () => {
         setConversationState(data.conversation_state);
       }
       
-      // Extract assistant response from messages
-      const assistantMessages = data.messages?.filter((msg: any) => 
-        msg.type === "ai" || msg.type === "assistant"
-      );
+      // Handle different backend states
+      const status = data.status || "completed";
+      let responseText = data.message || "Message processed!";
       
-      const assistantText = assistantMessages?.length > 0 ? 
-        assistantMessages[assistantMessages.length - 1].content || "Message processed!" 
-        : "Message processed successfully!";
-
       // Handle images if present
-      let responseText = assistantText;
       if (data.images && data.images.length > 0) {
         const imageElements = data.images.map((imageObj: any) => {
-          // Convert backslashes to forward slashes for web URLs
           const imagePath = imageObj.path ? imageObj.path.replace(/\\/g, '/') : '';
           return `<img src="${API}/${imagePath}" alt="Generated image" style="max-width: 300px; margin: 10px 0; border-radius: 8px;" />`;
         }).join('');
-        responseText = `${assistantText}\n\n${imageElements}`;
+        responseText = `${responseText}\n\n${imageElements}`;
       }
 
       // Remove the "Processing..." message and add the actual response
       setMessages((prev) => prev.filter((msg) => msg.text !== "✨ Processing your message..."));
-      addMessage("assistant", responseText);
       
-      // Set needsConfirmation flag if backend indicates it
-      if (data.needs_confirmation) {
-        setMessages((prev) => {
-          const updated = [...prev];
-          if (updated.length > 0) {
-            updated[updated.length - 1].needsConfirmation = true;
-          }
-          return updated;
-        });
+      if (status === "awaiting_approval" && data.plan_summary) {
+        // Display plan summary with approval buttons
+        setMessages((prev) => [...prev, {
+          role: "assistant",
+          text: responseText,
+          timestamp: new Date(),
+          needsConfirmation: true,
+          planSummary: data.plan_summary
+        }]);
+      } else if (status === "completed") {
+        // Display final result
+        addMessage("assistant", responseText);
+      } else {
+        // Processing or other states
+        addMessage("assistant", responseText);
       }
       
       toast({
