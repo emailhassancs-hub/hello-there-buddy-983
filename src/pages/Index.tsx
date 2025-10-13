@@ -11,20 +11,6 @@ interface Message {
   role: "user" | "assistant";
   text: string;
   timestamp?: Date;
-  needsConfirmation?: boolean;
-  planSummary?: {
-    action: string;
-    tool: string;
-    parameters: any;
-    enhanced_prompt?: string;
-    original_request?: string;
-    question?: string;
-  };
-}
-
-interface ConversationState {
-  stage: "initial" | "awaiting_params_confirmation" | "awaiting_prompt_confirmation" | "executing" | "completed";
-  context?: any;
 }
 
 interface StoryState {
@@ -48,21 +34,9 @@ const Index = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [conversationState, setConversationState] = useState<ConversationState>({
-    stage: "initial"
-  });
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const API = "http://35.209.183.202:8000";
-
-  // Load session_id from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem("session_id");
-    if (stored) {
-      setSessionId(stored);
-    }
-  }, []);
 
   // Load available episodes and stories on component mount
   useEffect(() => {
@@ -93,31 +67,19 @@ const Index = () => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date() }]);
   };
 
-  const handleSendMessage = async (message: string, isConfirmation: boolean = false) => {
+  const handleSendMessage = async (message: string) => {
     addMessage("user", message);
     setIsGenerating(true);
 
     try {
-      // Remove the temporary "Processing..." message from previous calls
-      setMessages((prev) => prev.filter((msg) => msg.text !== "✨ Processing your message..."));
-      
       addMessage("assistant", "✨ Processing your message...");
-      
-      const requestBody: any = { 
-        query: message,
-        conversation_state: conversationState,
-        is_confirmation: isConfirmation
-      };
-      
-      // Include session_id if we have one
-      if (sessionId) {
-        requestBody.session_id = sessionId;
-      }
       
       const res = await fetch(`${API}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ 
+          query: message
+        }),
       });
 
       if (!res.ok) {
@@ -126,56 +88,33 @@ const Index = () => {
 
       const data = await res.json();
       
-      // Update session_id if backend returns one
-      if (data.session_id) {
-        setSessionId(data.session_id);
-        localStorage.setItem("session_id", data.session_id);
-      }
+      // Extract assistant response from messages
+      const assistantMessages = data.messages?.filter((msg: any) => 
+        msg.type === "ai" || msg.type === "assistant"
+      );
       
-      // Update conversation state from backend response
-      if (data.conversation_state) {
-        setConversationState(data.conversation_state);
-      }
-      
-      // Handle different backend states
-      const status = data.status || "completed";
-      let responseText = data.message || "Message processed!";
-      
+      const assistantText = assistantMessages?.length > 0 ? 
+        assistantMessages[assistantMessages.length - 1].content || "Message processed!" 
+        : "Message processed successfully!";
+
       // Handle images if present
+      let responseText = assistantText;
       if (data.images && data.images.length > 0) {
         const imageElements = data.images.map((imageObj: any) => {
+          // Convert backslashes to forward slashes for web URLs
           const imagePath = imageObj.path ? imageObj.path.replace(/\\/g, '/') : '';
           return `<img src="${API}/${imagePath}" alt="Generated image" style="max-width: 300px; margin: 10px 0; border-radius: 8px;" />`;
         }).join('');
-        responseText = `${responseText}\n\n${imageElements}`;
+        responseText = `${assistantText}\n\n${imageElements}`;
       }
 
-      // Remove the "Processing..." message and add the actual response
-      setMessages((prev) => prev.filter((msg) => msg.text !== "✨ Processing your message..."));
-      
-      if (status === "awaiting_approval" && data.plan_summary) {
-        // Display plan summary with approval buttons
-        setMessages((prev) => [...prev, {
-          role: "assistant",
-          text: responseText,
-          timestamp: new Date(),
-          needsConfirmation: true,
-          planSummary: data.plan_summary
-        }]);
-      } else if (status === "completed") {
-        // Display final result
-        addMessage("assistant", responseText);
-      } else {
-        // Processing or other states
-        addMessage("assistant", responseText);
-      }
+      addMessage("assistant", responseText);
       
       toast({
         title: "Message Processed!",
         description: "Your message has been processed by the AI agent.",
       });
     } catch (error) {
-      setMessages((prev) => prev.filter((msg) => msg.text !== "✨ Processing your message..."));
       addMessage("assistant", "❌ Sorry, I couldn't process your message. Please check if the backend is running.");
       toast({
         title: "Processing Failed",
