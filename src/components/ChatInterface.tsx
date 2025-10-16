@@ -103,22 +103,28 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   };
 
   const handleConfirm = (toolCalls: ToolCall[]) => {
-    // Validate all fields
+    // Build a clean modified_args object limited to the shown tool calls,
+    // merging original args with any user edits so nothing is lost.
     const errors: Record<string, string> = {};
-    toolCalls.forEach(tc => {
-      const args = editedArgs[tc.name] || {};
-      Object.entries(args).forEach(([key, value]) => {
-        // Basic validation - check if numeric fields are numbers
-        if (key.includes("num_") || key.includes("count") || key.includes("number")) {
-          if (isNaN(Number(value))) {
-            errors[`${tc.name}.${key}`] = "Must be a number";
-          }
+    const payloadArgs: Record<string, Record<string, any>> = {};
+
+    toolCalls.forEach((tc) => {
+      const original = (tc.args || {}) as Record<string, any>;
+      const edits = (editedArgs[tc.name] || {}) as Record<string, any>;
+      const merged = { ...original, ...edits } as Record<string, any>;
+
+      // Validate merged values
+      Object.entries(merged).forEach(([key, value]) => {
+        const isNumeric = key.includes("num_") || key.includes("count") || key.includes("number");
+        if (isNumeric && (value === "" || value === null || value === undefined || isNaN(Number(value)))) {
+          errors[`${tc.name}.${key}`] = "Must be a number";
         }
-        // Check for empty required fields (basic check)
         if (value === "" || value === null || value === undefined) {
           errors[`${tc.name}.${key}`] = "This field is required";
         }
       });
+
+      payloadArgs[tc.name] = merged;
     });
 
     if (Object.keys(errors).length > 0) {
@@ -132,8 +138,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
 
     setValidationErrors({});
-    // Send edited args if any were edited, otherwise just confirm
-    onToolConfirmation?.("modify", editedArgs);
+    onToolConfirmation?.("modify", payloadArgs);
   };
 
   const handleCancel = (toolCalls: ToolCall[]) => {
