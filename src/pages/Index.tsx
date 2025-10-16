@@ -7,10 +7,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Image as ImageIcon, BookOpen, Box } from "lucide-react";
 
+interface ToolCall {
+  id: string;
+  tool_name: string;
+  parameters: Record<string, any>;
+}
+
 interface Message {
   role: "user" | "assistant";
   text: string;
   timestamp?: Date;
+  toolCalls?: ToolCall[];
+  conversationId?: string;
 }
 
 interface StoryState {
@@ -34,9 +42,10 @@ const Index = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const API = "http://35.209.183.202:8000";
+  const API = import.meta.env.VITE_BACKEND_URL || "http://35.209.183.202:8000";
 
   // Load available episodes and stories on component mount
   useEffect(() => {
@@ -72,14 +81,10 @@ const Index = () => {
     setIsGenerating(true);
 
     try {
-      addMessage("assistant", "✨ Processing your message...");
-      
       const res = await fetch(`${API}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          query: message
-        }),
+        body: JSON.stringify({ query: message }),
       });
 
       if (!res.ok) {
@@ -87,38 +92,96 @@ const Index = () => {
       }
 
       const data = await res.json();
-      
-      // Extract assistant response from messages
-      const assistantMessages = data.messages?.filter((msg: any) => 
-        msg.type === "ai" || msg.type === "assistant"
-      );
-      
-      const assistantText = assistantMessages?.length > 0 ? 
-        assistantMessages[assistantMessages.length - 1].content || "Message processed!" 
-        : "Message processed successfully!";
 
-      // Handle images if present
-      let responseText = assistantText;
-      if (data.images && data.images.length > 0) {
-        const imageElements = data.images.map((imageObj: any) => {
-          // Convert backslashes to forward slashes for web URLs
-          const imagePath = imageObj.path ? imageObj.path.replace(/\\/g, '/') : '';
-          return `<img src="${API}/${imagePath}" alt="Generated image" style="max-width: 300px; margin: 10px 0; border-radius: 8px;" />`;
-        }).join('');
-        responseText = `${assistantText}\n\n${imageElements}`;
+      if (data.status === "confirmation_required") {
+        setConversationId(data.conversation_id);
+        setMessages((prev) => {
+          // Remove the last message if it exists and update it
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            text: "🤖 The agent has prepared the following actions for your approval:",
+            timestamp: new Date(),
+            toolCalls: data.tool_calls,
+            conversationId: data.conversation_id,
+          };
+          return updated;
+        });
+      } else if (data.status === "completed") {
+        addMessage("assistant", data.response || "✅ Task completed successfully!");
       }
 
-      addMessage("assistant", responseText);
-      
       toast({
-        title: "Message Processed!",
-        description: "Your message has been processed by the AI agent.",
+        title: "Message Processed",
+        description: data.status === "confirmation_required" 
+          ? "Please review and approve the proposed actions."
+          : "Your request has been completed.",
       });
     } catch (error) {
       addMessage("assistant", "❌ Sorry, I couldn't process your message. Please check if the backend is running.");
       toast({
         title: "Processing Failed",
         description: "Unable to connect to the AI agent service.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleToolConfirmation = async (
+    toolId: string,
+    action: "yes" | "no" | "modify",
+    parameters?: Record<string, any>
+  ) => {
+    if (!conversationId) return;
+
+    setIsGenerating(true);
+
+    try {
+      const res = await fetch(`${API}/tool_confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          tool_id: toolId,
+          action,
+          parameters,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to confirm tool");
+      }
+
+      const data = await res.json();
+
+      if (data.status === "confirmation_required" && data.next_tool) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            text: "🤖 Next action requires your approval:",
+            timestamp: new Date(),
+            toolCalls: [data.next_tool],
+            conversationId,
+          };
+          return updated;
+        });
+      } else if (data.status === "completed") {
+        addMessage("assistant", data.final_response || "✅ All actions completed successfully!");
+        setConversationId(null);
+      }
+
+      toast({
+        title: action === "yes" ? "Action Approved" : action === "no" ? "Action Rejected" : "Action Modified",
+        description: data.status === "completed" ? "Task completed!" : "Proceeding to next step...",
+      });
+    } catch (error) {
+      addMessage("assistant", "❌ Failed to process your response. Please try again.");
+      toast({
+        title: "Confirmation Failed",
+        description: "Unable to send your response to the backend.",
         variant: "destructive",
       });
     } finally {
@@ -208,6 +271,7 @@ const Index = () => {
         <ChatInterface
           messages={messages}
           onSendMessage={handleSendMessage}
+          onToolConfirmation={handleToolConfirmation}
           isGenerating={isGenerating}
           apiUrl={API}
         />

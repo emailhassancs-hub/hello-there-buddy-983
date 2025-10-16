@@ -1,29 +1,41 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Send, Sparkles, BookOpen, Plus, Upload, FileText } from "lucide-react";
+import { Send, Sparkles, BookOpen, Plus, Upload, FileText, CheckCircle, XCircle, Edit } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+interface ToolCall {
+  id: string;
+  tool_name: string;
+  parameters: Record<string, any>;
+}
 
 interface Message {
   role: "user" | "assistant";
   text: string;
   timestamp?: Date;
+  toolCalls?: ToolCall[];
+  conversationId?: string;
 }
 
 interface ChatInterfaceProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
+  onToolConfirmation: (toolId: string, action: "yes" | "no" | "modify", parameters?: Record<string, any>) => void;
   isGenerating?: boolean;
   apiUrl: string;
 }
 
-const ChatInterface = ({ messages, onSendMessage, isGenerating, apiUrl }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingToolId, setEditingToolId] = useState<string | null>(null);
+  const [editedParams, setEditedParams] = useState<string>("");
 
   const welcomeMessages = [
     "Chat with me",
@@ -156,6 +168,91 @@ const ChatInterface = ({ messages, onSendMessage, isGenerating, apiUrl }: ChatIn
                 className="whitespace-pre-wrap"
                 dangerouslySetInnerHTML={{ __html: message.text }}
               />
+              
+              {message.toolCalls && message.toolCalls.map((tool) => (
+                <div key={tool.id} className="mt-4 p-4 bg-background/50 rounded-lg border border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-foreground">{tool.tool_name}</span>
+                  </div>
+                  
+                  {editingToolId === tool.id ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={editedParams}
+                        onChange={(e) => setEditedParams(e.target.value)}
+                        className="font-mono text-sm min-h-[120px]"
+                        placeholder="Edit JSON parameters..."
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            try {
+                              const params = JSON.parse(editedParams);
+                              onToolConfirmation(tool.id, "modify", params);
+                              setEditingToolId(null);
+                            } catch (e) {
+                              toast({
+                                title: "Invalid JSON",
+                                description: "Please check your JSON syntax.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          variant="black"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Apply Changes
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingToolId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <pre className="text-xs bg-background p-2 rounded overflow-x-auto mb-3">
+                        {JSON.stringify(tool.parameters, null, 2)}
+                      </pre>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => onToolConfirmation(tool.id, "yes")}
+                          variant="black"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Yes
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onToolConfirmation(tool.id, "no")}
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          No
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingToolId(tool.id);
+                            setEditedParams(JSON.stringify(tool.parameters, null, 2));
+                          }}
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Modify
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+              
               {message.timestamp && (
                 <div className="text-xs opacity-70 mt-2">
                   {message.timestamp.toLocaleTimeString()}
