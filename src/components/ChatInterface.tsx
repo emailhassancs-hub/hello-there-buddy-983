@@ -37,6 +37,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [currentToolCalls, setCurrentToolCalls] = useState<ToolCall[]>([]);
   const [editedArgs, setEditedArgs] = useState<Record<string, Record<string, any>>>({});
   const [showRawJson, setShowRawJson] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -60,16 +62,18 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
   }, [messages]);
 
-  // Initialize edited args when tool calls appear
+  // Check for tool confirmation requests
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.role === "assistant" && lastMessage.toolCalls) {
+      setCurrentToolCalls(lastMessage.toolCalls);
       // Initialize edited args with original args
       const initialArgs: Record<string, Record<string, any>> = {};
       lastMessage.toolCalls.forEach(tc => {
         initialArgs[tc.tool_name] = { ...tc.parameters };
       });
       setEditedArgs(initialArgs);
+      setShowConfirmModal(true);
     }
   }, [messages]);
 
@@ -102,15 +106,13 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   };
 
   const handleConfirm = () => {
+    setShowConfirmModal(false);
     onToolConfirmation?.("confirm");
   };
 
   const handleModify = () => {
     // Validate all fields
     const errors: Record<string, string> = {};
-    const lastMessage = messages[messages.length - 1];
-    const currentToolCalls = lastMessage?.toolCalls || [];
-    
     currentToolCalls.forEach(tc => {
       const args = editedArgs[tc.tool_name] || {};
       Object.entries(args).forEach(([key, value]) => {
@@ -137,11 +139,13 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       return;
     }
 
+    setShowConfirmModal(false);
     setValidationErrors({});
     onToolConfirmation?.("modify", editedArgs);
   };
 
   const handleCancel = () => {
+    setShowConfirmModal(false);
     onToolConfirmation?.("cancel");
   };
 
@@ -234,138 +238,34 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         )}
 
         {messages.map((message, index) => (
-          <div key={index}>
+          <div
+            key={index}
+            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+          >
             <div
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter ${
+                message.role === "user"
+                  ? "bg-chat-user-bubble text-chat-user-foreground ml-4"
+                  : "bg-chat-assistant-bubble text-chat-assistant-foreground mr-4 border border-border/20"
+              }`}
             >
-              <div
-                className={`max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter ${
-                  message.role === "user"
-                    ? "bg-chat-user-bubble text-chat-user-foreground ml-4"
-                    : "bg-chat-assistant-bubble text-chat-assistant-foreground mr-4 border border-border/20"
-                }`}
-              >
-                <div 
-                  className="whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{ __html: message.text }}
-                />
-                
-                {message.toolName && (
-                  <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
-                    Tool result: {message.toolName}
-                  </div>
-                )}
-                
-                {message.timestamp && (
-                  <div className="text-xs opacity-70 mt-2">
-                    {message.timestamp.toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Inline Confirmation UI */}
-            {message.role === "assistant" && message.toolCalls && index === messages.length - 1 && (
-              <div className="flex justify-start mt-4">
-                <div className="max-w-[85%] bg-background border-2 border-primary/30 rounded-2xl shadow-lg mr-4 overflow-hidden">
-                  <div className="bg-primary/10 px-4 py-3 border-b border-primary/20">
-                    <h3 className="font-semibold text-foreground">Tool execution needs your approval</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Review and confirm parameters below
-                    </p>
-                  </div>
-
-                  <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
-                    {message.toolCalls.map((toolCall, idx) => {
-                      const args = editedArgs[toolCall.tool_name] || toolCall.parameters;
-                      
-                      return (
-                        <div key={`${toolCall.id}-${idx}`} className="border rounded-lg p-3 space-y-3 bg-muted/30">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-sm">{toolCall.tool_name}</h4>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">ID: {toolCall.id}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowRawJson(prev => ({ ...prev, [toolCall.id]: !prev[toolCall.id] }))}
-                              >
-                                {showRawJson[toolCall.id] ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                                <span className="text-xs ml-1">Raw JSON</span>
-                              </Button>
-                            </div>
-                          </div>
-
-                          {showRawJson[toolCall.id] && (
-                            <pre className="text-xs bg-secondary p-2 rounded overflow-auto max-h-32">
-                              {JSON.stringify(toolCall.parameters, null, 2)}
-                            </pre>
-                          )}
-
-                          <div className="space-y-2">
-                            {Object.entries(args).map(([key, value]) => {
-                              const errorKey = `${toolCall.tool_name}.${key}`;
-                              const hasError = !!validationErrors[errorKey];
-                              const isNumeric = key.includes("num_") || key.includes("count") || key.includes("number");
-                              const isLongText = typeof value === "string" && value.length > 100;
-
-                              return (
-                                <div key={key} className="space-y-1">
-                                  <Label htmlFor={`${toolCall.id}-${key}`} className="text-xs font-medium">
-                                    {key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
-                                  </Label>
-                                  {isLongText ? (
-                                    <>
-                                      <Textarea
-                                        id={`${toolCall.id}-${key}`}
-                                        value={String(value)}
-                                        onChange={(e) => handleArgChange(toolCall.tool_name, key, e.target.value)}
-                                        className={`text-sm ${hasError ? "border-destructive" : ""}`}
-                                        rows={3}
-                                      />
-                                      <p className="text-xs text-muted-foreground">
-                                        Preview: {String(value).slice(0, 150)}...
-                                      </p>
-                                    </>
-                                  ) : (
-                                    <Input
-                                      id={`${toolCall.id}-${key}`}
-                                      type={isNumeric ? "number" : "text"}
-                                      value={String(value)}
-                                      onChange={(e) => handleArgChange(
-                                        toolCall.tool_name,
-                                        key,
-                                        isNumeric ? Number(e.target.value) : e.target.value
-                                      )}
-                                      className={`text-sm ${hasError ? "border-destructive" : ""}`}
-                                    />
-                                  )}
-                                  {hasError && (
-                                    <p className="text-xs text-destructive">{validationErrors[errorKey]}</p>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="flex gap-2 p-4 bg-muted/20 border-t border-border">
-                    <Button variant="outline" size="sm" onClick={handleCancel} className="flex-1">
-                      Cancel
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={handleModify} className="flex-1">
-                      Modify & Send
-                    </Button>
-                    <Button size="sm" onClick={handleConfirm} className="flex-1">
-                      Confirm
-                    </Button>
-                  </div>
+              <div 
+                className="whitespace-pre-wrap"
+                dangerouslySetInnerHTML={{ __html: message.text }}
+              />
+              
+              {message.toolName && (
+                <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
+                  Tool result: {message.toolName}
                 </div>
-              </div>
-            )}
+              )}
+              
+              {message.timestamp && (
+                <div className="text-xs opacity-70 mt-2">
+                  {message.timestamp.toLocaleTimeString()}
+                </div>
+              )}
+            </div>
           </div>
         ))}
 
@@ -439,6 +339,106 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         </div>
       </div>
 
+      {/* Confirmation Modal */}
+      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tool execution needs your approval</DialogTitle>
+            <DialogDescription>
+              The AI wants to call the following tool(s). Review and confirm parameters below.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {currentToolCalls.map((toolCall, idx) => {
+              const args = editedArgs[toolCall.tool_name] || toolCall.parameters;
+              
+              return (
+                <div key={`${toolCall.id}-${idx}`} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-lg">{toolCall.tool_name}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">ID: {toolCall.id}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowRawJson(prev => ({ ...prev, [toolCall.id]: !prev[toolCall.id] }))}
+                      >
+                        {showRawJson[toolCall.id] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        Raw JSON
+                      </Button>
+                    </div>
+                  </div>
+
+                  {showRawJson[toolCall.id] && (
+                    <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-48">
+                      {JSON.stringify(toolCall.parameters, null, 2)}
+                    </pre>
+                  )}
+
+                  <div className="space-y-3">
+                    {Object.entries(args).map(([key, value]) => {
+                      const errorKey = `${toolCall.tool_name}.${key}`;
+                      const hasError = !!validationErrors[errorKey];
+                      const isNumeric = key.includes("num_") || key.includes("count") || key.includes("number");
+                      const isLongText = typeof value === "string" && value.length > 100;
+
+                      return (
+                        <div key={key} className="space-y-1">
+                          <Label htmlFor={`${toolCall.id}-${key}`} className="text-sm font-medium">
+                            {key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                          </Label>
+                          {isLongText ? (
+                            <>
+                              <Textarea
+                                id={`${toolCall.id}-${key}`}
+                                value={String(value)}
+                                onChange={(e) => handleArgChange(toolCall.tool_name, key, e.target.value)}
+                                className={hasError ? "border-destructive" : ""}
+                                rows={4}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Preview: {String(value).slice(0, 200)}...
+                              </p>
+                            </>
+                          ) : (
+                            <Input
+                              id={`${toolCall.id}-${key}`}
+                              type={isNumeric ? "number" : "text"}
+                              value={String(value)}
+                              onChange={(e) => handleArgChange(
+                                toolCall.tool_name,
+                                key,
+                                isNumeric ? Number(e.target.value) : e.target.value
+                              )}
+                              className={hasError ? "border-destructive" : ""}
+                            />
+                          )}
+                          {hasError && (
+                            <p className="text-xs text-destructive">{validationErrors[errorKey]}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button variant="secondary" onClick={handleModify}>
+              Modify & Send
+            </Button>
+            <Button onClick={handleConfirm}>
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
