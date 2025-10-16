@@ -277,7 +277,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
                   <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
                     {message.toolCalls.map((toolCall, idx) => {
-                      const args = editedArgs[toolCall.tool_name] || toolCall.parameters;
+                      const args = editedArgs[toolCall.tool_name] || toolCall.parameters || {};
                       
                       return (
                         <div key={`${toolCall.id}-${idx}`} className="border rounded-lg p-3 space-y-3 bg-muted/30">
