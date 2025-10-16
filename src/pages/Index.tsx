@@ -9,17 +9,19 @@ import { Image as ImageIcon, BookOpen, Box } from "lucide-react";
 
 interface ToolCall {
   id: string;
-  tool_name: string;
-  parameters: Record<string, any>;
+  name: string;
+  args: Record<string, any>;
 }
 
 interface Message {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   text: string;
   timestamp?: Date;
   toolCalls?: ToolCall[];
   conversationId?: string;
   toolName?: string;
+  status?: "awaiting_confirmation" | "complete";
+  interruptMessage?: string;
 }
 
 interface StoryState {
@@ -140,6 +142,8 @@ const Index = () => {
         const assistantMessage: Message = {
           role: "assistant",
           text: data.interrupt_message || "Tool execution requires confirmation.",
+          status: "awaiting_confirmation",
+          interruptMessage: data.interrupt_message,
           toolCalls: data.tool_calls,
           conversationId: data.session_id,
         };
@@ -216,10 +220,12 @@ const Index = () => {
       }
 
       if (data.status === "awaiting_confirmation") {
-        // Nested interrupt - show confirmation modal again
+        // Nested interrupt - show confirmation UI again
         const assistantMessage: Message = {
           role: "assistant",
           text: data.interrupt_message || "Another tool requires confirmation.",
+          status: "awaiting_confirmation",
+          interruptMessage: data.interrupt_message,
           toolCalls: data.tool_calls,
           conversationId: data.session_id,
         };
