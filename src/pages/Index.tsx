@@ -19,6 +19,7 @@ interface Message {
   timestamp?: Date;
   toolCalls?: ToolCall[];
   conversationId?: string;
+  toolName?: string;
 }
 
 interface StoryState {
@@ -42,11 +43,24 @@ const Index = () => {
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
   //const API = "http://35.209.183.202:8000";
   const API = "http://localhost:8000"; // Local backend for development
+
+  // Session management
+  useEffect(() => {
+    const storedSessionId = localStorage.getItem("mcp_session_id");
+    if (storedSessionId) {
+      setSessionId(storedSessionId);
+    }
+  }, []);
+
+  const updateSessionId = (newSessionId: string) => {
+    setSessionId(newSessionId);
+    localStorage.setItem("mcp_session_id", newSessionId);
+  };
 
   // Load available episodes and stories on component mount
   useEffect(() => {
@@ -73,56 +87,84 @@ const Index = () => {
     loadAvailableContent();
   }, []);
 
-  const addMessage = (role: "user" | "assistant", text: string) => {
-    setMessages((prev) => [...prev, { role, text, timestamp: new Date() }]);
+  const addMessage = (role: "user" | "assistant", text: string, toolName?: string) => {
+    setMessages((prev) => [...prev, { role, text, timestamp: new Date(), toolName }]);
   };
 
-  const handleSendMessage = async (message: string) => {
-    addMessage("user", message);
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim()) return;
+
+    const userMessage: Message = {
+      role: "user",
+      text: text,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
     setIsGenerating(true);
 
     try {
-      const res = await fetch(`${API}/ask`, {
+      const payload: any = {
+        query: text,
+      };
+      
+      if (sessionId) {
+        payload.session_id = sessionId;
+      }
+
+      const response = await fetch(`${API}/ask`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: message }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to process message");
+      const data = await response.json();
+
+      // Update session ID if provided
+      if (data.session_id) {
+        updateSessionId(data.session_id);
       }
 
-      const data = await res.json();
+      // Append any messages from the backend
+      if (data.messages && Array.isArray(data.messages)) {
+        const newMessages = data.messages.map((msg: any) => ({
+          role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
+          text: msg.content || "",
+          toolName: msg.type === "tool" ? msg.name : undefined,
+        }));
+        setMessages((prev) => [...prev, ...newMessages]);
+      }
 
-      if (data.status === "confirmation_required") {
-        setConversationId(data.conversation_id);
-        setMessages((prev) => {
-          // Remove the last message if it exists and update it
-          const updated = [...prev];
-          updated[updated.length - 1] = {
+      if (data.status === "awaiting_confirmation") {
+        const assistantMessage: Message = {
+          role: "assistant",
+          text: data.interrupt_message || "Tool execution requires confirmation.",
+          toolCalls: data.tool_calls,
+          conversationId: data.session_id,
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else if (data.status === "complete") {
+        // Already handled by messages array above
+        if (!data.messages || data.messages.length === 0) {
+          const assistantMessage: Message = {
             role: "assistant",
-            text: "🤖 The agent has prepared the following actions for your approval:",
-            timestamp: new Date(),
-            toolCalls: data.tool_calls,
-            conversationId: data.conversation_id,
+            text: data.response || "Request completed.",
           };
-          return updated;
-        });
-      } else if (data.status === "completed") {
-        addMessage("assistant", data.response || "✅ Task completed successfully!");
+          setMessages((prev) => [...prev, assistantMessage]);
+        }
+      } else if (data.status === "cancelled") {
+        const assistantMessage: Message = {
+          role: "assistant",
+          text: "Operation cancelled.",
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
       }
-
-      toast({
-        title: "Message Processed",
-        description: data.status === "confirmation_required" 
-          ? "Please review and approve the proposed actions."
-          : "Your request has been completed.",
-      });
     } catch (error) {
-      addMessage("assistant", "❌ Sorry, I couldn't process your message. Please check if the backend is running.");
+      console.error("Error sending message:", error);
       toast({
-        title: "Processing Failed",
-        description: "Unable to connect to the AI agent service.",
+        title: "Error",
+        description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -131,58 +173,78 @@ const Index = () => {
   };
 
   const handleToolConfirmation = async (
-    toolId: string,
-    action: "yes" | "no" | "modify",
-    parameters?: Record<string, any>
+    action: "confirm" | "modify" | "cancel",
+    modifiedArgs?: Record<string, Record<string, any>>
   ) => {
-    if (!conversationId) return;
-
     setIsGenerating(true);
 
     try {
-      const res = await fetch(`${API}/tool_confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          tool_id: toolId,
+      const payload: any = {
+        session_id: sessionId,
+        confirmation_response: {
           action,
-          parameters,
-        }),
-      });
+        },
+      };
 
-      if (!res.ok) {
-        throw new Error("Failed to confirm tool");
+      if (action === "modify" && modifiedArgs) {
+        payload.confirmation_response.modified_args = modifiedArgs;
       }
 
-      const data = await res.json();
+      const response = await fetch(`${API}/ask`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-      if (data.status === "confirmation_required" && data.next_tool) {
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = {
+      const data = await response.json();
+
+      // Update session ID if provided
+      if (data.session_id) {
+        updateSessionId(data.session_id);
+      }
+
+      // Append any messages from the backend
+      if (data.messages && Array.isArray(data.messages)) {
+        const newMessages = data.messages.map((msg: any) => ({
+          role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
+          text: msg.content || "",
+          toolName: msg.type === "tool" ? msg.name : undefined,
+        }));
+        setMessages((prev) => [...prev, ...newMessages]);
+      }
+
+      if (data.status === "awaiting_confirmation") {
+        // Nested interrupt - show confirmation modal again
+        const assistantMessage: Message = {
+          role: "assistant",
+          text: data.interrupt_message || "Another tool requires confirmation.",
+          toolCalls: data.tool_calls,
+          conversationId: data.session_id,
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else if (data.status === "complete") {
+        // Already handled by messages array above
+        if (!data.messages || data.messages.length === 0) {
+          const assistantMessage: Message = {
             role: "assistant",
-            text: "🤖 Next action requires your approval:",
-            timestamp: new Date(),
-            toolCalls: [data.next_tool],
-            conversationId,
+            text: "Tools executed successfully.",
           };
-          return updated;
-        });
-      } else if (data.status === "completed") {
-        addMessage("assistant", data.final_response || "✅ All actions completed successfully!");
-        setConversationId(null);
+          setMessages((prev) => [...prev, assistantMessage]);
+        }
+      } else if (data.status === "cancelled") {
+        const assistantMessage: Message = {
+          role: "assistant",
+          text: "Operation cancelled.",
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
       }
-
-      toast({
-        title: action === "yes" ? "Action Approved" : action === "no" ? "Action Rejected" : "Action Modified",
-        description: data.status === "completed" ? "Task completed!" : "Proceeding to next step...",
-      });
     } catch (error) {
-      addMessage("assistant", "❌ Failed to process your response. Please try again.");
+      console.error("Error confirming tool:", error);
       toast({
-        title: "Confirmation Failed",
-        description: "Unable to send your response to the backend.",
+        title: "Error",
+        description: "Failed to confirm tool execution. Please try again.",
         variant: "destructive",
       });
     } finally {
