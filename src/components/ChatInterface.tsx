@@ -103,10 +103,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   };
 
   const handleConfirm = (toolCalls: ToolCall[]) => {
-    onToolConfirmation?.("confirm");
-  };
-
-  const handleModify = (toolCalls: ToolCall[]) => {
     // Validate all fields
     const errors: Record<string, string> = {};
     toolCalls.forEach(tc => {
@@ -136,6 +132,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
 
     setValidationErrors({});
+    // Send edited args if any were edited, otherwise just confirm
     onToolConfirmation?.("modify", editedArgs);
   };
 
@@ -369,13 +366,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                         Cancel
                       </Button>
                       <Button 
-                        variant="secondary" 
-                        onClick={() => handleModify(message.toolCalls!)}
-                        className="flex-1"
-                      >
-                        Modify & Send
-                      </Button>
-                      <Button 
                         onClick={() => handleConfirm(message.toolCalls!)}
                         className="flex-1"
                       >
@@ -385,7 +375,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
                     {/* Help text */}
                     <p className="text-xs text-muted-foreground border-t border-border pt-3">
-                      <strong>Why am I asked?</strong> The AI needs to call a backend tool. Confirm to let it run, modify to change arguments, or cancel to stop.
+                      <strong>Why am I asked?</strong> The AI needs to call a backend tool. Edit any parameters if needed, then confirm to execute or cancel to stop.
                     </p>
                   </div>
                 </div>
