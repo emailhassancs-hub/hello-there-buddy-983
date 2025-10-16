@@ -45,7 +45,8 @@ const Index = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const API = import.meta.env.VITE_BACKEND_URL || "http://35.209.183.202:8000";
+  //const API = "http://35.209.183.202:8000";
+  const API = "http://localhost:8000"; // Local backend for development
 
   // Load available episodes and stories on component mount
   useEffect(() => {
