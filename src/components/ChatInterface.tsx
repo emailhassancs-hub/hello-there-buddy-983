@@ -244,10 +244,37 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     : "bg-chat-assistant-bubble text-chat-assistant-foreground mr-4 border border-border/20"
                 }`}
               >
-                <div 
-                  className="whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{ __html: message.text }}
-                />
+                {(() => {
+                  // Check if message contains image response
+                  try {
+                    const parsed = JSON.parse(message.text);
+                    if (parsed && (parsed.type === "image" || (Array.isArray(parsed) && parsed.some((item: any) => item.type === "image")))) {
+                      const imageData = Array.isArray(parsed) ? parsed.find((item: any) => item.type === "image") : parsed;
+                      const imagePath = imageData.path || imageData.filename;
+                      const prompt = imageData.prompt || "Generated image";
+                      
+                      return (
+                        <div className="space-y-2">
+                          <img 
+                            src={imagePath.startsWith('http') ? imagePath : `${apiUrl}/${imagePath}`}
+                            alt={prompt}
+                            className="rounded-lg max-w-full h-auto"
+                          />
+                          <p className="text-xs text-muted-foreground italic">Generated image</p>
+                        </div>
+                      );
+                    }
+                  } catch (e) {
+                    // Not JSON or not an image response, render as normal text
+                  }
+                  
+                  return (
+                    <div 
+                      className="whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: message.text }}
+                    />
+                  );
+                })()}
                 
                 {message.toolName && (
                   <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
@@ -398,7 +425,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                   <div className="w-2 h-2 bg-primary rounded-full typing-indicator" style={{ animationDelay: "0.2s" }}></div>
                   <div className="w-2 h-2 bg-primary rounded-full typing-indicator" style={{ animationDelay: "0.4s" }}></div>
                 </div>
-                <span className="text-sm text-muted-foreground">Crafting your story...</span>
+                <span className="text-sm shimmer-text">Processing request...</span>
               </div>
             </div>
           </div>
