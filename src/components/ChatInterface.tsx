@@ -233,161 +233,218 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           </div>
         )}
 
-        {messages.map((message, index) => (
-          <div key={index}>
-            {/* Regular message bubble */}
-            <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter ${
-                  message.role === "user"
-                    ? "bg-chat-user-bubble text-chat-user-foreground ml-4"
-                    : "bg-chat-assistant-bubble text-chat-assistant-foreground mr-4 border border-border/20"
-                }`}
-              >
-                <div 
-                  className="whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{ __html: message.text }}
-                />
-                
-                {message.toolName && (
-                  <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
-                    Tool result: {message.toolName}
-                  </div>
-                )}
-                
-                {message.timestamp && (
-                  <div className="text-xs opacity-70 mt-2">
-                    {message.timestamp.toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-            </div>
+        {messages.map((message, index) => {
+          // Try to parse message text as JSON to detect image responses
+          let imageData = null;
+          let displayText = message.text;
+          
+          try {
+            const parsed = JSON.parse(message.text);
+            // Check if it's an object with type: "image"
+            if (parsed && parsed.type === "image") {
+              imageData = parsed;
+              displayText = null; // Don't show JSON as text
+            }
+            // Check if it's an array containing image objects
+            else if (Array.isArray(parsed)) {
+              const imageObj = parsed.find((item: any) => item && item.type === "image");
+              if (imageObj) {
+                imageData = imageObj;
+                displayText = null; // Don't show JSON as text
+              }
+            }
+          } catch (e) {
+            // Not JSON or parse error, keep original text
+          }
 
-            {/* Inline confirmation UI */}
-            {message.status === "awaiting_confirmation" && message.toolCalls && (
-              <div className="flex justify-start mt-4">
-                <div className="max-w-[85%] mr-4">
-                  <div className="bg-accent/10 border-2 border-accent rounded-2xl p-5 shadow-soft space-y-4">
-                    {/* Header */}
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-accent" />
-                        Tool execution needs your approval
-                      </h3>
-                      {message.interruptMessage && (
-                        <p className="text-sm text-muted-foreground">{message.interruptMessage}</p>
-                      )}
-                    </div>
-
-                    {/* Tool calls */}
-                    <div className="space-y-4">
-                      {message.toolCalls.map((toolCall, idx) => {
-                        const args = editedArgs[toolCall.name] || toolCall.args || {};
-                        
-                        return (
-                          <div key={`${toolCall.id}-${idx}`} className="bg-background border border-border rounded-lg p-4 space-y-3">
-                            {/* Tool header */}
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-semibold text-foreground">{toolCall.name}</h4>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground font-mono">ID: {toolCall.id}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setShowRawJson(prev => ({ ...prev, [toolCall.id]: !prev[toolCall.id] }))}
-                                  className="h-7 text-xs"
-                                >
-                                  {showRawJson[toolCall.id] ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                                  Raw JSON
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Raw JSON view */}
-                            {showRawJson[toolCall.id] && (
-                              <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-48 font-mono">
-                                {JSON.stringify(toolCall.args, null, 2)}
-                              </pre>
-                            )}
-
-                            {/* Editable parameters */}
-                            <div className="space-y-3">
-                              {Object.entries(args).map(([key, value]) => {
-                                const errorKey = `${toolCall.name}.${key}`;
-                                const hasError = !!validationErrors[errorKey];
-                                const isNumeric = key.includes("num_") || key.includes("count") || key.includes("number");
-                                const isLongText = typeof value === "string" && value.length > 100;
-
-                                return (
-                                  <div key={key} className="space-y-1">
-                                    <Label htmlFor={`${toolCall.id}-${key}`} className="text-sm font-medium">
-                                      {key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
-                                    </Label>
-                                    {isLongText ? (
-                                      <>
-                                        <Textarea
-                                          id={`${toolCall.id}-${key}`}
-                                          value={String(value)}
-                                          onChange={(e) => handleArgChange(toolCall.name, key, e.target.value)}
-                                          className={hasError ? "border-destructive" : ""}
-                                          rows={4}
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                          Preview: {String(value).slice(0, 200)}...
-                                        </p>
-                                      </>
-                                    ) : (
-                                      <Input
-                                        id={`${toolCall.id}-${key}`}
-                                        type={isNumeric ? "number" : "text"}
-                                        value={String(value)}
-                                        onChange={(e) => handleArgChange(
-                                          toolCall.name,
-                                          key,
-                                          isNumeric ? Number(e.target.value) : e.target.value
-                                        )}
-                                        className={hasError ? "border-destructive" : ""}
-                                      />
-                                    )}
-                                    {hasError && (
-                                      <p className="text-xs text-destructive">{validationErrors[errorKey]}</p>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => handleCancel(message.toolCalls!)}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        onClick={() => handleConfirm(message.toolCalls!)}
-                        className="flex-1"
-                      >
-                        Confirm
-                      </Button>
-                    </div>
-
-                    {/* Help text */}
-                    <p className="text-xs text-muted-foreground border-t border-border pt-3">
-                      <strong>Why am I asked?</strong> The AI needs to call a backend tool. Edit any parameters if needed, then confirm to execute or cancel to stop.
-                    </p>
+          return (
+            <div key={index}>
+              {/* Regular message bubble */}
+              {displayText && (
+                <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter ${
+                      message.role === "user"
+                        ? "bg-chat-user-bubble text-chat-user-foreground ml-4"
+                        : "bg-chat-assistant-bubble text-chat-assistant-foreground mr-4 border border-border/20"
+                    }`}
+                  >
+                    <div 
+                      className="whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: displayText }}
+                    />
+                    
+                    {message.toolName && (
+                      <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
+                        Tool result: {message.toolName}
+                      </div>
+                    )}
+                    
+                    {message.timestamp && (
+                      <div className="text-xs opacity-70 mt-2">
+                        {message.timestamp.toLocaleTimeString()}
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+
+              {/* Image display for image responses */}
+              {imageData && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] mr-4 space-y-2 chat-bubble-enter">
+                    <div className="bg-chat-assistant-bubble border border-border/20 rounded-2xl p-4 shadow-soft">
+                      <img 
+                        src={`${apiUrl}/${imageData.path || imageData.filename}`}
+                        alt={imageData.prompt || "Generated image"}
+                        className="w-full h-auto rounded-lg"
+                        onError={(e) => {
+                          console.error("Image load error:", imageData);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      {imageData.prompt && (
+                        <p className="text-xs text-muted-foreground mt-2 italic">
+                          {imageData.prompt}
+                        </p>
+                      )}
+                    </div>
+                    {message.timestamp && (
+                      <div className="text-xs opacity-70 px-2">
+                        {message.timestamp.toLocaleTimeString()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+
+              {/* Inline confirmation UI */}
+              {message.status === "awaiting_confirmation" && message.toolCalls && (
+                <div className="flex justify-start mt-4">
+                  <div className="max-w-[85%] mr-4">
+                    <div className="bg-accent/10 border-2 border-accent rounded-2xl p-5 shadow-soft space-y-4">
+                      {/* Header */}
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-accent" />
+                          Tool execution needs your approval
+                        </h3>
+                        {message.interruptMessage && (
+                          <p className="text-sm text-muted-foreground">{message.interruptMessage}</p>
+                        )}
+                      </div>
+
+                      {/* Tool calls */}
+                      <div className="space-y-4">
+                        {message.toolCalls.map((toolCall, idx) => {
+                          const args = editedArgs[toolCall.name] || toolCall.args || {};
+                          
+                          return (
+                            <div key={`${toolCall.id}-${idx}`} className="bg-background border border-border rounded-lg p-4 space-y-3">
+                              {/* Tool header */}
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-semibold text-foreground">{toolCall.name}</h4>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground font-mono">ID: {toolCall.id}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowRawJson(prev => ({ ...prev, [toolCall.id]: !prev[toolCall.id] }))}
+                                    className="h-7 text-xs"
+                                  >
+                                    {showRawJson[toolCall.id] ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+                                    Raw JSON
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Raw JSON view */}
+                              {showRawJson[toolCall.id] && (
+                                <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-48 font-mono">
+                                  {JSON.stringify(toolCall.args, null, 2)}
+                                </pre>
+                              )}
+
+                              {/* Editable parameters */}
+                              <div className="space-y-3">
+                                {Object.entries(args).map(([key, value]) => {
+                                  const errorKey = `${toolCall.name}.${key}`;
+                                  const hasError = !!validationErrors[errorKey];
+                                  const isNumeric = key.includes("num_") || key.includes("count") || key.includes("number");
+                                  const isLongText = typeof value === "string" && value.length > 100;
+
+                                  return (
+                                    <div key={key} className="space-y-1">
+                                      <Label htmlFor={`${toolCall.id}-${key}`} className="text-sm font-medium">
+                                        {key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                      </Label>
+                                      {isLongText ? (
+                                        <>
+                                          <Textarea
+                                            id={`${toolCall.id}-${key}`}
+                                            value={String(value)}
+                                            onChange={(e) => handleArgChange(toolCall.name, key, e.target.value)}
+                                            className={hasError ? "border-destructive" : ""}
+                                            rows={4}
+                                          />
+                                          <p className="text-xs text-muted-foreground">
+                                            Preview: {String(value).slice(0, 200)}...
+                                          </p>
+                                        </>
+                                      ) : (
+                                        <Input
+                                          id={`${toolCall.id}-${key}`}
+                                          type={isNumeric ? "number" : "text"}
+                                          value={String(value)}
+                                          onChange={(e) => handleArgChange(
+                                            toolCall.name,
+                                            key,
+                                            isNumeric ? Number(e.target.value) : e.target.value
+                                          )}
+                                          className={hasError ? "border-destructive" : ""}
+                                        />
+                                      )}
+                                      {hasError && (
+                                        <p className="text-xs text-destructive">{validationErrors[errorKey]}</p>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex gap-2 pt-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleCancel(message.toolCalls!)}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => handleConfirm(message.toolCalls!)}
+                          className="flex-1"
+                        >
+                          Confirm
+                        </Button>
+                      </div>
+
+                      {/* Help text */}
+                      <p className="text-xs text-muted-foreground border-t border-border pt-3">
+                        <strong>Why am I asked?</strong> The AI needs to call a backend tool. Edit any parameters if needed, then confirm to execute or cancel to stop.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {isGenerating && (
           <div className="flex justify-start">
