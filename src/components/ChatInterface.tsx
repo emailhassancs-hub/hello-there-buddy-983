@@ -398,7 +398,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                   <div className="w-2 h-2 bg-primary rounded-full typing-indicator" style={{ animationDelay: "0.2s" }}></div>
                   <div className="w-2 h-2 bg-primary rounded-full typing-indicator" style={{ animationDelay: "0.4s" }}></div>
                 </div>
-                <span className="text-sm text-muted-foreground">Crafting your story...</span>
+                <span className="text-sm shimmer-text font-medium">Processing request...</span>
               </div>
             </div>
           </div>

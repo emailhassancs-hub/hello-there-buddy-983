@@ -4,6 +4,7 @@ import EpisodeViewer from "@/components/EpisodeViewer";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Image as ImageIcon, BookOpen, Box } from "lucide-react";
 
@@ -46,6 +47,9 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [imageScale, setImageScale] = useState([100]);
+  const [modelScale, setModelScale] = useState([100]);
+  const [episodeScale, setEpisodeScale] = useState([100]);
   const { toast } = useToast();
 
   //const API = "http://35.209.183.202:8000";
@@ -364,25 +368,70 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
-            <ImageViewer apiUrl={API} />
+          <TabsContent value="images" className="flex-1 m-0 overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-border/50 bg-background">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-foreground min-w-[80px]">Zoom: {imageScale[0]}%</span>
+                <Slider
+                  value={imageScale}
+                  onValueChange={setImageScale}
+                  min={50}
+                  max={200}
+                  step={10}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden" style={{ transform: `scale(${imageScale[0] / 100})`, transformOrigin: 'top center' }}>
+              <ImageViewer apiUrl={API} />
+            </div>
           </TabsContent>
           
-          <TabsContent value="models" className="flex-1 m-0 overflow-hidden">
-            <ModelViewer apiUrl={API} />
+          <TabsContent value="models" className="flex-1 m-0 overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-border/50 bg-background">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-foreground min-w-[80px]">Zoom: {modelScale[0]}%</span>
+                <Slider
+                  value={modelScale}
+                  onValueChange={setModelScale}
+                  min={50}
+                  max={200}
+                  step={10}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden" style={{ transform: `scale(${modelScale[0] / 100})`, transformOrigin: 'top center' }}>
+              <ModelViewer apiUrl={API} />
+            </div>
           </TabsContent>
           
-          <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden">
-            <EpisodeViewer
-              storyState={storyState}
-              episodes={episodes}
-              stories={stories}
-              selectedEpisode={selectedEpisode}
-              onExtendStory={handleExtendStory}
-              onLoadEpisode={handleLoadEpisode}
-              onLoadStory={handleLoadStory}
-              isGenerating={isGenerating}
-            />
+          <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-border/50 bg-background">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-foreground min-w-[80px]">Zoom: {episodeScale[0]}%</span>
+                <Slider
+                  value={episodeScale}
+                  onValueChange={setEpisodeScale}
+                  min={50}
+                  max={200}
+                  step={10}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden" style={{ transform: `scale(${episodeScale[0] / 100})`, transformOrigin: 'top center' }}>
+              <EpisodeViewer
+                storyState={storyState}
+                episodes={episodes}
+                stories={stories}
+                selectedEpisode={selectedEpisode}
+                onExtendStory={handleExtendStory}
+                onLoadEpisode={handleLoadEpisode}
+                onLoadStory={handleLoadStory}
+                isGenerating={isGenerating}
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
