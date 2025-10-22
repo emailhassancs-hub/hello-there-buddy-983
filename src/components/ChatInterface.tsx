@@ -235,81 +235,91 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
         {messages.map((message, index) => (
           <div key={index}>
-            {/* Regular message bubble */}
-            <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter ${
-                  message.role === "user"
-                    ? "bg-chat-user-bubble text-chat-user-foreground ml-4"
-                    : "bg-chat-assistant-bubble text-chat-assistant-foreground mr-4 border border-border/20"
-                }`}
-              >
-                {(() => {
-                  // Ensure message.text is a string
-                  if (typeof message.text !== 'string') {
-                    return null;
-                  }
+            {/* User message with bubble, assistant without bubble */}
+            {message.role === "user" ? (
+              <div className="flex justify-end">
+                <div className="max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter bg-chat-user-bubble text-chat-user-foreground ml-4">
+                  <div 
+                    className="whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: message.text }}
+                  />
+                  {message.timestamp && (
+                    <div className="text-xs opacity-70 mt-2">
+                      {message.timestamp.toLocaleTimeString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] chat-bubble-enter">
+                  {(() => {
+                    // Ensure message.text is a string
+                    if (typeof message.text !== 'string') {
+                      return null;
+                    }
 
-                  // Check if message contains image response (JSON object with type: "image")
-                  try {
-                    const parsed = JSON.parse(message.text);
-                    if (parsed && (parsed.type === "image" || (Array.isArray(parsed) && parsed.some((item: any) => item.type === "image")))) {
-                      const imageData = Array.isArray(parsed) ? parsed.find((item: any) => item.type === "image") : parsed;
-                      const imagePath = imageData.path || imageData.filename;
-                      const prompt = imageData.prompt || "Generated image";
-                      
+                    // Check if message contains image response (JSON object with type: "image")
+                    try {
+                      const parsed = JSON.parse(message.text);
+                      if (parsed && (parsed.type === "image" || (Array.isArray(parsed) && parsed.some((item: any) => item.type === "image")))) {
+                        const imageData = Array.isArray(parsed) ? parsed.find((item: any) => item.type === "image") : parsed;
+                        const imagePath = imageData.path || imageData.filename;
+                        const prompt = imageData.prompt || "Generated image";
+                        
+                        return (
+                          <div className="space-y-2">
+                            <img 
+                              src={imagePath.startsWith('http') ? imagePath : `${apiUrl}/${imagePath}`}
+                              alt={prompt}
+                              className="rounded-lg max-w-full h-auto"
+                            />
+                            <p className="text-xs text-muted-foreground italic">Generated image</p>
+                          </div>
+                        );
+                      }
+                    } catch (e) {
+                      // Not JSON, check if it's a plain image path
+                    }
+                    
+                    // Check if message is a plain image path (e.g., "images\filename.png")
+                    const imagePathPattern = /^images[\\/][\w\-_.]+\.(png|jpg|jpeg|gif|webp)$/i;
+                    if (imagePathPattern.test(message.text.trim())) {
+                      const imagePath = message.text.trim().replace(/\\/g, '/');
                       return (
                         <div className="space-y-2">
                           <img 
-                            src={imagePath.startsWith('http') ? imagePath : `${apiUrl}/${imagePath}`}
-                            alt={prompt}
+                            src={`${apiUrl}/${imagePath}`}
+                            alt="Generated image"
                             className="rounded-lg max-w-full h-auto"
                           />
                           <p className="text-xs text-muted-foreground italic">Generated image</p>
                         </div>
                       );
                     }
-                  } catch (e) {
-                    // Not JSON, check if it's a plain image path
-                  }
-                  
-                  // Check if message is a plain image path (e.g., "images\filename.png")
-                  const imagePathPattern = /^images[\\/][\w\-_.]+\.(png|jpg|jpeg|gif|webp)$/i;
-                  if (imagePathPattern.test(message.text.trim())) {
-                    const imagePath = message.text.trim().replace(/\\/g, '/');
+                    
                     return (
-                      <div className="space-y-2">
-                        <img 
-                          src={`${apiUrl}/${imagePath}`}
-                          alt="Generated image"
-                          className="rounded-lg max-w-full h-auto"
-                        />
-                        <p className="text-xs text-muted-foreground italic">Generated image</p>
-                      </div>
+                      <div 
+                        className="whitespace-pre-wrap text-chat-assistant-foreground"
+                        dangerouslySetInnerHTML={{ __html: message.text }}
+                      />
                     );
-                  }
+                  })()}
                   
-                  return (
-                    <div 
-                      className="whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{ __html: message.text }}
-                    />
-                  );
-                })()}
-                
-                {message.toolName && (
-                  <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
-                    Tool result: {message.toolName}
-                  </div>
-                )}
-                
-                {message.timestamp && (
-                  <div className="text-xs opacity-70 mt-2">
-                    {message.timestamp.toLocaleTimeString()}
-                  </div>
-                )}
+                  {message.toolName && (
+                    <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
+                      Tool result: {message.toolName}
+                    </div>
+                  )}
+                  
+                  {message.timestamp && (
+                    <div className="text-xs opacity-70 mt-2">
+                      {message.timestamp.toLocaleTimeString()}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Inline confirmation UI */}
             {message.status === "awaiting_confirmation" && message.toolCalls && (
