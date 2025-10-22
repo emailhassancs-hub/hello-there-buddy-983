@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
+import ReactMarkdown from "react-markdown";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp } from "lucide-react";
@@ -318,10 +318,9 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     }
                     
                     return (
-                      <div 
-                        className="whitespace-pre-wrap text-chat-assistant-foreground"
-                        dangerouslySetInnerHTML={{ __html: message.text }}
-                      />
+                      <div className="prose prose-sm max-w-none text-chat-assistant-foreground">
+                        <ReactMarkdown>{message.text}</ReactMarkdown>
+                      </div>
                     );
                   })()}
                   
