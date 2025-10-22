@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ImageIcon, X } from "lucide-react";
@@ -12,6 +12,7 @@ interface ThumbnailGalleryProps {
 
 const ThumbnailGallery = ({ apiUrl, onThumbnailClick }: ThumbnailGalleryProps) => {
   const [thumbnails, setThumbnails] = useState<string[]>([]);
+  const [convertedImages, setConvertedImages] = useState<Map<string, string>>(new Map());
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -48,10 +49,78 @@ const ThumbnailGallery = ({ apiUrl, onThumbnailClick }: ThumbnailGalleryProps) =
     return `${apiUrl}/thumbnails/${filename}`;
   };
 
+  const convertWebpToPng = async (filename: string, url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const pngUrl = URL.createObjectURL(blob);
+            resolve(pngUrl);
+          } else {
+            reject(new Error('Could not convert to PNG'));
+          }
+        }, 'image/png');
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Could not load image'));
+      };
+      
+      img.src = url;
+    });
+  };
+
+  const getDisplayUrl = async (filename: string) => {
+    const url = getThumbnailUrl(filename);
+    
+    if (filename.toLowerCase().endsWith('.webp')) {
+      if (convertedImages.has(filename)) {
+        return convertedImages.get(filename)!;
+      }
+      
+      try {
+        const pngUrl = await convertWebpToPng(filename, url);
+        setConvertedImages(prev => new Map(prev).set(filename, pngUrl));
+        return pngUrl;
+      } catch (error) {
+        console.error('Error converting webp to png:', error);
+        return url; // Fallback to original
+      }
+    }
+    
+    return url;
+  };
+
   const handleThumbnailClick = (filename: string) => {
     setSelectedImage(filename);
     onThumbnailClick?.(filename);
   };
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      convertedImages.forEach((url) => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [convertedImages]);
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -84,25 +153,12 @@ const ThumbnailGallery = ({ apiUrl, onThumbnailClick }: ThumbnailGalleryProps) =
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {thumbnails.map((filename) => (
-                <div
+                <ThumbnailCard
                   key={filename}
-                  className="group cursor-pointer rounded-lg border-2 border-border overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg hover:scale-105"
+                  filename={filename}
+                  getDisplayUrl={getDisplayUrl}
                   onClick={() => handleThumbnailClick(filename)}
-                >
-                  <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
-                    <img
-                      src={getThumbnailUrl(filename)}
-                      alt={filename}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="p-2 bg-card">
-                    <p className="text-xs font-medium truncate" title={filename}>
-                      {filename}
-                    </p>
-                  </div>
-                </div>
+                />
               ))}
             </div>
           )}
@@ -117,17 +173,65 @@ const ThumbnailGallery = ({ apiUrl, onThumbnailClick }: ThumbnailGalleryProps) =
             <span className="sr-only">Close</span>
           </DialogClose>
           {selectedImage && (
-            <div className="p-4">
-              <img
-                src={getThumbnailUrl(selectedImage)}
-                alt={selectedImage}
-                className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
-              />
-              <p className="mt-4 text-center text-sm font-medium">{selectedImage}</p>
-            </div>
+            <EnlargedImage filename={selectedImage} getDisplayUrl={getDisplayUrl} />
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+const ThumbnailCard = ({ filename, getDisplayUrl, onClick }: {
+  filename: string;
+  getDisplayUrl: (filename: string) => Promise<string>;
+  onClick: () => void;
+}) => {
+  const [imgSrc, setImgSrc] = useState<string>("");
+
+  useEffect(() => {
+    getDisplayUrl(filename).then(setImgSrc);
+  }, [filename]);
+
+  return (
+    <div
+      className="group cursor-pointer rounded-lg border-2 border-border overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg hover:scale-105"
+      onClick={onClick}
+    >
+      <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
+        <img
+          src={imgSrc}
+          alt={filename}
+          className="w-full h-full object-cover transition-transform group-hover:scale-110"
+          loading="lazy"
+        />
+      </div>
+      <div className="p-2 bg-card">
+        <p className="text-xs font-medium truncate" title={filename}>
+          {filename}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const EnlargedImage = ({ filename, getDisplayUrl }: {
+  filename: string;
+  getDisplayUrl: (filename: string) => Promise<string>;
+}) => {
+  const [imgSrc, setImgSrc] = useState<string>("");
+
+  useEffect(() => {
+    getDisplayUrl(filename).then(setImgSrc);
+  }, [filename]);
+
+  return (
+    <div className="p-4">
+      <img
+        src={imgSrc}
+        alt={filename}
+        className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+      />
+      <p className="mt-4 text-center text-sm font-medium">{filename}</p>
     </div>
   );
 };
