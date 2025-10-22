@@ -112,22 +112,18 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     // Upload images first if any
     if (uploadedImages.length > 0) {
       for (const { file } of uploadedImages) {
-        const fullPath = await uploadImage(file);
-        if (fullPath) {
-          // Ensure we're using the complete absolute path
-          console.log('Full path from upload:', fullPath);
-          imagePaths.push(fullPath);
+        const serverPath = await uploadImage(file);
+        if (serverPath) {
+          imagePaths.push(serverPath);
         }
       }
     }
     
-    // Concatenate complete absolute image paths with user message
+    // Create message with image paths
     let messageToSend = inputValue;
     if (imagePaths.length > 0) {
-      // Pass the complete absolute path (e.g., C:\Users\hassan\Desktop\...\image.png)
       const imagePathsText = imagePaths.map(path => `[Image: ${path}]`).join('\n');
       messageToSend = `${inputValue}\n${imagePathsText}`.trim();
-      console.log('Message being sent to backend:', messageToSend);
     }
     
     onSendMessage(messageToSend);
@@ -219,35 +215,30 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     formData.append("file", file);
 
     try {
-      const response = await fetch(`${apiUrl}/upload-image`, {
+      const response = await fetch(`${apiUrl}/upload`, {
         method: "POST",
         body: formData,
       });
 
-      const data = await response.json();
-      console.log("Upload response from backend:", data);
-      
-      // Get the complete absolute path from backend response
-      // Backend should return the full path like: C:\Users\hassan\Desktop\Story generation\MCP\MCP_server\images\image.png
-      const fullAbsolutePath = data.full_path || data.absolute_path || data.path;
-      
-      if (!fullAbsolutePath) {
-        console.error("Backend did not return a full path");
-        toast({
-          title: "Error",
-          description: "Backend did not return complete image path",
-          variant: "destructive",
-        });
-        return null;
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
       }
+
+      const data = await response.json();
       
-      console.log("Complete absolute path to be sent:", fullAbsolutePath);
+      // Expect { path: "/images/filename.png" } from backend
+      const serverPath = data.path;
+      
+      if (!serverPath) {
+        throw new Error("Backend did not return image path");
+      }
       
       toast({
         title: "Success",
         description: "Image uploaded successfully",
       });
-      return fullAbsolutePath;
+      
+      return serverPath;
     } catch (error) {
       console.error("Upload error:", error);
       toast({
@@ -330,21 +321,20 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       return (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {imageMatches.map((match, idx) => {
-                            const fullPath = match.match(/\[Image: (.*?)\]/)?.[1];
-                            if (!fullPath) return null;
+                            const imagePath = match.match(/\[Image: (.*?)\]/)?.[1];
+                            if (!imagePath) return null;
                             
-                            // Extract filename from full path for display URL
-                            const filename = fullPath.split(/[\\/]/).pop() || '';
-                            const displayUrl = `${apiUrl}/images/${filename}`;
+                            // Use the server path directly (e.g., /images/filename.png)
+                            const imageUrl = `${apiUrl}${imagePath}`;
                             
                             return (
                               <img
                                 key={idx}
-                                src={displayUrl}
+                                src={imageUrl}
                                 alt="Uploaded"
                                 className="w-20 h-20 object-cover rounded-lg"
                                 onError={(e) => {
-                                  console.error('Image load error for:', displayUrl);
+                                  console.error('Image load error for:', imageUrl);
                                   e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23ddd" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" font-size="12" text-anchor="middle" dy=".3em"%3EImage%3C/text%3E%3C/svg%3E';
                                 }}
                               />
