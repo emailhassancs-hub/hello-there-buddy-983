@@ -224,6 +224,7 @@ const ModelViewer = ({ apiUrl }: ModelViewerProps) => {
                       src={getThumbnailUrl(model.thumbnailUrl) || ''} 
                       alt={model.name}
                       className="w-full h-24 object-cover rounded-t-md"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-24 bg-muted rounded-t-md flex items-center justify-center">
