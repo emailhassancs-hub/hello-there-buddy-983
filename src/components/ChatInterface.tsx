@@ -251,8 +251,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 </div>
               </div>
             ) : (
-              <div className="flex justify-start">
-                <div className="max-w-[80%] chat-bubble-enter">
+              <div className="flex justify-center">
+                <div className="max-w-[80%] chat-bubble-enter text-center">
                   {(() => {
                     // Ensure message.text is a string
                     if (typeof message.text !== 'string') {
@@ -272,7 +272,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                             <img 
                               src={imagePath.startsWith('http') ? imagePath : `${apiUrl}/${imagePath}`}
                               alt={prompt}
-                              className="rounded-lg max-w-full h-auto"
+                              className="rounded-lg max-w-full h-auto mx-auto"
                             />
                             <p className="text-xs text-muted-foreground italic">Generated image</p>
                           </div>
@@ -291,7 +291,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                           <img 
                             src={`${apiUrl}/${imagePath}`}
                             alt="Generated image"
-                            className="rounded-lg max-w-full h-auto"
+                            className="rounded-lg max-w-full h-auto mx-auto"
                           />
                           <p className="text-xs text-muted-foreground italic">Generated image</p>
                         </div>
