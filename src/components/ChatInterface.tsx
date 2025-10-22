@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ToolCall {
@@ -43,6 +43,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [editedArgs, setEditedArgs] = useState<Record<string, Record<string, any>>>({});
   const [showRawJson, setShowRawJson] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [uploadedImages, setUploadedImages] = useState<{ file: File; preview: string }[]>([]);
   const { toast } = useToast();
 
   const welcomeMessages = [
@@ -102,8 +103,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     adjustTextareaHeight();
   }, [inputValue]);
 
-  const handleSend = () => {
-    if (!inputValue.trim() || isGenerating) return;
+  const handleSend = async () => {
+    if ((!inputValue.trim() && uploadedImages.length === 0) || isGenerating) return;
+    
+    // Upload images first if any
+    if (uploadedImages.length > 0) {
+      for (const { file } of uploadedImages) {
+        await uploadImage(file);
+      }
+      // Clear uploaded images and their previews
+      uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
+      setUploadedImages([]);
+    }
+    
     onSendMessage(inputValue);
     setInputValue("");
     // Reset textarea height after sending
@@ -211,9 +223,21 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      uploadImage(file);
+    if (file && file.type.startsWith('image/')) {
+      const preview = URL.createObjectURL(file);
+      setUploadedImages(prev => [...prev, { file, preview }]);
     }
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+      return newImages;
+    });
   };
 
   const triggerFileUpload = () => {
@@ -516,19 +540,44 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             className="hidden"
           />
           
-          <Textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Describe your image idea..."
-            className="flex-1 bg-background border-border focus:border-primary transition-all rounded-xl resize-none overflow-hidden min-h-[44px] max-h-[200px]"
-            disabled={isGenerating}
-            rows={1}
-          />
+          <div className="flex-1 flex flex-col gap-2">
+            {/* Image thumbnails */}
+            {uploadedImages.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {uploadedImages.map((img, index) => (
+                  <div key={index} className="relative group">
+                    <img 
+                      src={img.preview} 
+                      alt="Upload preview" 
+                      className="w-16 h-16 object-cover rounded-lg border-2 border-border"
+                    />
+                    <button
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                      aria-label="Remove image"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <Textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Describe your image idea..."
+              className="bg-background border-border focus:border-primary transition-all rounded-xl resize-none overflow-hidden min-h-[44px] max-h-[200px]"
+              disabled={isGenerating}
+              rows={1}
+            />
+          </div>
+          
           <Button
             onClick={handleSend}
-            disabled={!inputValue.trim() || isGenerating}
+            disabled={(!inputValue.trim() && uploadedImages.length === 0) || isGenerating}
             variant="black"
             className="rounded-xl px-6 shadow-soft"
           >
