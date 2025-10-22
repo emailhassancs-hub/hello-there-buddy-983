@@ -391,20 +391,16 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                         return (
                           <div key={`${toolCall.id}-${idx}`} className="bg-background border border-border rounded-lg p-4 space-y-3">
                             {/* Tool header */}
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-semibold text-foreground">{toolCall.name}</h4>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground font-mono">ID: {toolCall.id}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setShowRawJson(prev => ({ ...prev, [toolCall.id]: !prev[toolCall.id] }))}
-                                  className="h-7 text-xs"
-                                >
-                                  {showRawJson[toolCall.id] ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                                  Raw JSON
-                                </Button>
-                              </div>
+                            <div className="flex items-center justify-end">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowRawJson(prev => ({ ...prev, [toolCall.id]: !prev[toolCall.id] }))}
+                                className="h-7 text-xs"
+                              >
+                                {showRawJson[toolCall.id] ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+                                Raw JSON
+                              </Button>
                             </div>
 
                             {/* Raw JSON view */}
