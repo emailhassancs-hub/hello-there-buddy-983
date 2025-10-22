@@ -4,6 +4,7 @@ import EpisodeViewer from "@/components/EpisodeViewer";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
 import { Image as ImageIcon, BookOpen, Box } from "lucide-react";
 
@@ -335,57 +336,64 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
-      {/* Chat Interface - Left Half */}
-      <div className="w-1/2 border-r border-border/50">
-        <ChatInterface
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          onToolConfirmation={handleToolConfirmation}
-          isGenerating={isGenerating}
-          apiUrl={API}
-        />
-      </div>
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Chat Interface - Resizable Left Panel */}
+        <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
+          <ChatInterface
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            onToolConfirmation={handleToolConfirmation}
+            isGenerating={isGenerating}
+            apiUrl={API}
+          />
+        </ResizablePanel>
 
-      {/* Right Half - Tabs for Image Viewer, 3D Model Viewer, and Episode Viewer */}
-      <div className="w-1/2 flex flex-col overflow-hidden">
-        <Tabs defaultValue="images" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="w-full justify-start rounded-none border-b bg-background h-14 px-6">
-            <TabsTrigger value="images" className="gap-2">
-              <ImageIcon className="w-4 h-4" />
-              Image Viewer
-            </TabsTrigger>
-            <TabsTrigger value="models" className="gap-2">
-              <Box className="w-4 h-4" />
-              3D Model Viewer
-            </TabsTrigger>
-            <TabsTrigger value="episodes" className="gap-2">
-              <BookOpen className="w-4 h-4" />
-              Episode Viewer
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
-            <ImageViewer apiUrl={API} />
-          </TabsContent>
-          
-          <TabsContent value="models" className="flex-1 m-0 overflow-hidden">
-            <ModelViewer apiUrl={API} />
-          </TabsContent>
-          
-          <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden">
-            <EpisodeViewer
-              storyState={storyState}
-              episodes={episodes}
-              stories={stories}
-              selectedEpisode={selectedEpisode}
-              onExtendStory={handleExtendStory}
-              onLoadEpisode={handleLoadEpisode}
-              onLoadStory={handleLoadStory}
-              isGenerating={isGenerating}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+        {/* Draggable Resize Handle */}
+        <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
+
+        {/* Right Panel - Tabs for Image Viewer, 3D Model Viewer, and Episode Viewer */}
+        <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
+          <div className="flex flex-col h-full overflow-hidden">
+            <Tabs defaultValue="images" className="flex-1 flex flex-col min-h-0">
+              <TabsList className="w-full justify-start rounded-none border-b bg-background h-14 px-6">
+                <TabsTrigger value="images" className="gap-2">
+                  <ImageIcon className="w-4 h-4" />
+                  Image Viewer
+                </TabsTrigger>
+                <TabsTrigger value="models" className="gap-2">
+                  <Box className="w-4 h-4" />
+                  3D Model Viewer
+                </TabsTrigger>
+                <TabsTrigger value="episodes" className="gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Episode Viewer
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
+                <ImageViewer apiUrl={API} />
+              </TabsContent>
+              
+              <TabsContent value="models" className="flex-1 m-0 overflow-hidden">
+                <ModelViewer apiUrl={API} />
+              </TabsContent>
+              
+              <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden">
+                <EpisodeViewer
+                  storyState={storyState}
+                  episodes={episodes}
+                  stories={stories}
+                  selectedEpisode={selectedEpisode}
+                  onExtendStory={handleExtendStory}
+                  onLoadEpisode={handleLoadEpisode}
+                  onLoadStory={handleLoadStory}
+                  isGenerating={isGenerating}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 };
