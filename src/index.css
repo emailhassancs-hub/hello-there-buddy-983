@@ -11,7 +11,7 @@
     --foreground: 0 0% 0%;
 
     /* Chat interface colors */
-    --chat-background: 0 0% 98%;
+    --chat-background: 0 0% 85%;
     --chat-user-bubble: 0 0% 0%;
     --chat-user-foreground: 0 0% 100%;
     --chat-assistant-bubble: 0 0% 98%;
