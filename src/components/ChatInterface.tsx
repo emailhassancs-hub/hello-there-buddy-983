@@ -296,7 +296,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             ) : (
               <div className="flex justify-start">
                 <div className="max-w-[80%] chat-bubble-enter">
-                  <div className="text-xs font-bold text-muted-foreground mb-2">Game AI Studio</div>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs font-bold text-muted-foreground">Game AI Studio</span>
+                  </div>
                   {(() => {
                     // Ensure message.text is a string
                     if (typeof message.text !== 'string') {
