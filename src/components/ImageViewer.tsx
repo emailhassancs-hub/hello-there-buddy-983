@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 interface ImageItem {
   name: string;
   url: string;
+  timestamp?: number;
 }
 
 interface ImageViewerProps {
@@ -33,9 +34,38 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
       const mapped = (data.images || []).map((filename: string) => ({
         name: filename,
         url: `/images/${filename}`,   // relative to backend
+        timestamp: Date.now(), // placeholder, will be replaced by actual file stats if available
       }));
 
-      setImages(mapped);
+      // Try to fetch file stats for each image to get creation time
+      const imagesWithStats = await Promise.all(
+        mapped.map(async (img: ImageItem) => {
+          try {
+            const statsResponse = await fetch(`${apiUrl}/image-stats/${img.name}`);
+            if (statsResponse.ok) {
+              const stats = await statsResponse.json();
+              return { ...img, timestamp: stats.mtime || stats.ctime || Date.now() };
+            }
+          } catch (e) {
+            // If stats endpoint doesn't exist, fallback to filename parsing
+            // Try to extract timestamp from filename if it contains a date pattern
+            const match = img.name.match(/(\d{10,13})/); // Unix timestamp
+            if (match) {
+              return { ...img, timestamp: parseInt(match[1]) };
+            }
+          }
+          return img;
+        })
+      );
+
+      // Sort by timestamp (newest first)
+      const sorted = imagesWithStats.sort((a, b) => {
+        const timeA = a.timestamp || 0;
+        const timeB = b.timestamp || 0;
+        return timeB - timeA; // Descending order (newest first)
+      });
+
+      setImages(sorted);
     } catch (error) {
       toast({
         title: "Failed to load images",
