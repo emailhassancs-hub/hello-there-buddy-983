@@ -217,16 +217,18 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     try {
       const response = await fetch(`${apiUrl}/upload`, {
         method: "POST",
-        body: formData,
+        body: formData, // multipart/form-data
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Upload failed:", errorText);
         throw new Error("Upload failed");
       }
 
       const data = await response.json();
       
-      // Backend returns { "path": "/images/filename.png" }
+      // Backend saves to /images and returns { "path": "/images/filename.png" }
       const serverPath = data.path;
       
       if (!serverPath) {
@@ -238,7 +240,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         description: "Image uploaded successfully",
       });
       
-      return serverPath;
+      return serverPath; // e.g., "/images/filename.png"
     } catch (error) {
       console.error("Upload error:", error);
       toast({
