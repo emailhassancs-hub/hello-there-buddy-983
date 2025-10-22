@@ -219,12 +219,16 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       });
 
       const data = await response.json();
-      console.log("Uploaded:", data);
+      console.log("Upload response:", data);
+      
+      // Get the full path from backend response
+      const fullPath = data.full_path || data.absolute_path || data.path || data.filename;
+      
       toast({
         title: "Success",
         description: "Image uploaded successfully",
       });
-      return data.path || data.filename || null;
+      return fullPath;
     } catch (error) {
       console.error("Upload error:", error);
       toast({
@@ -307,14 +311,23 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       return (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {imageMatches.map((match, idx) => {
-                            const path = match.match(/\[Image: (.*?)\]/)?.[1];
-                            if (!path) return null;
+                            const fullPath = match.match(/\[Image: (.*?)\]/)?.[1];
+                            if (!fullPath) return null;
+                            
+                            // Extract filename from full path for display URL
+                            const filename = fullPath.split(/[\\/]/).pop() || '';
+                            const displayUrl = `${apiUrl}/images/${filename}`;
+                            
                             return (
                               <img
                                 key={idx}
-                                src={path.startsWith('http') ? path : `${apiUrl}/${path}`}
+                                src={displayUrl}
                                 alt="Uploaded"
                                 className="w-20 h-20 object-cover rounded-lg"
+                                onError={(e) => {
+                                  console.error('Image load error for:', displayUrl);
+                                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23ddd" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" font-size="12" text-anchor="middle" dy=".3em"%3EImage%3C/text%3E%3C/svg%3E';
+                                }}
                               />
                             );
                           })}
