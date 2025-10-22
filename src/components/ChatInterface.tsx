@@ -321,12 +321,14 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       return (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {imageMatches.map((match, idx) => {
-                            const fullPath = match.match(/\[Image: (.*?)\]/)?.[1];
-                            if (!fullPath) return null;
+                            const imagePath = match.match(/\[Image: (.*?)\]/)?.[1];
+                            if (!imagePath) return null;
                             
-                            // Extract filename from full path for display URL
-                            const filename = fullPath.split(/[\\/]/).pop() || '';
-                            const displayUrl = `${apiUrl}/images/${filename}`;
+                            // Backend returns paths like "/images/filename.png"
+                            // Display using apiUrl + path
+                            const displayUrl = imagePath.startsWith('/') 
+                              ? `${apiUrl}${imagePath}`
+                              : `${apiUrl}/images/${imagePath}`;
                             
                             return (
                               <img
