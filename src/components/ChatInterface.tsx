@@ -36,6 +36,7 @@ interface ChatInterfaceProps {
 const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,10 +90,28 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     return () => clearInterval(interval);
   }, [messages.length]);
 
+  // Auto-resize textarea based on content
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputValue]);
+
   const handleSend = () => {
     if (!inputValue.trim() || isGenerating) return;
     onSendMessage(inputValue);
     setInputValue("");
+    // Reset textarea height after sending
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+    }, 0);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -498,13 +517,15 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             className="hidden"
           />
           
-          <Input
+          <Textarea
+            ref={textareaRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Describe your image idea..."
-            className="flex-1 bg-background border-border focus:border-primary transition-colors rounded-xl"
+            className="flex-1 bg-background border-border focus:border-primary transition-all rounded-xl resize-none overflow-hidden min-h-[44px] max-h-[200px]"
             disabled={isGenerating}
+            rows={1}
           />
           <Button
             onClick={handleSend}
