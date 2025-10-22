@@ -112,16 +112,22 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     // Upload images first if any
     if (uploadedImages.length > 0) {
       for (const { file } of uploadedImages) {
-        const path = await uploadImage(file);
-        if (path) imagePaths.push(path);
+        const fullPath = await uploadImage(file);
+        if (fullPath) {
+          // Ensure we're using the complete absolute path
+          console.log('Full path from upload:', fullPath);
+          imagePaths.push(fullPath);
+        }
       }
     }
     
-    // Concatenate image paths with user message
+    // Concatenate complete absolute image paths with user message
     let messageToSend = inputValue;
     if (imagePaths.length > 0) {
+      // Pass the complete absolute path (e.g., C:\Users\hassan\Desktop\...\image.png)
       const imagePathsText = imagePaths.map(path => `[Image: ${path}]`).join('\n');
       messageToSend = `${inputValue}\n${imagePathsText}`.trim();
+      console.log('Message being sent to backend:', messageToSend);
     }
     
     onSendMessage(messageToSend);
@@ -219,16 +225,29 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       });
 
       const data = await response.json();
-      console.log("Upload response:", data);
+      console.log("Upload response from backend:", data);
       
-      // Get the full path from backend response
-      const fullPath = data.full_path || data.absolute_path || data.path || data.filename;
+      // Get the complete absolute path from backend response
+      // Backend should return the full path like: C:\Users\hassan\Desktop\Story generation\MCP\MCP_server\images\image.png
+      const fullAbsolutePath = data.full_path || data.absolute_path || data.path;
+      
+      if (!fullAbsolutePath) {
+        console.error("Backend did not return a full path");
+        toast({
+          title: "Error",
+          description: "Backend did not return complete image path",
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      console.log("Complete absolute path to be sent:", fullAbsolutePath);
       
       toast({
         title: "Success",
         description: "Image uploaded successfully",
       });
-      return fullPath;
+      return fullAbsolutePath;
     } catch (error) {
       console.error("Upload error:", error);
       toast({
