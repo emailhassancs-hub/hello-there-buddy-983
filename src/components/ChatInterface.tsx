@@ -112,22 +112,18 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     // Upload images first if any
     if (uploadedImages.length > 0) {
       for (const { file } of uploadedImages) {
-        const fullPath = await uploadImage(file);
-        if (fullPath) {
-          // Ensure we're using the complete absolute path
-          console.log('Full path from upload:', fullPath);
-          imagePaths.push(fullPath);
+        const serverPath = await uploadImage(file);
+        if (serverPath) {
+          imagePaths.push(serverPath);
         }
       }
     }
     
-    // Concatenate complete absolute image paths with user message
+    // Send message with image paths
     let messageToSend = inputValue;
     if (imagePaths.length > 0) {
-      // Pass the complete absolute path (e.g., C:\Users\hassan\Desktop\...\image.png)
       const imagePathsText = imagePaths.map(path => `[Image: ${path}]`).join('\n');
       messageToSend = `${inputValue}\n${imagePathsText}`.trim();
-      console.log('Message being sent to backend:', messageToSend);
     }
     
     onSendMessage(messageToSend);
@@ -219,35 +215,30 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     formData.append("file", file);
 
     try {
-      const response = await fetch(`${apiUrl}/upload-image`, {
+      const response = await fetch(`${apiUrl}/upload`, {
         method: "POST",
         body: formData,
       });
 
-      const data = await response.json();
-      console.log("Upload response from backend:", data);
-      
-      // Get the complete absolute path from backend response
-      // Backend should return the full path like: C:\Users\hassan\Desktop\Story generation\MCP\MCP_server\images\image.png
-      const fullAbsolutePath = data.full_path || data.absolute_path || data.path;
-      
-      if (!fullAbsolutePath) {
-        console.error("Backend did not return a full path");
-        toast({
-          title: "Error",
-          description: "Backend did not return complete image path",
-          variant: "destructive",
-        });
-        return null;
+      if (!response.ok) {
+        throw new Error("Upload failed");
       }
+
+      const data = await response.json();
       
-      console.log("Complete absolute path to be sent:", fullAbsolutePath);
+      // Backend returns { "path": "/images/filename.png" }
+      const serverPath = data.path;
+      
+      if (!serverPath) {
+        throw new Error("No path returned from server");
+      }
       
       toast({
         title: "Success",
         description: "Image uploaded successfully",
       });
-      return fullAbsolutePath;
+      
+      return serverPath;
     } catch (error) {
       console.error("Upload error:", error);
       toast({
