@@ -252,7 +252,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           <BookOpen className="w-6 h-6 text-background" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-foreground">AI Game Studio</h2>
+          <h2 className="text-xl font-bold text-foreground">Game AI Studio</h2>
           <p className="text-sm text-muted-foreground">Create and edit images with AI</p>
         </div>
       </div>
@@ -296,6 +296,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             ) : (
               <div className="flex justify-start">
                 <div className="max-w-[80%] chat-bubble-enter">
+                  <div className="text-xs font-bold text-muted-foreground mb-2">Game AI Studio</div>
                   {(() => {
                     // Ensure message.text is a string
                     if (typeof message.text !== 'string') {
