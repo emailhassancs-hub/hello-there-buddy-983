@@ -349,7 +349,7 @@ const Index = () => {
         </ResizablePanel>
 
         {/* Draggable Resize Handle */}
-        <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
+        <ResizableHandle withHandle className="w-px bg-border/50 hover:bg-primary/20 transition-colors" />
 
         {/* Right Panel - Tabs for Image Viewer, 3D Model Viewer, and Episode Viewer */}
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
