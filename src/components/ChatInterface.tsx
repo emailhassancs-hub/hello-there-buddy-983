@@ -245,6 +245,11 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 }`}
               >
                 {(() => {
+                  // Ensure message.text is a string
+                  if (typeof message.text !== 'string') {
+                    return null;
+                  }
+
                   // Check if message contains image response (JSON object with type: "image")
                   try {
                     const parsed = JSON.parse(message.text);
