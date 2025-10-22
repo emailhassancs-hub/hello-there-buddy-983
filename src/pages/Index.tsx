@@ -50,7 +50,7 @@ const Index = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const API = import.meta.env.VITE_BACKEND_URL || "http://35.209.183.202:8000";
+  const API = "http://localhost:8000";
 
   // Session management
   useEffect(() => {
