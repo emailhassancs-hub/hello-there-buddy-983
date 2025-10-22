@@ -42,7 +42,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [editedArgs, setEditedArgs] = useState<Record<string, Record<string, any>>>({});
   const [showRawJson, setShowRawJson] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [messagePositions, setMessagePositions] = useState<Record<number, { left: string; maxWidth: string }>>({});
   const { toast } = useToast();
 
   const welcomeMessages = [
@@ -88,26 +87,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }, 3500);
 
     return () => clearInterval(interval);
-  }, [messages.length]);
-
-  // Generate random positions for bot messages
-  useEffect(() => {
-    const newPositions: Record<number, { left: string; maxWidth: string }> = {};
-    messages.forEach((msg, index) => {
-      if (msg.role === "assistant" && !messagePositions[index]) {
-        // Random left position between 5% and 60%
-        const leftPos = Math.random() * 55 + 5;
-        // Random max width between 50% and 75%
-        const maxWidth = Math.random() * 25 + 50;
-        newPositions[index] = {
-          left: `${leftPos}%`,
-          maxWidth: `${maxWidth}%`
-        };
-      }
-    });
-    if (Object.keys(newPositions).length > 0) {
-      setMessagePositions(prev => ({ ...prev, ...newPositions }));
-    }
   }, [messages.length]);
 
   const handleSend = () => {
@@ -272,14 +251,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 </div>
               </div>
             ) : (
-              <div 
-                className="relative chat-bubble-enter animate-fade-in"
-                style={{
-                  left: messagePositions[index]?.left || '10%',
-                  maxWidth: messagePositions[index]?.maxWidth || '65%'
-                }}
-              >
-                <div>
+              <div className="flex justify-start">
+                <div className="max-w-[80%] chat-bubble-enter">
                   {(() => {
                     // Ensure message.text is a string
                     if (typeof message.text !== 'string') {
