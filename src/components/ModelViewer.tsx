@@ -10,9 +10,11 @@ import { RefreshCw, Box } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ModelData {
+  workflow: string;
   filename: string;
   name: string;
   type: string;
+  modelUrl: string;
   thumbnailUrl?: string;
 }
 
@@ -133,8 +135,23 @@ const ModelViewer = ({ apiUrl }: ModelViewerProps) => {
     return `${apiUrl}${thumbnailUrl}`;
   };
 
-  const getModelUrl = (filename: string) => {
-    return `${apiUrl}/models/${filename}`;
+  const getModelUrl = (modelUrl: string) => {
+    return `${apiUrl}${modelUrl}`;
+  };
+
+  // Group models by workflow
+  const groupedModels = models.reduce((acc, model) => {
+    if (!acc[model.workflow]) {
+      acc[model.workflow] = [];
+    }
+    acc[model.workflow].push(model);
+    return acc;
+  }, {} as Record<string, ModelData[]>);
+
+  const workflowTitles: Record<string, string> = {
+    text_to_3d: "🧱 Text to 3D Models",
+    image_to_3d: "🖼️ Image to 3D Models",
+    post_processing: "🧰 Post Processing Models"
   };
 
   return (
@@ -165,7 +182,7 @@ const ModelViewer = ({ apiUrl }: ModelViewerProps) => {
               
               <Suspense fallback={null}>
                 <Model 
-                  url={getModelUrl(selectedModel.filename)} 
+                  url={getModelUrl(selectedModel.modelUrl)} 
                   type={selectedModel.type} 
                   onError={setLoadError} 
                 />
@@ -184,12 +201,12 @@ const ModelViewer = ({ apiUrl }: ModelViewerProps) => {
         )}
       </div>
 
-      {/* Thumbnail Grid - Bottom Section */}
-      <div className="border-t border-border/50 flex flex-col" style={{ height: '30%', maxHeight: '300px' }}>
+      {/* Workflow Sections - Bottom Section */}
+      <div className="border-t border-border/50 flex flex-col" style={{ height: '30%', maxHeight: '350px' }}>
         <div className="p-3 border-b border-border/50 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Box className="w-4 h-4 text-primary" />
-            <h2 className="text-base font-semibold">3D Models</h2>
+            <h2 className="text-base font-semibold">3D Models by Workflow</h2>
           </div>
           <Button
             variant="ghost"
@@ -202,40 +219,51 @@ const ModelViewer = ({ apiUrl }: ModelViewerProps) => {
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="p-3 flex gap-3 overflow-x-auto">
+          <div className="p-3 space-y-6">
             {models.length === 0 ? (
               <div className="w-full text-center py-6 text-muted-foreground">
                 No models available
               </div>
             ) : (
-              models.map((model) => (
-                <div
-                  key={model.filename}
-                  className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 flex-shrink-0 ${
-                    selectedModel?.filename === model.filename
-                      ? 'border-primary shadow-lg'
-                      : 'border-border'
-                  }`}
-                  onClick={() => setSelectedModel(model)}
-                  style={{ width: '140px' }}
-                >
-                  {model.thumbnailUrl ? (
-                    <img 
-                      src={getThumbnailUrl(model.thumbnailUrl) || ''} 
-                      alt={model.name}
-                      className="w-full h-24 object-cover rounded-t-md"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-24 bg-muted rounded-t-md flex items-center justify-center">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {model.type.toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <div className="p-2">
-                    <p className="text-xs font-medium truncate">{model.name}</p>
-                    <span className="text-xs text-muted-foreground">{model.type}</span>
+              Object.entries(groupedModels).map(([workflow, workflowModels]) => (
+                <div key={workflow} className="space-y-2">
+                  {/* Workflow Title */}
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {workflowTitles[workflow] || workflow}
+                  </h3>
+                  
+                  {/* Thumbnail Grid */}
+                  <div className="flex gap-2 flex-wrap">
+                    {workflowModels.map((model) => (
+                      <div
+                        key={`${model.workflow}-${model.filename}`}
+                        className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
+                          selectedModel?.filename === model.filename && selectedModel?.workflow === model.workflow
+                            ? 'border-primary shadow-lg'
+                            : 'border-border'
+                        }`}
+                        onClick={() => setSelectedModel(model)}
+                        style={{ width: '80px' }}
+                      >
+                        {model.thumbnailUrl ? (
+                          <img 
+                            src={getThumbnailUrl(model.thumbnailUrl) || ''} 
+                            alt={model.name}
+                            className="w-full h-20 object-cover rounded-t-md"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {model.type.toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div className="p-1.5">
+                          <p className="text-xs font-medium truncate">{model.name}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))
