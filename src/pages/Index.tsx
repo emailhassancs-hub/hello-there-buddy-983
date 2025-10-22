@@ -3,6 +3,7 @@ import ChatInterface from "@/components/ChatInterface";
 import EpisodeViewer from "@/components/EpisodeViewer";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
+import ThumbnailGallery from "@/components/ThumbnailGallery";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
@@ -360,6 +361,10 @@ const Index = () => {
                   <ImageIcon className="w-4 h-4" />
                   Image Viewer
                 </TabsTrigger>
+                <TabsTrigger value="thumbnails" className="gap-2">
+                  <ImageIcon className="w-4 h-4" />
+                  Thumbnails
+                </TabsTrigger>
                 <TabsTrigger value="models" className="gap-2">
                   <Box className="w-4 h-4" />
                   3D Model Viewer
@@ -372,6 +377,10 @@ const Index = () => {
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
                 <ImageViewer apiUrl={API} />
+              </TabsContent>
+              
+              <TabsContent value="thumbnails" className="flex-1 m-0 overflow-hidden">
+                <ThumbnailGallery apiUrl={API} />
               </TabsContent>
               
               <TabsContent value="models" className="flex-1 m-0 overflow-hidden">
