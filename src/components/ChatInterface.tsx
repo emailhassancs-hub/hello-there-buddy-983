@@ -109,14 +109,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     
     let imagePaths: string[] = [];
     
-    // Upload images first if any
+    // Upload all images at once if any
     if (uploadedImages.length > 0) {
-      for (const { file } of uploadedImages) {
-        const serverPath = await uploadImage(file);
-        if (serverPath) {
-          imagePaths.push(serverPath);
-        }
-      }
+      const files = uploadedImages.map(img => img.file);
+      imagePaths = await uploadImages(files);
     }
     
     // Create message with image paths
@@ -210,9 +206,13 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
   };
 
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const uploadImages = async (files: File[]): Promise<string[]> => {
     const formData = new FormData();
-    formData.append("file", file);
+    
+    // Append each file as "files" (plural)
+    for (const file of files) {
+      formData.append("files", file);
+    }
 
     try {
       const response = await fetch(`${apiUrl}/upload`, {
@@ -226,37 +226,42 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
       const data = await response.json();
       
-      // Expect { path: "/images/filename.png" } from backend
-      const serverPath = data.path;
+      // Expect { paths: ["images/img1.png", "images/img2.jpg"] } from backend
+      const serverPaths = data.paths;
       
-      if (!serverPath) {
-        throw new Error("Backend did not return image path");
+      if (!serverPaths || !Array.isArray(serverPaths)) {
+        throw new Error("Backend did not return image paths");
       }
       
       toast({
         title: "Success",
-        description: "Image uploaded successfully",
+        description: `${serverPaths.length} image(s) uploaded successfully`,
       });
       
-      return serverPath;
+      return serverPaths;
     } catch (error) {
       console.error("Upload error:", error);
       toast({
         title: "Error",
-        description: "Failed to upload image",
+        description: "Failed to upload images",
         variant: "destructive",
       });
-      return null;
+      return [];
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const preview = URL.createObjectURL(file);
-      setUploadedImages(prev => [...prev, { file, preview }]);
+    const files = e.target.files;
+    if (files) {
+      const newImages = Array.from(files)
+        .filter(file => file.type.startsWith('image/'))
+        .map(file => ({
+          file,
+          preview: URL.createObjectURL(file)
+        }));
+      setUploadedImages(prev => [...prev, ...newImages]);
     }
-    // Reset input so same file can be selected again
+    // Reset input so same files can be selected again
     e.target.value = '';
   };
 
