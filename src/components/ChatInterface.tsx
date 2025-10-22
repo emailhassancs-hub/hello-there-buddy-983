@@ -245,7 +245,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 }`}
               >
                 {(() => {
-                  // Check if message contains image response
+                  // Check if message contains image response (JSON object with type: "image")
                   try {
                     const parsed = JSON.parse(message.text);
                     if (parsed && (parsed.type === "image" || (Array.isArray(parsed) && parsed.some((item: any) => item.type === "image")))) {
@@ -265,7 +265,23 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       );
                     }
                   } catch (e) {
-                    // Not JSON or not an image response, render as normal text
+                    // Not JSON, check if it's a plain image path
+                  }
+                  
+                  // Check if message is a plain image path (e.g., "images\filename.png")
+                  const imagePathPattern = /^images[\\/][\w\-_.]+\.(png|jpg|jpeg|gif|webp)$/i;
+                  if (imagePathPattern.test(message.text.trim())) {
+                    const imagePath = message.text.trim().replace(/\\/g, '/');
+                    return (
+                      <div className="space-y-2">
+                        <img 
+                          src={`${apiUrl}/${imagePath}`}
+                          alt="Generated image"
+                          className="rounded-lg max-w-full h-auto"
+                        />
+                        <p className="text-xs text-muted-foreground italic">Generated image</p>
+                      </div>
+                    );
                   }
                   
                   return (
