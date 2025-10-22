@@ -23,6 +23,7 @@ interface Message {
   toolName?: string;
   status?: "awaiting_confirmation" | "complete";
   interruptMessage?: string;
+  imagePaths?: string[];
 }
 
 interface ChatInterfaceProps {
@@ -106,18 +107,30 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const handleSend = async () => {
     if ((!inputValue.trim() && uploadedImages.length === 0) || isGenerating) return;
     
+    let imagePaths: string[] = [];
+    
     // Upload images first if any
     if (uploadedImages.length > 0) {
       for (const { file } of uploadedImages) {
-        await uploadImage(file);
+        const path = await uploadImage(file);
+        if (path) imagePaths.push(path);
       }
-      // Clear uploaded images and their previews
-      uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
-      setUploadedImages([]);
     }
     
-    onSendMessage(inputValue);
+    // Concatenate image paths with user message
+    let messageToSend = inputValue;
+    if (imagePaths.length > 0) {
+      const imagePathsText = imagePaths.map(path => `[Image: ${path}]`).join('\n');
+      messageToSend = `${inputValue}\n${imagePathsText}`.trim();
+    }
+    
+    onSendMessage(messageToSend);
+    
+    // Clear uploaded images and their previews
+    uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
+    setUploadedImages([]);
     setInputValue("");
+    
     // Reset textarea height after sending
     setTimeout(() => {
       if (textareaRef.current) {
@@ -195,7 +208,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
   };
 
-  const uploadImage = async (file: File) => {
+  const uploadImage = async (file: File): Promise<string | null> => {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -211,6 +224,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         title: "Success",
         description: "Image uploaded successfully",
       });
+      return data.path || data.filename || null;
     } catch (error) {
       console.error("Upload error:", error);
       toast({
@@ -218,6 +232,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         description: "Failed to upload image",
         variant: "destructive",
       });
+      return null;
     }
   };
 
@@ -284,8 +299,30 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 <div className="max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter bg-chat-user-bubble text-chat-user-foreground ml-4">
                   <div 
                     className="whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: message.text }}
+                    dangerouslySetInnerHTML={{ __html: message.text.replace(/\[Image:.*?\]/g, '') }}
                   />
+                  {(() => {
+                    const imageMatches = message.text.match(/\[Image: (.*?)\]/g);
+                    if (imageMatches) {
+                      return (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {imageMatches.map((match, idx) => {
+                            const path = match.match(/\[Image: (.*?)\]/)?.[1];
+                            if (!path) return null;
+                            return (
+                              <img
+                                key={idx}
+                                src={path.startsWith('http') ? path : `${apiUrl}/${path}`}
+                                alt="Uploaded"
+                                className="w-20 h-20 object-cover rounded-lg"
+                              />
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                   {message.timestamp && (
                     <div className="text-xs opacity-70 mt-2">
                       {message.timestamp.toLocaleTimeString()}
