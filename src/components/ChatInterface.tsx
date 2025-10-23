@@ -286,13 +286,13 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   return (
     <div className="flex flex-col h-full bg-chat-background">
       {/* Header */}
-      <div className="flex items-center gap-3 p-6 border-b border-border bg-chat-background">
-        <div className="p-2 rounded-xl bg-primary">
-          <BookOpen className="w-6 h-6 text-primary-foreground" />
+      <div className="flex items-center gap-3 p-6 border-b border-border bg-background dark:bg-black">
+        <div className="p-2 rounded-xl bg-primary dark:bg-white">
+          <BookOpen className="w-6 h-6 text-primary-foreground dark:text-black" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-chat-assistant-foreground">Game AI Studio</h2>
-          <p className="text-sm text-chat-assistant-foreground/70">Create and edit images with AI</p>
+          <h2 className="text-xl font-bold text-foreground dark:text-white">Game AI Studio</h2>
+          <p className="text-sm text-muted-foreground dark:text-white/70">Create and edit images with AI</p>
         </div>
       </div>
 
