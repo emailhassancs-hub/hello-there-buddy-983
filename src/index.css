@@ -10,11 +10,11 @@
     --background: 0 0% 100%;
     --foreground: 0 0% 0%;
 
-    /* Chat interface colors */
-    --chat-background: 0 0% 65%;
+    /* Chat interface colors - light mode */
+    --chat-background: 0 0% 95%;
     --chat-user-bubble: 0 0% 0%;
     --chat-user-foreground: 0 0% 100%;
-    --chat-assistant-bubble: 0 0% 98%;
+    --chat-assistant-bubble: 0 0% 100%;
     --chat-assistant-foreground: 0 0% 0%;
 
     /* Episode viewer colors */
@@ -86,12 +86,12 @@
     --background: 0 0% 10%;
     --foreground: 0 0% 95%;
 
-    /* Chat interface colors - dark grey */
-    --chat-background: 0 0% 15%;
-    --chat-user-bubble: 0 0% 25%;
-    --chat-user-foreground: 0 0% 95%;
-    --chat-assistant-bubble: 0 0% 20%;
-    --chat-assistant-foreground: 0 0% 95%;
+    /* Chat interface colors - dark grey with white text */
+    --chat-background: 0 0% 20%;
+    --chat-user-bubble: 0 0% 30%;
+    --chat-user-foreground: 0 0% 100%;
+    --chat-assistant-bubble: 0 0% 25%;
+    --chat-assistant-foreground: 0 0% 100%;
 
     /* Episode viewer colors */
     --episode-background: 0 0% 10%;
