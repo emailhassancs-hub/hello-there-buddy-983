@@ -172,20 +172,9 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         </Button>
       </div>
 
-      {/* New Chat Button */}
-      <div className="px-2 pt-2 pb-1">
-        <Button
-          onClick={onNewChat}
-          className="w-full gap-1.5 h-7 text-xs"
-          variant="default"
-        >
-          <Plus className="w-3 h-3" />
-          New
-        </Button>
-      </div>
 
       {/* Chat List */}
-      <ScrollArea className="flex-1 px-2">
+      <ScrollArea className="flex-1 px-2 pt-2">
         {isLoading ? (
           <div className="p-3 text-center text-muted-foreground text-xs">Loading...</div>
         ) : sessions.length === 0 ? (
@@ -270,6 +259,18 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
           </div>
         )}
       </ScrollArea>
+
+      {/* New Chat Button - Bottom */}
+      <div className="p-2 border-t border-border">
+        <Button
+          onClick={onNewChat}
+          className="w-full gap-1.5 h-7 text-xs"
+          variant="default"
+        >
+          <Plus className="w-3 h-3" />
+          New
+        </Button>
+      </div>
     </div>
   );
 };
