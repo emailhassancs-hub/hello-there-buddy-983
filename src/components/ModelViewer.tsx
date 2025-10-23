@@ -110,6 +110,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [lightAngleX, setLightAngleX] = useState([45]);
   const [lightAngleY, setLightAngleY] = useState([45]);
   const [lightIntensity, setLightIntensity] = useState([2.5]);
+  const [cameraHeight, setCameraHeight] = useState([3]);
   const { toast } = useToast();
 
   // Use external selected model if provided, otherwise use internal
@@ -225,10 +226,21 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                   className="w-full"
                 />
               </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-foreground">Camera Height: {cameraHeight[0]}</label>
+                <Slider
+                  value={cameraHeight}
+                  onValueChange={setCameraHeight}
+                  min={1}
+                  max={8}
+                  step={0.5}
+                  className="w-full"
+                />
+              </div>
             </div>
 
             <Canvas shadows style={{ background: 'hsl(0, 0%, 90%)' }}>
-              <PerspectiveCamera makeDefault position={[3, 3, 3]} />
+              <PerspectiveCamera makeDefault position={[3, cameraHeight[0], 3]} />
               <OrbitControls 
                 enableDamping
                 dampingFactor={0.05}
@@ -246,7 +258,14 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                 intensity={lightIntensity[0]} 
                 castShadow 
               />
-              <directionalLight position={[-10, -10, -5]} intensity={0.3} />
+              <directionalLight 
+                position={[
+                  -10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
+                  -10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
+                  -10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
+                ]} 
+                intensity={lightIntensity[0] * 0.4} 
+              />
               
               <Suspense fallback={null}>
                 <Model 
