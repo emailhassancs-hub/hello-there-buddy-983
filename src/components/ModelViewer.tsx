@@ -109,6 +109,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [loadError, setLoadError] = useState<string | null>(null);
   const [lightAngleX, setLightAngleX] = useState([45]);
   const [lightAngleY, setLightAngleY] = useState([45]);
+  const [lightIntensity, setLightIntensity] = useState([2.5]);
   const { toast } = useToast();
 
   // Use external selected model if provided, otherwise use internal
@@ -190,9 +191,9 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
             </div>
 
             {/* Light Controls */}
-            <div className="absolute top-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg space-y-3" style={{ width: '220px' }}>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-foreground">Light Angle X: {lightAngleX[0]}°</label>
+            <div className="absolute bottom-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-2 rounded-lg border border-border shadow-lg space-y-2" style={{ width: '160px' }}>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-foreground">Angle X: {lightAngleX[0]}°</label>
                 <Slider
                   value={lightAngleX}
                   onValueChange={setLightAngleX}
@@ -202,14 +203,25 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                   className="w-full"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-foreground">Light Angle Y: {lightAngleY[0]}°</label>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-foreground">Angle Y: {lightAngleY[0]}°</label>
                 <Slider
                   value={lightAngleY}
                   onValueChange={setLightAngleY}
                   min={0}
                   max={360}
                   step={5}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-foreground">Brightness: {lightIntensity[0]}</label>
+                <Slider
+                  value={lightIntensity}
+                  onValueChange={setLightIntensity}
+                  min={0.5}
+                  max={5}
+                  step={0.5}
                   className="w-full"
                 />
               </div>
@@ -231,7 +243,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                   10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
                   10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
                 ]} 
-                intensity={1} 
+                intensity={lightIntensity[0]} 
                 castShadow 
               />
               <directionalLight position={[-10, -10, -5]} intensity={0.3} />
