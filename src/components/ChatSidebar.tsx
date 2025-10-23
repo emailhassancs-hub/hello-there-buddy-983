@@ -133,14 +133,14 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
 
   if (isCollapsed) {
     return (
-      <div className="w-14 h-full bg-background border-r border-border flex flex-col items-center py-4 gap-4">
+      <div className="w-12 h-full bg-background border-r border-border flex flex-col items-center py-4 gap-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setIsCollapsed(false)}
           className="dark:text-white"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-4 h-4" />
         </Button>
         <Button
           variant="ghost"
@@ -148,35 +148,35 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
           onClick={onNewChat}
           className="dark:text-white"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="w-[280px] h-full bg-background border-r border-border flex flex-col">
+    <div className="w-[220px] h-full bg-background border-r border-border flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-border flex items-center justify-between">
+      <div className="p-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 dark:text-white" />
-          <h2 className="font-semibold dark:text-white">Chat History</h2>
+          <MessageSquare className="w-4 h-4 dark:text-white" />
+          <h2 className="font-semibold text-sm dark:text-white">Chats</h2>
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setIsCollapsed(true)}
-          className="dark:text-white"
+          className="dark:text-white h-7 w-7"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-3 h-3" />
         </Button>
       </div>
 
       {/* New Chat Button */}
-      <div className="p-4">
+      <div className="p-3">
         <Button
           onClick={onNewChat}
-          className="w-full gap-2"
+          className="w-full gap-2 h-9 text-sm"
           variant="default"
         >
           <Plus className="w-4 h-4" />
@@ -187,10 +187,10 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
       {/* Chat List */}
       <ScrollArea className="flex-1 px-2">
         {isLoading ? (
-          <div className="p-4 text-center text-muted-foreground">Loading...</div>
+          <div className="p-3 text-center text-muted-foreground text-xs">Loading...</div>
         ) : sessions.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground text-sm">
-            No chats yet. Start a new conversation!
+          <div className="p-3 text-center text-muted-foreground text-xs">
+            No chats yet
           </div>
         ) : (
           <div className="space-y-2 pb-4">
@@ -198,7 +198,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
               <div
                 key={session.session_id}
                 className={cn(
-                  "group relative p-3 rounded-lg cursor-pointer transition-colors border border-transparent",
+                  "group relative p-2 rounded-md cursor-pointer transition-colors border border-transparent",
                   currentSessionId === session.session_id
                     ? "bg-primary/10 border-primary/20 dark:bg-primary/20 dark:border-primary/30"
                     : "hover:bg-muted/50 dark:hover:bg-muted/20"
@@ -221,29 +221,29 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-1">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm truncate dark:text-white">
+                        <h3 className="font-medium text-xs truncate dark:text-white">
                           {getChatName(session.session_id, session.created_at)}
                         </h3>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <span>{session.message_count} messages</span>
+                        <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-muted-foreground">
+                          <span>{session.message_count}</span>
                           <span>•</span>
-                          <span>{formatTimestamp(session.updated_at)}</span>
+                          <span className="truncate">{formatTimestamp(session.updated_at)}</span>
                         </div>
                       </div>
                       {currentSessionId === session.session_id && (
-                        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-1" />
                       )}
                     </div>
                     <div
-                      className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 dark:text-white dark:hover:bg-muted"
+                        className="h-6 w-6 dark:text-white dark:hover:bg-muted"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRename(session.session_id);
@@ -254,7 +254,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive dark:hover:bg-muted"
+                        className="h-6 w-6 text-destructive hover:text-destructive dark:hover:bg-muted"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDelete(session.session_id);
