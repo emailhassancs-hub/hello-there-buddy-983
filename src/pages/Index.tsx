@@ -369,7 +369,7 @@ const Index = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
               <TabsList className="w-full justify-start rounded-none border-b bg-background h-14 px-6">
                 <TabsTrigger value="images" className="gap-2">
-                  <ImageIcon className="w-4 h-4" />
+                  <ImageIcon className="w-4 h-4 dark:text-white" />
                   Image Viewer
                 </TabsTrigger>
                 <TabsTrigger value="models" className="gap-2">
