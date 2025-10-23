@@ -155,32 +155,32 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   }
 
   return (
-    <div className="w-[220px] h-full bg-background border-r border-border flex flex-col">
+    <div className="w-[170px] h-full bg-background border-r border-border flex flex-col">
       {/* Header */}
-      <div className="p-3 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 dark:text-white" />
-          <h2 className="font-semibold text-sm dark:text-white">Chats</h2>
+      <div className="p-2 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <MessageSquare className="w-3.5 h-3.5 dark:text-white" />
+          <h2 className="font-semibold text-xs dark:text-white">Chats</h2>
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setIsCollapsed(true)}
-          className="dark:text-white h-7 w-7"
+          className="dark:text-white h-6 w-6"
         >
           <ChevronLeft className="w-3 h-3" />
         </Button>
       </div>
 
       {/* New Chat Button */}
-      <div className="p-3">
+      <div className="px-2 pt-2 pb-1">
         <Button
           onClick={onNewChat}
-          className="w-full gap-2 h-9 text-sm"
+          className="w-full gap-1.5 h-7 text-xs"
           variant="default"
         >
-          <Plus className="w-4 h-4" />
-          New Chat
+          <Plus className="w-3 h-3" />
+          New
         </Button>
       </div>
 
