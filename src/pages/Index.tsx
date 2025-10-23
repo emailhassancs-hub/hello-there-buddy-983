@@ -4,6 +4,7 @@ import EpisodeViewer from "@/components/EpisodeViewer";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ChatSidebar } from "@/components/ChatSidebar";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -342,12 +343,68 @@ const Index = () => {
     setActiveTab("models");
   };
 
+  const handleLoadSession = async (sessionId: string) => {
+    try {
+      const response = await fetch(`${API}/session/${sessionId}/export`);
+      if (!response.ok) {
+        throw new Error("Failed to load session");
+      }
+      
+      const data = await response.json();
+      
+      // Update session ID
+      setSessionId(sessionId);
+      localStorage.setItem("mcp_session_id", sessionId);
+      
+      // Convert messages to the format expected by ChatInterface
+      const loadedMessages: Message[] = data.messages.map((msg: any) => ({
+        role: msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant",
+        text: msg.content || "",
+        timestamp: new Date(),
+        toolName: msg.type === "tool" ? msg.name : undefined,
+      }));
+      
+      setMessages(loadedMessages);
+      
+      toast({
+        title: "Chat Loaded",
+        description: "Previous conversation has been restored.",
+      });
+    } catch (error) {
+      console.error("Error loading session:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load chat session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNewChat = () => {
+    setSessionId(null);
+    localStorage.removeItem("mcp_session_id");
+    setMessages([]);
+    toast({
+      title: "New Chat Started",
+      description: "You can now start a fresh conversation.",
+    });
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />
       </div>
-      <ResizablePanelGroup direction="horizontal" className="h-full">
+      
+      {/* Chat Sidebar */}
+      <ChatSidebar
+        currentSessionId={sessionId}
+        onSelectSession={handleLoadSession}
+        onNewChat={handleNewChat}
+        apiUrl={API}
+      />
+      
+      <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
         {/* Chat Interface - Resizable Left Panel */}
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
           <ChatInterface
