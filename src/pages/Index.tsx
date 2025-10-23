@@ -3,6 +3,7 @@ import ChatInterface from "@/components/ChatInterface";
 import EpisodeViewer from "@/components/EpisodeViewer";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -343,6 +344,9 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Chat Interface - Resizable Left Panel */}
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
