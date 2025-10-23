@@ -10,11 +10,11 @@
     --background: 0 0% 100%;
     --foreground: 0 0% 0%;
 
-    /* Chat interface colors - light mode */
-    --chat-background: 0 0% 95%;
+    /* Chat interface colors - light mode pure white */
+    --chat-background: 0 0% 100%;
     --chat-user-bubble: 0 0% 0%;
     --chat-user-foreground: 0 0% 100%;
-    --chat-assistant-bubble: 0 0% 100%;
+    --chat-assistant-bubble: 0 0% 98%;
     --chat-assistant-foreground: 0 0% 0%;
 
     /* Episode viewer colors */
