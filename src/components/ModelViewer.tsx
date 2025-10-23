@@ -6,8 +6,9 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as THREE from "three";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Box } from "lucide-react";
+import { RefreshCw, Box, ZoomIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
 
 interface ModelData {
   workflow: string;
@@ -76,6 +77,8 @@ function Model({ url, type, onError }: ModelProps) {
           loadedModel.scale.multiplyScalar(scale);
           
           loadedModel.position.sub(center.multiplyScalar(scale));
+          // Position model above the grid
+          loadedModel.position.y += 1;
           
           setModel(loadedModel);
           onError(null);
@@ -104,6 +107,8 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [models, setModels] = useState<ModelData[]>([]);
   const [internalSelectedModel, setInternalSelectedModel] = useState<ModelData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [lightAngleX, setLightAngleX] = useState([45]);
+  const [lightAngleY, setLightAngleY] = useState([45]);
   const { toast } = useToast();
 
   // Use external selected model if provided, otherwise use internal
@@ -178,7 +183,39 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                 </div>
               </div>
             )}
-            <Canvas shadows>
+            
+            {/* Zoom indicator */}
+            <div className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-lg border border-border shadow-sm">
+              <ZoomIn className="w-4 h-4 text-foreground" />
+            </div>
+
+            {/* Light Controls */}
+            <div className="absolute top-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-4 rounded-lg border border-border shadow-lg space-y-3" style={{ width: '220px' }}>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-foreground">Light Angle X: {lightAngleX[0]}°</label>
+                <Slider
+                  value={lightAngleX}
+                  onValueChange={setLightAngleX}
+                  min={0}
+                  max={360}
+                  step={5}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-foreground">Light Angle Y: {lightAngleY[0]}°</label>
+                <Slider
+                  value={lightAngleY}
+                  onValueChange={setLightAngleY}
+                  min={0}
+                  max={360}
+                  step={5}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <Canvas shadows style={{ background: 'hsl(0, 0%, 90%)' }}>
               <PerspectiveCamera makeDefault position={[3, 3, 3]} />
               <OrbitControls 
                 enableDamping
@@ -188,7 +225,15 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
               />
               
               <ambientLight intensity={0.5} />
-              <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+              <directionalLight 
+                position={[
+                  10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
+                  10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
+                  10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
+                ]} 
+                intensity={1} 
+                castShadow 
+              />
               <directionalLight position={[-10, -10, -5]} intensity={0.3} />
               
               <Suspense fallback={null}>
@@ -199,7 +244,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                 />
               </Suspense>
               
-              <gridHelper args={[10, 10]} />
+              <gridHelper args={[10, 10]} position={[0, 0, 0]} />
             </Canvas>
           </div>
         ) : (
