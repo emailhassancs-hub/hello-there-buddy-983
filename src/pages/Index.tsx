@@ -48,6 +48,8 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("images");
+  const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
   const { toast } = useToast();
 
   const API = "http://localhost:8000";
@@ -334,6 +336,11 @@ const Index = () => {
     }
   };
 
+  const handleModelSelect = (modelUrl: string, thumbnailUrl: string, workflow: string) => {
+    setSelectedModel({ modelUrl, thumbnailUrl, workflow });
+    setActiveTab("models");
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
       <ResizablePanelGroup direction="horizontal" className="h-full">
@@ -345,6 +352,7 @@ const Index = () => {
             onToolConfirmation={handleToolConfirmation}
             isGenerating={isGenerating}
             apiUrl={API}
+            onModelSelect={handleModelSelect}
           />
         </ResizablePanel>
 
@@ -354,7 +362,7 @@ const Index = () => {
         {/* Right Panel - Tabs for Image Viewer, 3D Model Viewer, and Episode Viewer */}
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
           <div className="flex flex-col h-full overflow-hidden">
-            <Tabs defaultValue="images" className="flex-1 flex flex-col min-h-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
               <TabsList className="w-full justify-start rounded-none border-b bg-background h-14 px-6">
                 <TabsTrigger value="images" className="gap-2">
                   <ImageIcon className="w-4 h-4" />
@@ -375,7 +383,7 @@ const Index = () => {
               </TabsContent>
               
               <TabsContent value="models" className="flex-1 m-0 overflow-hidden">
-                <ModelViewer apiUrl={API} />
+                <ModelViewer apiUrl={API} selectedModel={selectedModel} />
               </TabsContent>
               
               <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden">

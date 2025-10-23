@@ -20,6 +20,7 @@ interface ModelData {
 
 interface ModelViewerProps {
   apiUrl: string;
+  selectedModel?: { modelUrl: string; thumbnailUrl: string; workflow: string } | null;
 }
 
 interface ModelProps {
@@ -99,11 +100,21 @@ function Model({ url, type, onError }: ModelProps) {
   return <primitive object={model} />;
 }
 
-const ModelViewer = ({ apiUrl }: ModelViewerProps) => {
+const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelViewerProps) => {
   const [models, setModels] = useState<ModelData[]>([]);
-  const [selectedModel, setSelectedModel] = useState<ModelData | null>(null);
+  const [internalSelectedModel, setInternalSelectedModel] = useState<ModelData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Use external selected model if provided, otherwise use internal
+  const selectedModel = externalSelectedModel ? {
+    workflow: externalSelectedModel.workflow,
+    filename: externalSelectedModel.modelUrl.split('/').pop() || '',
+    name: externalSelectedModel.modelUrl.split('/').pop()?.replace(/\.[^/.]+$/, '') || '',
+    type: externalSelectedModel.modelUrl.endsWith('.glb') ? '.glb' : '.fbx',
+    modelUrl: externalSelectedModel.modelUrl,
+    thumbnailUrl: externalSelectedModel.thumbnailUrl
+  } : internalSelectedModel;
 
   const loadModels = async () => {
     try {
@@ -242,7 +253,7 @@ const ModelViewer = ({ apiUrl }: ModelViewerProps) => {
                             ? 'border-primary shadow-lg'
                             : 'border-border'
                         }`}
-                        onClick={() => setSelectedModel(model)}
+                        onClick={() => setInternalSelectedModel(model)}
                         style={{ width: '80px' }}
                       >
                         {model.thumbnailUrl ? (

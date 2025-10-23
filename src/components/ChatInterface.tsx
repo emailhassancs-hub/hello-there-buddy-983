@@ -32,9 +32,10 @@ interface ChatInterfaceProps {
   onToolConfirmation?: (action: "confirm" | "modify" | "cancel", modifiedArgs?: Record<string, Record<string, any>>) => void;
   isGenerating?: boolean;
   apiUrl: string;
+  onModelSelect?: (modelUrl: string, thumbnailUrl: string, workflow: string) => void;
 }
 
-const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -373,6 +374,37 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     // Ensure message.text is a string
                     if (typeof message.text !== 'string') {
                       return null;
+                    }
+
+                    // Check for 3D model responses (image_to_3d, text_to_3d, post_processing tools)
+                    const is3DModelTool = message.toolName && (
+                      message.toolName.includes('image_to_3d') || 
+                      message.toolName.includes('text_to_3d') || 
+                      message.toolName.includes('post_processing')
+                    );
+
+                    if (is3DModelTool) {
+                      try {
+                        const parsed = JSON.parse(message.text);
+                        if (parsed && parsed.thumbnail_url && parsed.model_url) {
+                          const workflow = message.toolName.includes('image_to_3d') ? 'image_to_3d' :
+                                          message.toolName.includes('text_to_3d') ? 'text_to_3d' : 'post_processing';
+                          
+                          return (
+                            <div className="space-y-2">
+                              <img 
+                                src={parsed.thumbnail_url}
+                                alt="3D Model Preview"
+                                className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => onModelSelect?.(parsed.model_url, parsed.thumbnail_url, workflow)}
+                              />
+                              <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>
+                            </div>
+                          );
+                        }
+                      } catch (e) {
+                        // Not valid JSON, fall through
+                      }
                     }
 
                     // Check if message contains image response (JSON object with type: "image")
