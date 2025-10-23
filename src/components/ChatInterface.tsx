@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface ToolCall {
   id: string;
@@ -283,15 +284,15 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-story">
+    <div className="flex flex-col h-full bg-chat-background">
       {/* Header */}
-      <div className="flex items-center gap-3 p-6 border-b border-border bg-background">
-        <div className="p-2 rounded-xl bg-foreground">
-          <BookOpen className="w-6 h-6 text-background" />
+      <div className="flex items-center gap-3 p-6 border-b border-border bg-chat-background">
+        <div className="p-2 rounded-xl bg-primary">
+          <BookOpen className="w-6 h-6 text-primary-foreground" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-foreground">Game AI Studio</h2>
-          <p className="text-sm text-muted-foreground">Create and edit images with AI</p>
+          <h2 className="text-xl font-bold text-chat-assistant-foreground">Game AI Studio</h2>
+          <p className="text-sm text-chat-assistant-foreground/70">Create and edit images with AI</p>
         </div>
       </div>
 
@@ -299,15 +300,15 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       <div className="flex-1 overflow-y-auto p-6 space-y-8">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-            <div className="p-4 rounded-full bg-foreground shadow-soft">
-              <Sparkles className="w-8 h-8 text-background" />
+            <div className="p-4 rounded-full bg-primary shadow-soft">
+              <Sparkles className="w-8 h-8 text-primary-foreground" />
             </div>
             <div
               className={`transition-opacity duration-500 ${
                 isVisible ? "opacity-100" : "opacity-0"
               }`}
             >
-              <p className="text-foreground text-lg max-w-md font-medium">
+              <p className="text-chat-assistant-foreground text-lg max-w-md font-medium">
                 {welcomeMessages[currentMessageIndex]}
               </p>
             </div>
