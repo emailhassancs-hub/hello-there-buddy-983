@@ -376,7 +376,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       return null;
                     }
 
-                    // Check for 3D model responses (image_to_3d, text_to_3d, post_processing tools)
+                    // Check for 3D model tool messages
                     const is3DModelTool = message.toolName && (
                       message.toolName.includes('image_to_3d') || 
                       message.toolName.includes('text_to_3d') || 
@@ -384,6 +384,18 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     );
 
                     if (is3DModelTool) {
+                      // Check if it's an error message
+                      if (message.text.includes('Error executing tool') || message.text.includes('500 Server Error')) {
+                        return (
+                          <div className="space-y-2">
+                            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                              <p className="text-sm text-destructive">Failed to generate 3D model. Please try again.</p>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Try to parse successful response
                       try {
                         const parsed = JSON.parse(message.text);
                         if (parsed && parsed.thumbnail_url && parsed.model_url) {
@@ -403,8 +415,12 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                           );
                         }
                       } catch (e) {
-                        // Not valid JSON, fall through
+                        // Not valid JSON, hide the raw response
+                        return null;
                       }
+
+                      // Hide raw tool responses for 3D tools
+                      return null;
                     }
 
                     // Check if message contains image response (JSON object with type: "image")
@@ -453,7 +469,11 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     );
                   })()}
                   
-                  {message.toolName && (
+                  {message.toolName && !(
+                    message.toolName.includes('image_to_3d') || 
+                    message.toolName.includes('text_to_3d') || 
+                    message.toolName.includes('post_processing')
+                  ) && (
                     <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
                       Tool result: {message.toolName}
                     </div>
