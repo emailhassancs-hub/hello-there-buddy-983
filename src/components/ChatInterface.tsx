@@ -630,14 +630,47 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       </div>
 
       {/* Input Area */}
-      <div className="p-6 border-t border-border bg-background">
-        <div className="flex gap-3">
+      <div className="p-6 border-t glass">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        
+        {/* Image thumbnails */}
+        {uploadedImages.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {uploadedImages.map((img, index) => (
+              <div key={index} className="relative group">
+                <img 
+                  src={img.preview} 
+                  alt="Upload preview" 
+                  className="w-16 h-16 object-cover rounded-lg border-2 border-border"
+                />
+                <button
+                  onClick={() => removeImage(index)}
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                  aria-label="Remove image"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Combined input box with buttons inside */}
+        <div className="relative flex items-end glass border border-border rounded-2xl p-2 shadow-soft">
+          {/* Plus button (left inside) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
-                className="rounded-xl border-border hover:bg-muted"
+                className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
               >
                 <Plus className="w-4 h-4" />
               </Button>
@@ -653,55 +686,25 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
+
+          {/* Textarea (middle) */}
+          <Textarea
+            ref={textareaRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Describe your image idea..."
+            className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-hidden min-h-[36px] max-h-[200px] px-2"
+            disabled={isGenerating}
+            rows={1}
           />
-          
-          <div className="flex-1 flex flex-col gap-2">
-            {/* Image thumbnails */}
-            {uploadedImages.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {uploadedImages.map((img, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={img.preview} 
-                      alt="Upload preview" 
-                      className="w-16 h-16 object-cover rounded-lg border-2 border-border"
-                    />
-                    <button
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                      aria-label="Remove image"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <Textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Describe your image idea..."
-              className="bg-background border-border focus:border-primary transition-all rounded-xl resize-none overflow-hidden min-h-[44px] max-h-[200px]"
-              disabled={isGenerating}
-              rows={1}
-            />
-          </div>
-          
+
+          {/* Send button (right inside) */}
           <Button
             onClick={handleSend}
             disabled={(!inputValue.trim() && uploadedImages.length === 0) || isGenerating}
-            variant="black"
-            className="rounded-xl px-6 shadow-soft"
+            size="icon"
+            className="flex-shrink-0 h-9 w-9 rounded-lg"
           >
             <Send className="w-4 h-4" />
           </Button>
