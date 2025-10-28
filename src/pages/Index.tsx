@@ -56,6 +56,25 @@ const Index = () => {
 
   const API = "http://localhost:8000";
 
+  // Token capture from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      console.log("🔑 Token captured:", token);
+      fetch("http://localhost:8000/store-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      })
+        .then(res => res.json())
+        .then(data => console.log("✅ Token sent successfully:", data))
+        .catch(err => console.error("❌ Error sending token:", err));
+    } else {
+      console.warn("⚠️ No token found in URL");
+    }
+  }, []);
+
   // Session management
   useEffect(() => {
     const storedSessionId = localStorage.getItem("mcp_session_id");
