@@ -20,7 +20,16 @@ const ThumbnailGallery = ({ apiUrl, onThumbnailClick }: ThumbnailGalleryProps) =
   const loadThumbnails = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/thumbnails`);
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      const authToken = (window as any).authToken;
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`${apiUrl}/thumbnails`, { headers });
       if (!response.ok) throw new Error("Failed to load thumbnails");
       
       const data = await response.json();

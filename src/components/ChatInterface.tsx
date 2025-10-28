@@ -220,8 +220,16 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
 
     try {
+      const headers: HeadersInit = {};
+      const authToken = (window as any).authToken;
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(`${apiUrl}/upload`, {
         method: "POST",
+        headers,
         body: formData,
       });
 

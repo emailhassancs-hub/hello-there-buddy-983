@@ -37,7 +37,16 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const fetchSessions = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/sessions`);
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      const authToken = (window as any).authToken;
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`${apiUrl}/sessions`, { headers });
       if (!response.ok) {
         throw new Error("Failed to fetch sessions");
       }
@@ -93,8 +102,18 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     }
 
     try {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      const authToken = (window as any).authToken;
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(`${apiUrl}/session/${sessionId}/delete`, {
         method: "DELETE",
+        headers,
       });
 
       if (!response.ok) {

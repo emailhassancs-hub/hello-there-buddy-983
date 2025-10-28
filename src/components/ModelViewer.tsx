@@ -125,7 +125,16 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
 
   const loadModels = async () => {
     try {
-      const response = await fetch(`${apiUrl}/models`);
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      const authToken = (window as any).authToken;
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`${apiUrl}/models`, { headers });
       if (!response.ok) throw new Error("Failed to load models");
       
       const data = await response.json();

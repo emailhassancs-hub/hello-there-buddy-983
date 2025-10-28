@@ -24,7 +24,16 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
   const fetchImages = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/images`);
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      const authToken = (window as any).authToken;
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`${apiUrl}/images`, { headers });
       if (!response.ok) {
         throw new Error("Failed to fetch images");
       }
@@ -41,7 +50,16 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
       const imagesWithStats = await Promise.all(
         mapped.map(async (img: ImageItem) => {
           try {
-            const statsResponse = await fetch(`${apiUrl}/image-stats/${img.name}`);
+            const statsHeaders: HeadersInit = {
+              "Content-Type": "application/json",
+            };
+            const authToken = (window as any).authToken;
+            
+            if (authToken) {
+              statsHeaders["Authorization"] = `Bearer ${authToken}`;
+            }
+
+            const statsResponse = await fetch(`${apiUrl}/image-stats/${img.name}`, { headers: statsHeaders });
             if (statsResponse.ok) {
               const stats = await statsResponse.json();
               return { ...img, timestamp: stats.mtime || stats.ctime || Date.now() };

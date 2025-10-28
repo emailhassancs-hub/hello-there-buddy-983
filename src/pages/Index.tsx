@@ -52,6 +52,7 @@ const Index = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("images");
   const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const { toast } = useToast();
 
   const API = "http://localhost:8000";
@@ -62,9 +63,16 @@ const Index = () => {
     const token = params.get("token");
     if (token) {
       console.log("🔑 Token captured:", token);
+      setAuthToken(token);
+      // Store globally for child components
+      (window as any).authToken = token;
+      
       fetch("http://localhost:8000/store-token", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ token }),
       })
         .then(res => res.json())
@@ -91,16 +99,23 @@ const Index = () => {
   // Load available episodes and stories on component mount
   useEffect(() => {
     const loadAvailableContent = async () => {
+      if (!authToken) return;
+      
       try {
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
+        };
+
         // Load episodes
-        const episodesRes = await fetch(`${API}/episodes`);
+        const episodesRes = await fetch(`${API}/episodes`, { headers });
         if (episodesRes.ok) {
           const episodesData = await episodesRes.json();
           setEpisodes(episodesData.episodes || []);
         }
 
         // Load stories
-        const storiesRes = await fetch(`${API}/stories`);
+        const storiesRes = await fetch(`${API}/stories`, { headers });
         if (storiesRes.ok) {
           const storiesData = await storiesRes.json();
           setStories(storiesData.stories || []);
@@ -111,7 +126,7 @@ const Index = () => {
     };
 
     loadAvailableContent();
-  }, []);
+  }, [authToken]);
 
   const addMessage = (role: "user" | "assistant", text: string, toolName?: string) => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), toolName }]);
@@ -137,11 +152,17 @@ const Index = () => {
         payload.session_id = sessionId;
       }
 
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(`${API}/ask`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(payload),
       });
 
@@ -218,11 +239,17 @@ const Index = () => {
         payload.confirmation_response.modified_args = modifiedArgs;
       }
 
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(`${API}/ask`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(payload),
       });
 
@@ -289,7 +316,15 @@ const Index = () => {
 
   const handleLoadEpisode = async (filename: string) => {
     try {
-      const res = await fetch(`${API}/episodes/${filename}`);
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const res = await fetch(`${API}/episodes/${filename}`, { headers });
       
       if (!res.ok) {
         throw new Error("Failed to load episode");
@@ -324,7 +359,15 @@ const Index = () => {
 
   const handleLoadStory = async (filename: string) => {
     try {
-      const res = await fetch(`${API}/stories/${filename}`);
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const res = await fetch(`${API}/stories/${filename}`, { headers });
       
       if (!res.ok) {
         throw new Error("Failed to load story");
@@ -364,7 +407,15 @@ const Index = () => {
 
   const handleLoadSession = async (sessionId: string) => {
     try {
-      const response = await fetch(`${API}/session/${sessionId}/export`);
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`${API}/session/${sessionId}/export`, { headers });
       if (!response.ok) {
         throw new Error("Failed to load session");
       }
