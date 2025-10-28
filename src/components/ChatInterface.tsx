@@ -284,9 +284,9 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   };
 
   return (
-    <div className="flex flex-col h-full bg-chat-background">
+    <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="flex items-center gap-3 p-6 border-b border-border bg-background dark:bg-black">
+      <div className="flex items-center gap-3 p-6 border-b glass shadow-soft">
         <div className="p-2 rounded-xl bg-primary dark:bg-white">
           <BookOpen className="w-6 h-6 text-primary-foreground dark:text-black" />
         </div>
@@ -297,7 +297,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 glass">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
             <div className="p-4 rounded-full bg-primary shadow-soft">

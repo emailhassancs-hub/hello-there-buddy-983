@@ -155,9 +155,9 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   }
 
   return (
-    <div className="w-[170px] h-full bg-background border-r border-border flex flex-col">
+    <div className="w-[170px] h-full glass border-r flex flex-col shadow-soft">
       {/* Header */}
-      <div className="p-2 border-b border-border flex items-center justify-between">
+      <div className="p-2 border-b glass flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <MessageSquare className="w-3.5 h-3.5 dark:text-white" />
           <h2 className="font-semibold text-xs dark:text-white">Chats</h2>
