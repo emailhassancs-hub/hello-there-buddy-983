@@ -135,9 +135,9 @@
     --story-location: 0 0% 18%;
 
     /* Glass effects - Windows 10 Acrylic style (dark mode) */
-    --glass-bg: hsl(0 0% 15% / 0.7);
-    --glass-border: hsl(0 0% 100% / 0.1);
-    --glass-blur: 20px;
+    --glass-bg: hsl(0 0% 10% / 0.6);
+    --glass-border: hsl(0 0% 100% / 0.15);
+    --glass-blur: 24px;
 
     --sidebar-background: 0 0% 12%;
     --sidebar-foreground: 0 0% 90%;
