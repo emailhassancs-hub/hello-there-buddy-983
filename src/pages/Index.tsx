@@ -53,6 +53,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("images");
   const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const { toast } = useToast();
 
   const API = "http://localhost:8000";
@@ -484,6 +485,7 @@ const Index = () => {
             isGenerating={isGenerating}
             apiUrl={API}
             onModelSelect={handleModelSelect}
+            onImageGenerated={() => setImageRefreshTrigger(prev => prev + 1)}
           />
         </ResizablePanel>
 
@@ -510,7 +512,7 @@ const Index = () => {
               </TabsList>
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
-                <ImageViewer apiUrl={API} />
+                <ImageViewer apiUrl={API} refreshTrigger={imageRefreshTrigger} />
               </TabsContent>
               
               <TabsContent value="models" className="flex-1 m-0 overflow-hidden">

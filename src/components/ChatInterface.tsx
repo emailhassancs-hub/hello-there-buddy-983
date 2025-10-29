@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
+import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X } from "lucide-react";
@@ -35,9 +36,10 @@ interface ChatInterfaceProps {
   isGenerating?: boolean;
   apiUrl: string;
   onModelSelect?: (modelUrl: string, thumbnailUrl: string, workflow: string) => void;
+  onImageGenerated?: () => void;
 }
 
-const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -48,6 +50,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [showRawJson, setShowRawJson] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [uploadedImages, setUploadedImages] = useState<{ file: File; preview: string }[]>([]);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const { toast } = useToast();
 
   const welcomeMessages = [
@@ -67,6 +70,23 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       scrollToBottom();
     }
   }, [messages]);
+
+  // Detect when an image is generated in messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === "assistant") {
+        try {
+          const parsed = JSON.parse(lastMessage.text);
+          if (parsed?.img_url) {
+            onImageGenerated?.();
+          }
+        } catch (e) {
+          // Not JSON, ignore
+        }
+      }
+    }
+  }, [messages, onImageGenerated]);
 
   // Initialize edited args when confirmation is needed
   useEffect(() => {
@@ -463,9 +483,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                               <img 
                                 src={parsed.img_url}
                                 alt={parsed.filename || 'Generated image'}
-                                className="rounded-xl max-w-[320px] h-auto"
+                                className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-90 transition-opacity"
                                 style={{ marginTop: '8px' }}
                                 onError={() => setHasError(true)}
+                                onClick={() => setZoomedImage(parsed.img_url)}
                               />
                               {parsed.prompt && (
                                 <p className="text-xs text-muted-foreground italic">{parsed.prompt}</p>
@@ -488,7 +509,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                             <img 
                               src={imagePath.startsWith('http') ? imagePath : `${apiUrl}/${imagePath}`}
                               alt={prompt}
-                              className="rounded-lg max-w-full h-auto"
+                              className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => setZoomedImage(imagePath.startsWith('http') ? imagePath : `${apiUrl}/${imagePath}`)}
                             />
                             <p className="text-xs text-muted-foreground italic">Generated image</p>
                           </div>
@@ -507,7 +529,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                           <img 
                             src={`${apiUrl}/${imagePath}`}
                             alt="Generated image"
-                            className="rounded-lg max-w-full h-auto"
+                            className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => setZoomedImage(`${apiUrl}/${imagePath}`)}
                           />
                           <p className="text-xs text-muted-foreground italic">Generated image</p>
                         </div>
@@ -757,6 +780,25 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           </Button>
         </div>
       </div>
+
+      {/* Image Zoom Dialog */}
+      <Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
+        <DialogContent className="max-w-5xl w-full p-0 overflow-hidden">
+          <DialogClose className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+          {zoomedImage && (
+            <div className="relative bg-muted/20 flex items-center justify-center p-8">
+              <img
+                src={zoomedImage}
+                alt="Zoomed view"
+                className="max-h-[80vh] w-auto object-contain"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

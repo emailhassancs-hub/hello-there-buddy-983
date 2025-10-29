@@ -13,9 +13,10 @@ interface ImageItem {
 
 interface ImageViewerProps {
   apiUrl: string;
+  refreshTrigger?: number;
 }
 
-const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
+const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImageItem | null>(null);
@@ -82,6 +83,12 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
 
   useEffect(() => {
     fetchImages();
+  }, [refreshTrigger]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchImages, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
