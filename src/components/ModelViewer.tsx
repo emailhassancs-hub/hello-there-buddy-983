@@ -6,9 +6,11 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as THREE from "three";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Box, ZoomIn } from "lucide-react";
+import { RefreshCw, Box, ZoomIn, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 
 interface ModelData {
   workflow: string;
@@ -111,6 +113,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [lightAngleY, setLightAngleY] = useState([45]);
   const [lightIntensity, setLightIntensity] = useState([2.5]);
   const [cameraHeight, setCameraHeight] = useState([3]);
+  const [bgColor, setBgColor] = useState("#e5e5e5");
   const { toast } = useToast();
 
   // Use external selected model if provided, otherwise use internal
@@ -246,9 +249,21 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                   className="w-full"
                 />
               </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-foreground flex items-center gap-1">
+                  <Palette className="w-3 h-3" />
+                  Background
+                </label>
+                <Input
+                  type="color"
+                  value={bgColor}
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="w-full h-6 p-0 border-0 cursor-pointer"
+                />
+              </div>
             </div>
 
-            <Canvas shadows style={{ background: 'hsl(0, 0%, 90%)' }}>
+            <Canvas shadows style={{ background: bgColor }}>
               <PerspectiveCamera makeDefault position={[3, cameraHeight[0], 3]} />
               <OrbitControls 
                 enableDamping
@@ -297,12 +312,12 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
         )}
       </div>
 
-      {/* Workflow Sections - Bottom Section */}
+      {/* Workflow Sections - Bottom Section with Tabs */}
       <div className="border-t border-border/50 flex flex-col" style={{ height: '30%', maxHeight: '350px' }}>
         <div className="p-3 border-b border-border/50 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Box className="w-4 h-4 text-primary" />
-            <h2 className="text-base font-semibold">3D Models by Workflow</h2>
+            <h2 className="text-base font-semibold">3D Models</h2>
           </div>
           <Button
             variant="ghost"
@@ -314,58 +329,162 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
           </Button>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="p-3 space-y-6">
-            {models.length === 0 ? (
-              <div className="w-full text-center py-6 text-muted-foreground">
-                No models available
-              </div>
-            ) : (
-              Object.entries(groupedModels).map(([workflow, workflowModels]) => (
-                <div key={workflow} className="space-y-2">
-                  {/* Workflow Title */}
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {workflowTitles[workflow] || workflow}
-                  </h3>
-                  
-                  {/* Thumbnail Grid */}
-                  <div className="flex gap-2 flex-wrap">
-                    {workflowModels.map((model) => (
-                      <div
-                        key={`${model.workflow}-${model.filename}`}
-                        className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
-                          selectedModel?.filename === model.filename && selectedModel?.workflow === model.workflow
-                            ? 'border-primary shadow-lg'
-                            : 'border-border'
-                        }`}
-                        onClick={() => setInternalSelectedModel(model)}
-                        style={{ width: '80px' }}
-                      >
-                        {model.thumbnailUrl ? (
-                          <img 
-                            src={getThumbnailUrl(model.thumbnailUrl) || ''} 
-                            alt={model.name}
-                            className="w-full h-20 object-cover rounded-t-md"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {model.type.toUpperCase()}
-                            </span>
+        <Tabs defaultValue="text_to_3d" className="flex-1 flex flex-col">
+          <TabsList className="mx-3 mt-2 w-auto">
+            <TabsTrigger value="text_to_3d" className="text-xs">
+              🧱 Text to 3D
+            </TabsTrigger>
+            <TabsTrigger value="image_to_3d" className="text-xs">
+              🖼️ Image to 3D
+            </TabsTrigger>
+            <TabsTrigger value="post_processing" className="text-xs">
+              🧰 Post Processing
+            </TabsTrigger>
+          </TabsList>
+
+          {models.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              No models available
+            </div>
+          ) : (
+            <>
+              <TabsContent value="text_to_3d" className="flex-1 mt-2">
+                <ScrollArea className="h-full">
+                  <div className="px-3 pb-3">
+                    {groupedModels.text_to_3d && groupedModels.text_to_3d.length > 0 ? (
+                      <div className="flex gap-2 flex-wrap">
+                        {groupedModels.text_to_3d.map((model) => (
+                          <div
+                            key={`${model.workflow}-${model.filename}`}
+                            className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
+                              selectedModel?.filename === model.filename && selectedModel?.workflow === model.workflow
+                                ? 'border-primary shadow-lg'
+                                : 'border-border'
+                            }`}
+                            onClick={() => setInternalSelectedModel(model)}
+                            style={{ width: '80px' }}
+                          >
+                            {model.thumbnailUrl ? (
+                              <img 
+                                src={getThumbnailUrl(model.thumbnailUrl) || ''} 
+                                alt={model.name}
+                                className="w-full h-20 object-cover rounded-t-md"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {model.type.toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="p-1.5">
+                              <p className="text-xs font-medium truncate">{model.name}</p>
+                            </div>
                           </div>
-                        )}
-                        <div className="p-1.5">
-                          <p className="text-xs font-medium truncate">{model.name}</p>
-                        </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        No text to 3D models available
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="image_to_3d" className="flex-1 mt-2">
+                <ScrollArea className="h-full">
+                  <div className="px-3 pb-3">
+                    {groupedModels.image_to_3d && groupedModels.image_to_3d.length > 0 ? (
+                      <div className="flex gap-2 flex-wrap">
+                        {groupedModels.image_to_3d.map((model) => (
+                          <div
+                            key={`${model.workflow}-${model.filename}`}
+                            className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
+                              selectedModel?.filename === model.filename && selectedModel?.workflow === model.workflow
+                                ? 'border-primary shadow-lg'
+                                : 'border-border'
+                            }`}
+                            onClick={() => setInternalSelectedModel(model)}
+                            style={{ width: '80px' }}
+                          >
+                            {model.thumbnailUrl ? (
+                              <img 
+                                src={getThumbnailUrl(model.thumbnailUrl) || ''} 
+                                alt={model.name}
+                                className="w-full h-20 object-cover rounded-t-md"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {model.type.toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="p-1.5">
+                              <p className="text-xs font-medium truncate">{model.name}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        No image to 3D models available
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="post_processing" className="flex-1 mt-2">
+                <ScrollArea className="h-full">
+                  <div className="px-3 pb-3">
+                    {groupedModels.post_processing && groupedModels.post_processing.length > 0 ? (
+                      <div className="flex gap-2 flex-wrap">
+                        {groupedModels.post_processing.map((model) => (
+                          <div
+                            key={`${model.workflow}-${model.filename}`}
+                            className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
+                              selectedModel?.filename === model.filename && selectedModel?.workflow === model.workflow
+                                ? 'border-primary shadow-lg'
+                                : 'border-border'
+                            }`}
+                            onClick={() => setInternalSelectedModel(model)}
+                            style={{ width: '80px' }}
+                          >
+                            {model.thumbnailUrl ? (
+                              <img 
+                                src={getThumbnailUrl(model.thumbnailUrl) || ''} 
+                                alt={model.name}
+                                className="w-full h-20 object-cover rounded-t-md"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {model.type.toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="p-1.5">
+                              <p className="text-xs font-medium truncate">{model.name}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        No post processing models available
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </>
+          )}
+        </Tabs>
       </div>
     </div>
   );
