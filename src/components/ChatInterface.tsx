@@ -514,7 +514,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       );
                     }
                     
-                    return <TypewriterText text={message.text} speed={15} />;
+                    return <TypewriterText text={message.text} speed={3} />;
                   })()}
                   
                   {message.toolName && !(
