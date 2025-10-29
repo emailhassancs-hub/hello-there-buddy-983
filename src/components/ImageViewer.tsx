@@ -81,13 +81,16 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
     }
   };
 
+  // Fetch on mount and when refreshTrigger changes
   useEffect(() => {
     fetchImages();
   }, [refreshTrigger]);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds (but not on initial mount)
   useEffect(() => {
-    const interval = setInterval(fetchImages, 30000);
+    const interval = setInterval(() => {
+      fetchImages();
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
