@@ -330,7 +330,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
         </div>
 
         <Tabs defaultValue="text_to_3d" className="flex-1 flex flex-col">
-          <TabsList className="mx-3 mt-2 w-auto">
+          <TabsList className="mx-3 mt-2 w-auto gap-2">
             <TabsTrigger value="text_to_3d" className="text-xs">
               🧱 Text to 3D
             </TabsTrigger>
