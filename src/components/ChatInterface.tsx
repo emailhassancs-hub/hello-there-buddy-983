@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import TypewriterText from "./TypewriterText";
 
 interface ToolCall {
   id: string;
@@ -513,11 +514,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       );
                     }
                     
-                    return (
-                      <div className="prose prose-sm max-w-none text-chat-assistant-foreground">
-                        <ReactMarkdown>{message.text}</ReactMarkdown>
-                      </div>
-                    );
+                    return <TypewriterText text={message.text} speed={15} />;
                   })()}
                   
                   {message.toolName && !(
