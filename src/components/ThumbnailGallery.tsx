@@ -20,25 +20,37 @@ const ThumbnailGallery = ({ apiUrl, onThumbnailClick }: ThumbnailGalleryProps) =
   const loadThumbnails = async () => {
     setLoading(true);
     try {
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      };
       const authToken = (window as any).authToken;
       
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
+      if (!authToken) {
+        console.warn("No auth token available");
+        setThumbnails([]);
+        setLoading(false);
+        return;
       }
 
-      const response = await fetch(`${apiUrl}/thumbnails`, { headers });
-      if (!response.ok) throw new Error("Failed to load thumbnails");
+      const response = await fetch(
+        "https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-generation/history?limit=6&offset=0",
+        {
+          method: "GET",
+          headers: {
+            "accept": "*/*",
+            "Authorization": `Bearer ${authToken}`,
+          },
+        }
+      );
+      
+      if (!response.ok) throw new Error("Failed to load image history");
       
       const data = await response.json();
-      setThumbnails(data.thumbnails || []);
+      // Extract image URLs from the response
+      const imageUrls = data.map((item: any) => item.img_url || item.image_url || item.path).filter(Boolean);
+      setThumbnails(imageUrls);
     } catch (error) {
-      console.error("Error loading thumbnails:", error);
+      console.error("Error loading image history:", error);
       toast({
         title: "Load Failed",
-        description: "Unable to load thumbnails",
+        description: "Unable to load image history",
         variant: "destructive",
       });
     } finally {
@@ -55,6 +67,10 @@ const ThumbnailGallery = ({ apiUrl, onThumbnailClick }: ThumbnailGalleryProps) =
   }, [apiUrl]);
 
   const getThumbnailUrl = (filename: string) => {
+    // If filename is already a full URL, return it directly
+    if (filename.startsWith('http://') || filename.startsWith('https://')) {
+      return filename;
+    }
     return `${apiUrl}/thumbnails/${filename}`;
   };
 
@@ -136,7 +152,7 @@ const ThumbnailGallery = ({ apiUrl, onThumbnailClick }: ThumbnailGalleryProps) =
       <div className="p-3 border-b border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-primary" />
-          <h2 className="text-base font-semibold">Thumbnails</h2>
+          <h2 className="text-base font-semibold">Image History</h2>
           <span className="text-xs text-muted-foreground">
             ({thumbnails.length})
           </span>
@@ -157,16 +173,16 @@ const ThumbnailGallery = ({ apiUrl, onThumbnailClick }: ThumbnailGalleryProps) =
           {thumbnails.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">No thumbnails available</p>
+              <p className="text-lg">No previous images found.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {thumbnails.map((filename) => (
+              {thumbnails.map((url, index) => (
                 <ThumbnailCard
-                  key={filename}
-                  filename={filename}
+                  key={`${url}-${index}`}
+                  filename={url}
                   getDisplayUrl={getDisplayUrl}
-                  onClick={() => handleThumbnailClick(filename)}
+                  onClick={() => handleThumbnailClick(url)}
                 />
               ))}
             </div>
