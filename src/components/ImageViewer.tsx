@@ -24,70 +24,51 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
   const fetchImages = async () => {
     setIsLoading(true);
     try {
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      };
       const authToken = (window as any).authToken;
       
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
+      if (!authToken) {
+        console.warn("No auth token available");
+        setImages([]);
+        setIsLoading(false);
+        return;
       }
 
-      const response = await fetch(`${apiUrl}/images`, { headers });
+      const response = await fetch(
+        "https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-generation/history?limit=50&offset=0",
+        {
+          method: "GET",
+          headers: {
+            "accept": "*/*",
+            "Authorization": `Bearer ${authToken}`,
+          },
+        }
+      );
+      
       if (!response.ok) {
-        throw new Error("Failed to fetch images");
+        throw new Error("Failed to fetch image history");
       }
+      
       const data = await response.json();
       
-      // Map into objects with name + url
-      const mapped = (data.images || []).map((filename: string) => ({
-        name: filename,
-        url: `/images/${filename}`,   // relative to backend
-        timestamp: Date.now(), // placeholder, will be replaced by actual file stats if available
-      }));
-
-      // Try to fetch file stats for each image to get creation time
-      const imagesWithStats = await Promise.all(
-        mapped.map(async (img: ImageItem) => {
-          try {
-            const statsHeaders: HeadersInit = {
-              "Content-Type": "application/json",
-            };
-            const authToken = (window as any).authToken;
-            
-            if (authToken) {
-              statsHeaders["Authorization"] = `Bearer ${authToken}`;
-            }
-
-            const statsResponse = await fetch(`${apiUrl}/image-stats/${img.name}`, { headers: statsHeaders });
-            if (statsResponse.ok) {
-              const stats = await statsResponse.json();
-              return { ...img, timestamp: stats.mtime || stats.ctime || Date.now() };
-            }
-          } catch (e) {
-            // If stats endpoint doesn't exist, fallback to filename parsing
-            // Try to extract timestamp from filename if it contains a date pattern
-            const match = img.name.match(/(\d{10,13})/); // Unix timestamp
-            if (match) {
-              return { ...img, timestamp: parseInt(match[1]) };
-            }
-          }
-          return img;
-        })
-      );
+      // Map the response to ImageItem format
+      const mapped: ImageItem[] = data.map((item: any) => ({
+        name: item.filename || item.path?.split('/').pop() || 'generated-image.png',
+        url: item.img_url || item.image_url || item.path,
+        timestamp: item.created_at ? new Date(item.created_at).getTime() : Date.now(),
+      })).filter((item: ImageItem) => item.url);
 
       // Sort by timestamp (newest first)
-      const sorted = imagesWithStats.sort((a, b) => {
+      const sorted = mapped.sort((a, b) => {
         const timeA = a.timestamp || 0;
         const timeB = b.timestamp || 0;
-        return timeB - timeA; // Descending order (newest first)
+        return timeB - timeA;
       });
 
       setImages(sorted);
     } catch (error) {
       toast({
         title: "Failed to load images",
-        description: "Unable to fetch images from the server.",
+        description: "Unable to fetch image generation history.",
         variant: "destructive",
       });
       console.error("Error fetching images:", error);
@@ -142,9 +123,9 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
                   <ImageIcon className="w-12 h-12 text-muted-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No Images Yet</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No generated images yet.</h3>
                   <p className="text-muted-foreground max-w-md">
-                    Generated images from your story will appear here.
+                    Generated images from your conversations will appear here.
                   </p>
                 </div>
               </div>
@@ -159,7 +140,7 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
                 >
                   <div className="aspect-square overflow-hidden bg-muted/20">
                     <img
-                      src={`${apiUrl}${image.url}`}
+                      src={image.url}
                       alt={image.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
@@ -190,7 +171,7 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
             <div className="flex flex-col">
               <div className="relative bg-muted/20 flex items-center justify-center p-8">
                 <img
-                  src={`${apiUrl}${selectedImage.url}`}
+                  src={selectedImage.url}
                   alt={selectedImage.name}
                   className="max-h-[70vh] w-auto object-contain"
                   onError={(e) => {
