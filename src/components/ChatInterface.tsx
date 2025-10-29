@@ -432,33 +432,48 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       return null;
                     }
 
-                    // Check if message contains image response (JSON object with type: "image" or img_url/image_url)
+                    // Check if message contains image response (JSON object with img_url)
                     try {
                       const parsed = JSON.parse(message.text);
                       
-                      // Check for img_url or image_url in the response
-                      const imageUrl = parsed?.img_url || parsed?.image_url;
-                      
-                      if (imageUrl) {
-                        const prompt = parsed.prompt || "Generated image";
-                        return (
-                          <div className="space-y-2">
-                            <img 
-                              src={imageUrl}
-                              alt={prompt}
-                              className="rounded-xl max-w-[320px] h-auto"
-                              style={{ marginTop: '6px' }}
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                const fallback = document.createElement('div');
-                                fallback.className = 'text-sm text-muted-foreground';
-                                fallback.innerHTML = `Image preview unavailable. <a href="${imageUrl}" target="_blank" rel="noopener noreferrer" class="underline hover:text-primary">View image</a>`;
-                                e.currentTarget.parentElement?.appendChild(fallback);
-                              }}
-                            />
-                            {prompt && <p className="text-xs text-muted-foreground italic">{prompt}</p>}
-                          </div>
-                        );
+                      // Check for img_url in the response
+                      if (parsed?.img_url) {
+                        const ImageWithFallback = () => {
+                          const [hasError, setHasError] = useState(false);
+                          
+                          if (hasError) {
+                            return (
+                              <div className="text-sm text-muted-foreground">
+                                Image preview unavailable.{' '}
+                                <a 
+                                  href={parsed.img_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="underline hover:text-primary"
+                                >
+                                  View image
+                                </a>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <div className="space-y-2">
+                              <img 
+                                src={parsed.img_url}
+                                alt={parsed.filename || 'Generated image'}
+                                className="rounded-xl max-w-[320px] h-auto"
+                                style={{ marginTop: '8px' }}
+                                onError={() => setHasError(true)}
+                              />
+                              {parsed.prompt && (
+                                <p className="text-xs text-muted-foreground italic">{parsed.prompt}</p>
+                              )}
+                            </div>
+                          );
+                        };
+                        
+                        return <ImageWithFallback />;
                       }
                       
                       // Fallback to existing type: "image" check
