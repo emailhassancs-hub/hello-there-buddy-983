@@ -432,9 +432,29 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       return null;
                     }
 
-                    // Check if message contains image response (JSON object with type: "image")
+                    // Check if message contains image response (JSON object with type: "image" or img_url/image_url)
                     try {
                       const parsed = JSON.parse(message.text);
+                      
+                      // Check for img_url or image_url in the response
+                      const imageUrl = parsed?.img_url || parsed?.image_url;
+                      
+                      if (imageUrl) {
+                        const prompt = parsed.prompt || "Generated image";
+                        return (
+                          <div className="space-y-2">
+                            <img 
+                              src={imageUrl}
+                              alt={prompt}
+                              className="rounded-lg max-w-[300px] h-auto"
+                              style={{ marginTop: '8px' }}
+                            />
+                            <p className="text-xs text-muted-foreground italic">{prompt}</p>
+                          </div>
+                        );
+                      }
+                      
+                      // Fallback to existing type: "image" check
                       if (parsed && (parsed.type === "image" || (Array.isArray(parsed) && parsed.some((item: any) => item.type === "image")))) {
                         const imageData = Array.isArray(parsed) ? parsed.find((item: any) => item.type === "image") : parsed;
                         const imagePath = imageData.path || imageData.filename;
