@@ -50,6 +50,9 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
       
       const data = await response.json();
       
+      // Debug: Show the actual response structure
+      alert(JSON.stringify(data, null, 2));
+      
       // Map the response to ImageItem format
       const mapped: ImageItem[] = data.map((item: any) => ({
         name: item.filename || item.path?.split('/').pop() || 'generated-image.png',
