@@ -50,14 +50,14 @@ const ImageViewer = ({ apiUrl }: ImageViewerProps) => {
       
       const data = await response.json();
       
-      // Debug: Show the actual response structure
-      alert(JSON.stringify(data, null, 2));
+      // Extract images from the nested data property
+      const imageList = data.data || [];
       
       // Map the response to ImageItem format
-      const mapped: ImageItem[] = data.map((item: any) => ({
-        name: item.filename || item.path?.split('/').pop() || 'generated-image.png',
-        url: item.img_url || item.image_url || item.path,
-        timestamp: item.created_at ? new Date(item.created_at).getTime() : Date.now(),
+      const mapped: ImageItem[] = imageList.map((item: any) => ({
+        name: item.prompt?.substring(0, 50) + '...' || item.id || 'generated-image.png',
+        url: item.imagePath || item.img_url || '',
+        timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
       })).filter((item: ImageItem) => item.url);
 
       // Sort by timestamp (newest first)
