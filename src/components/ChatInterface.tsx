@@ -446,10 +446,17 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                             <img 
                               src={imageUrl}
                               alt={prompt}
-                              className="rounded-lg max-w-[300px] h-auto"
-                              style={{ marginTop: '8px' }}
+                              className="rounded-xl max-w-[320px] h-auto"
+                              style={{ marginTop: '6px' }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = document.createElement('div');
+                                fallback.className = 'text-sm text-muted-foreground';
+                                fallback.innerHTML = `Image preview unavailable. <a href="${imageUrl}" target="_blank" rel="noopener noreferrer" class="underline hover:text-primary">View image</a>`;
+                                e.currentTarget.parentElement?.appendChild(fallback);
+                              }}
                             />
-                            <p className="text-xs text-muted-foreground italic">{prompt}</p>
+                            {prompt && <p className="text-xs text-muted-foreground italic">{prompt}</p>}
                           </div>
                         );
                       }
