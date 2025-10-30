@@ -450,7 +450,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
   const selectedModelData = models.find((m) => m.id === selectedModel)
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
+    <div className="min-h-screen bg-white text-black p-6">
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
@@ -464,19 +464,19 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
       <div className="max-w-7xl mx-auto">
         {/* Success Notification */}
         {showSuccessNotification && (
-          <div className="mb-6 p-4 bg-white/10 border border-white/20 rounded-lg flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-white rounded-full">
-              <CheckCircle className="h-5 w-5 text-black" />
+          <div className="mb-6 p-4 bg-black/10 border border-black/20 rounded-lg flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-black rounded-full">
+              <CheckCircle className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="text-white font-semibold">{successMessage.title}</h3>
-              <p className="text-white/70 text-sm">{successMessage.description}</p>
+              <h3 className="text-black font-semibold">{successMessage.title}</h3>
+              <p className="text-black/70 text-sm">{successMessage.description}</p>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowSuccessNotification(false)}
-              className="text-white/70 hover:text-white hover:bg-white/10"
+              className="text-black/70 hover:text-black hover:bg-black/10"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -484,16 +484,16 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
         )}
 
         {/* Main Card */}
-        <Card className="border border-white/20 bg-black shadow-2xl">
-          <CardHeader className="border-b border-white/10 pb-6">
+        <Card className="border border-black/20 bg-white shadow-2xl">
+          <CardHeader className="border-b border-black/10 pb-6">
             <CardTitle className="flex items-center justify-between text-2xl">
               <div className="flex items-center gap-2">
-                <Settings className="h-6 w-6 text-white" />
-                <span className="text-white">Model Optimization</span>
+                <Settings className="h-6 w-6 text-black" />
+                <span className="text-black">Model Optimization</span>
               </div>
               <Button
                 onClick={() => document.getElementById('model-file-input')?.click()}
-                className="bg-white text-black hover:bg-white/90"
+                className="bg-black text-white hover:bg-black/90"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Model
@@ -509,7 +509,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                 }}
               />
             </CardTitle>
-            <CardDescription className="text-white/60">
+            <CardDescription className="text-black/60">
               Optimize your 3D models for better performance
             </CardDescription>
           </CardHeader>
@@ -521,41 +521,41 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                 {/* Available Models */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-white text-sm font-medium">Available Models</Label>
+                    <Label className="text-black text-sm font-medium">Available Models</Label>
                     <Button
                       type="button"
                       onClick={refreshModelsData}
                       disabled={loading || refreshingModels}
                       size="sm"
                       variant="outline"
-                      className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                      className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                     >
                       <RefreshCw className={`h-3 w-3 mr-1 ${loading || refreshingModels ? 'animate-spin' : ''}`} />
                       Refresh
                     </Button>
                   </div>
-                  <div className="h-96 overflow-y-auto space-y-3 p-2 bg-white/5 rounded-lg border border-white/10 hide-scrollbar" onScroll={handleScroll}>
+                  <div className="h-96 overflow-y-auto space-y-3 p-2 bg-black/5 rounded-lg border border-black/10 hide-scrollbar" onScroll={handleScroll}>
                     {loading || refreshingModels ? (
                       <div className="flex items-center justify-center h-full min-h-[300px]">
-                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                        <Loader2 className="h-6 w-6 animate-spin text-black" />
                       </div>
                     ) : error ? (
                       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-                        <AlertCircle className="h-8 w-8 text-white mb-2" />
-                        <p className="text-white/60 text-sm">{error}</p>
+                        <AlertCircle className="h-8 w-8 text-black mb-2" />
+                        <p className="text-black/60 text-sm">{error}</p>
                         <Button
                           type="button"
                           onClick={refreshModelsData}
                           size="sm"
-                          className="mt-2 bg-white text-black hover:bg-white/90"
+                          className="mt-2 bg-black text-white hover:bg-black/90"
                         >
                           Retry
                         </Button>
                       </div>
                     ) : models.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-                        <FileIcon className="h-8 w-8 text-white/50 mb-2" />
-                        <p className="text-white/60 text-sm">No models available</p>
+                        <FileIcon className="h-8 w-8 text-black/50 mb-2" />
+                        <p className="text-black/60 text-sm">No models available</p>
                       </div>
                     ) : (
                       models.map((model) => (
@@ -563,8 +563,8 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                           key={model.id}
                           className={`cursor-pointer transition-all ${
                             selectedModel === model.id
-                              ? "border-white bg-white/20"
-                              : "border-white/10 hover:border-white/30 bg-white/5"
+                              ? "border-black bg-black/20"
+                              : "border-black/10 hover:border-black/30 bg-black/5"
                           }`}
                           onClick={() => setSelectedModel(model.id)}
                         >
@@ -573,11 +573,11 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                               <img
                                 src={model.image || "/placeholder.svg"}
                                 alt={model.name}
-                                className="w-12 h-12 rounded-lg object-cover bg-white/10"
+                                className="w-12 h-12 rounded-lg object-cover bg-black/10"
                               />
                               <div className="flex-1">
-                                <h4 className="text-white font-medium text-sm">{model.name}</h4>
-                                <div className="flex items-center gap-1 text-white/60 text-xs">
+                                <h4 className="text-black font-medium text-sm">{model.name}</h4>
+                                <div className="flex items-center gap-1 text-black/60 text-xs">
                                   <Calendar className="h-3 w-3" />
                                   {model.creationDate}
                                 </div>
@@ -590,7 +590,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                     
                     {loadingMore && (
                       <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-5 w-5 animate-spin text-white" />
+                        <Loader2 className="h-5 w-5 animate-spin text-black" />
                       </div>
                     )}
                   </div>
@@ -599,7 +599,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                 {/* Optimized Versions */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-white text-sm font-medium">Optimized Versions</Label>
+                    <Label className="text-black text-sm font-medium">Optimized Versions</Label>
                     {selectedModel && (
                       <Button
                         type="button"
@@ -607,35 +607,35 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                         disabled={loadingAssociated || refreshingAssociated}
                         size="sm"
                         variant="outline"
-                        className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                        className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                       >
                         <RefreshCw className={`h-3 w-3 mr-1 ${loadingAssociated || refreshingAssociated ? 'animate-spin' : ''}`} />
                         Refresh
                       </Button>
                     )}
                   </div>
-                  <div className="h-96 overflow-y-auto space-y-3 p-2 bg-white/5 rounded-lg border border-white/10 hide-scrollbar">
+                  <div className="h-96 overflow-y-auto space-y-3 p-2 bg-black/5 rounded-lg border border-black/10 hide-scrollbar">
                     {loadingAssociated ? (
                       <div className="flex items-center justify-center h-full min-h-[300px]">
-                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                        <Loader2 className="h-6 w-6 animate-spin text-black" />
                       </div>
                     ) : !selectedModel ? (
                       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-                        <FileIcon className="h-8 w-8 text-white/50 mb-2" />
-                        <p className="text-white/60 text-sm">Select a model to view optimized versions</p>
+                        <FileIcon className="h-8 w-8 text-black/50 mb-2" />
+                        <p className="text-black/60 text-sm">Select a model to view optimized versions</p>
                       </div>
                     ) : associatedModels.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-                        <FileIcon className="h-8 w-8 text-white/50 mb-2" />
-                        <p className="text-white/60 text-sm">No optimized versions available</p>
+                        <FileIcon className="h-8 w-8 text-black/50 mb-2" />
+                        <p className="text-black/60 text-sm">No optimized versions available</p>
                       </div>
                     ) : (
                       associatedModels.map((version) => (
-                        <Card key={version.id} className="border-white/10 bg-white/5">
+                        <Card key={version.id} className="border-black/10 bg-black/5">
                           <CardContent className="p-3">
                             <div className="space-y-2">
-                              <h4 className="text-white font-medium text-sm">{version.preset_name}</h4>
-                              <p className="text-white/60 text-xs">Status: {version.optimization_status}</p>
+                              <h4 className="text-black font-medium text-sm">{version.preset_name}</h4>
+                              <p className="text-black/60 text-xs">Status: {version.optimization_status}</p>
                               <div className="flex gap-2 flex-wrap">
                                 {version.downloads.glb && (
                                   <Button
@@ -643,7 +643,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleDownload(version.downloads.glb!, `${version.name}.glb`)}
-                                    className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                                    className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                                   >
                                     <Download className="h-3 w-3 mr-1" />
                                     GLB
@@ -655,7 +655,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleDownload(version.downloads.usdz!, `${version.name}.usdz`)}
-                                    className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                                    className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                                   >
                                     <Download className="h-3 w-3 mr-1" />
                                     USDZ
@@ -667,7 +667,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleDownload(version.downloads.fbx!, `${version.name}.fbx`)}
-                                    className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                                    className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                                   >
                                     <Download className="h-3 w-3 mr-1" />
                                     FBX
@@ -686,14 +686,14 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
               {/* Optimization Controls */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-white text-sm">Optimization Type</Label>
+                  <Label className="text-black text-sm">Optimization Type</Label>
                   <Select value={optimizationType} onValueChange={setOptimizationType}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectTrigger className="bg-black/5 border-black/10 text-black">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-black border-white/20">
+                    <SelectContent className="bg-white border-black/20">
                       {optimizationPresets && Object.keys(optimizationPresets.presets).map((type) => (
-                        <SelectItem key={type} value={type} className="text-white hover:bg-white/10">
+                        <SelectItem key={type} value={type} className="text-black hover:bg-black/10">
                           {type}
                         </SelectItem>
                       ))}
@@ -711,10 +711,10 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                     <SelectTrigger className="bg-white/5 border-white/10 text-white">
                       <SelectValue placeholder="Select strength" />
                     </SelectTrigger>
-                    <SelectContent className="bg-black border-white/20">
+                    <SelectContent className="bg-white border-black/20">
                       {optimizationType && optimizationPresets && 
                         optimizationPresets.presets[optimizationType]?.map((option) => (
-                          <SelectItem key={option.id} value={option.id} className="text-white hover:bg-white/10">
+                          <SelectItem key={option.id} value={option.id} className="text-black hover:bg-black/10">
                             {option.text}
                           </SelectItem>
                         ))
@@ -728,7 +728,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                 type="button"
                 onClick={addOptimizationRequest}
                 disabled={!optimizationType || !optimizationStrength || !selectedModel}
-                className="w-full bg-white text-black hover:bg-white/90"
+                className="w-full bg-black text-white hover:bg-black/90"
               >
                 Add to Queue
               </Button>
@@ -736,20 +736,20 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
               {/* Optimization Queue */}
               {optimizationRequests.length > 0 && (
                 <div className="space-y-3">
-                  <Label className="text-white text-sm font-medium">Optimization Queue</Label>
-                  <div className="space-y-2 p-3 bg-white/5 rounded-lg border border-white/10">
+                  <Label className="text-black text-sm font-medium">Optimization Queue</Label>
+                  <div className="space-y-2 p-3 bg-black/5 rounded-lg border border-black/10">
                     {optimizationRequests.map((request) => (
-                      <div key={request.id} className="flex items-center justify-between p-2 bg-white/5 rounded border border-white/10">
+                      <div key={request.id} className="flex items-center justify-between p-2 bg-black/5 rounded border border-black/10">
                         <div>
-                          <p className="text-white text-sm font-medium">{request.modelName}</p>
-                          <p className="text-white/60 text-xs">{request.optimizationType} - {request.strength}</p>
+                          <p className="text-black text-sm font-medium">{request.modelName}</p>
+                          <p className="text-black/60 text-xs">{request.optimizationType} - {request.strength}</p>
                         </div>
                         <Button
                           type="button"
                           size="sm"
                           variant="ghost"
                           onClick={() => removeOptimizationRequest(request.id)}
-                          className="text-white/70 hover:text-white hover:bg-white/10"
+                          className="text-black/70 hover:text-black hover:bg-black/10"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -762,7 +762,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
               <Button
                 type="submit"
                 disabled={optimizationRequests.length === 0 || isOptimizing}
-                className="w-full bg-white text-black hover:bg-white/90"
+                className="w-full bg-black text-white hover:bg-black/90"
               >
                 {isOptimizing ? (
                   <>
