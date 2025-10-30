@@ -7,7 +7,7 @@ export async function apiFetch<T>(
     headers?: Record<string, string>;
   }
 ): Promise<T> {
-  const baseUrl = "http://localhost:8000";
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
   const authToken = (window as any).authToken;
   
   const config: RequestInit = {
