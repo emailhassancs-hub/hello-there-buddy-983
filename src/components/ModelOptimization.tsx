@@ -179,6 +179,14 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
   const [optimizationStrength, setOptimizationStrength] = useState("")
   const [optimizationRequests, setOptimizationRequests] = useState<OptimizationRequest[]>([])
   const [isOptimizing, setIsOptimizing] = useState(false)
+  
+  // Interactive workflow states
+  const [showModelSelectionForm, setShowModelSelectionForm] = useState(false)
+  const [showOptimizationForm, setShowOptimizationForm] = useState(false)
+  const [selectedFormModel, setSelectedFormModel] = useState<number | null>(null)
+  const [isRunningOptimization, setIsRunningOptimization] = useState(false)
+  const [optimizationComplete, setOptimizationComplete] = useState(false)
+  const [completedOptimization, setCompletedOptimization] = useState<AssociatedModelInfo | null>(null)
 
   // API data states
   const [models, setModels] = useState<any[]>([])
@@ -221,10 +229,10 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
 
   // Send system prompt to /ask endpoint when component is active
   useEffect(() => {
-    if (isActive && optimizationPresets) {
+    if (isActive && optimizationPresets && models.length > 0) {
       sendSystemPromptToAgent()
     }
-  }, [isActive, optimizationPresets])
+  }, [isActive, optimizationPresets, models])
 
   const sendSystemPromptToAgent = async () => {
     const systemPrompt = `User ka model upload ho gaya!
@@ -308,10 +316,74 @@ Be friendly and instructive. Use short explanations and examples where needed.`
       } else if (data.response) {
         onAddDirectMessage?.("assistant", data.response);
       }
+      
+      // Step 4: Show interactive model selection form
+      setShowModelSelectionForm(true);
     } catch (error) {
       console.error("Error sending system prompt:", error);
       onAddDirectMessage?.("assistant", "Sorry, there was an error initializing model optimization. Please try again.");
     }
+  }
+
+  const handleFormModelSelect = (modelId: number) => {
+    setSelectedFormModel(modelId);
+    setShowOptimizationForm(true);
+  }
+
+  const handleStartOptimization = async () => {
+    if (!selectedFormModel || !optimizationType || !optimizationStrength) return;
+
+    setIsRunningOptimization(true);
+    onAddDirectMessage?.("assistant", "⏳ Optimizing your model... please wait");
+
+    try {
+      const selectedModelData = models.find((m) => m.id === selectedFormModel);
+      const presetOptions = optimizationPresets?.presets[optimizationType] || [];
+      const selectedPreset = presetOptions.find(option => option.id === optimizationStrength);
+      
+      if (selectedModelData && selectedPreset) {
+        const result = await optimizeModel(
+          selectedModelData.id.toString(),
+          selectedPreset.id,
+          selectedModelData.name
+        );
+
+        // Wait a bit for the optimization to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Fetch the updated associated models
+        const updatedModels = await fetchAssociatedModels(selectedModelData.id.toString());
+        
+        // Find the newly created optimization (latest one)
+        const latestOptimization = updatedModels.models[0];
+        
+        setCompletedOptimization(latestOptimization);
+        setOptimizationComplete(true);
+        
+        // Display completion message
+        onAddDirectMessage?.("assistant", "✅ Model optimization complete! You can now download your optimized model.");
+      }
+    } catch (error) {
+      console.error("Optimization failed:", error);
+      onAddDirectMessage?.("assistant", "❌ Optimization failed. Please try again.");
+    } finally {
+      setIsRunningOptimization(false);
+    }
+  }
+
+  const handleUploadNewModel = () => {
+    document.getElementById('model-file-input')?.click();
+  }
+
+  const resetWorkflow = () => {
+    setShowModelSelectionForm(false);
+    setShowOptimizationForm(false);
+    setSelectedFormModel(null);
+    setOptimizationType("");
+    setOptimizationStrength("");
+    setIsRunningOptimization(false);
+    setOptimizationComplete(false);
+    setCompletedOptimization(null);
   }
 
   const handleDownload = async (url: string, filename: string) => {
@@ -549,6 +621,177 @@ Be friendly and instructive. Use short explanations and examples where needed.`
   }
 
   const selectedModelData = models.find((m) => m.id === selectedModel)
+
+  // Render interactive workflow forms
+  const renderInteractiveForms = () => {
+    if (!showModelSelectionForm) return null;
+
+    return (
+      <div className="space-y-6 mt-6 p-6 bg-black/5 rounded-lg border border-black/10">
+        {/* Step 1: Model Selection */}
+        <div className="space-y-4">
+          <h3 className="text-black font-semibold text-lg">Step 1: Select a Model</h3>
+          <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
+            {models.map((model) => (
+              <Card
+                key={model.id}
+                className={`cursor-pointer transition-all ${
+                  selectedFormModel === model.id
+                    ? "border-black bg-black/20"
+                    : "border-black/10 hover:border-black/30 bg-white"
+                }`}
+                onClick={() => handleFormModelSelect(model.id)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={model.image || "/placeholder.svg"}
+                      alt={model.name}
+                      className="w-12 h-12 rounded-lg object-cover bg-black/10"
+                    />
+                    <div className="flex-1">
+                      <h4 className="text-black font-medium text-sm">{model.name}</h4>
+                      <div className="flex items-center gap-1 text-black/60 text-xs">
+                        <Calendar className="h-3 w-3" />
+                        {model.creationDate}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Button
+            onClick={handleUploadNewModel}
+            variant="outline"
+            className="w-full border-black/20 text-black hover:bg-black/10"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload a new model instead
+          </Button>
+        </div>
+
+        {/* Step 2: Optimization Configuration */}
+        {showOptimizationForm && (
+          <div className="space-y-4">
+            <h3 className="text-black font-semibold text-lg">Step 2: Configure Optimization</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-black text-sm">Optimization Type</Label>
+                <Select value={optimizationType} onValueChange={setOptimizationType}>
+                  <SelectTrigger className="bg-white border-black/10 text-black">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-black/20">
+                    {optimizationPresets && Object.keys(optimizationPresets.presets).map((type) => (
+                      <SelectItem key={type} value={type} className="text-black hover:bg-black/10">
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-black text-sm">Reduction Strength</Label>
+                <Select 
+                  value={optimizationStrength} 
+                  onValueChange={setOptimizationStrength}
+                  disabled={!optimizationType}
+                >
+                  <SelectTrigger className="bg-white border-black/10 text-black">
+                    <SelectValue placeholder="Select strength" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-black/20">
+                    {optimizationType && optimizationPresets && 
+                      optimizationPresets.presets[optimizationType]?.map((option) => (
+                        <SelectItem key={option.id} value={option.id} className="text-black hover:bg-black/10">
+                          {option.text}
+                        </SelectItem>
+                      ))
+                    }
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleStartOptimization}
+              disabled={!optimizationType || !optimizationStrength || isRunningOptimization}
+              className="w-full bg-black text-white hover:bg-black/90"
+            >
+              {isRunningOptimization ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Optimizing...
+                </>
+              ) : (
+                "Start Optimization"
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* Step 3: Completion Message */}
+        {optimizationComplete && completedOptimization && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+              <div>
+                <h3 className="text-green-900 font-semibold">Optimization Complete!</h3>
+                <p className="text-green-700 text-sm">Your model has been optimized successfully.</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-white border border-black/10 rounded-lg space-y-3">
+              <h4 className="text-black font-medium">{completedOptimization.preset_name}</h4>
+              <p className="text-black/60 text-sm">Status: {completedOptimization.optimization_status}</p>
+              <div className="flex gap-2 flex-wrap">
+                {completedOptimization.downloads.glb && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleDownload(completedOptimization.downloads.glb!, `${completedOptimization.name}.glb`)}
+                    className="bg-black text-white hover:bg-black/90"
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Download GLB
+                  </Button>
+                )}
+                {completedOptimization.downloads.usdz && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleDownload(completedOptimization.downloads.usdz!, `${completedOptimization.name}.usdz`)}
+                    className="bg-black text-white hover:bg-black/90"
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Download USDZ
+                  </Button>
+                )}
+                {completedOptimization.downloads.fbx && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleDownload(completedOptimization.downloads.fbx!, `${completedOptimization.name}.fbx`)}
+                    className="bg-black text-white hover:bg-black/90"
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Download FBX
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <Button
+              onClick={resetWorkflow}
+              variant="outline"
+              className="w-full border-black/20 text-black hover:bg-black/10"
+            >
+              Start New Optimization
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="h-full bg-white text-black p-6 overflow-y-auto hide-scrollbar">
@@ -877,6 +1120,9 @@ Be friendly and instructive. Use short explanations and examples where needed.`
             </form>
           </div>
         </div>
+
+        {/* Interactive Workflow Forms */}
+        {renderInteractiveForms()}
       </div>
     </div>
   )
