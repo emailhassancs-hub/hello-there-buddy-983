@@ -416,7 +416,12 @@ const Index = () => {
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
     console.log("Optimization form submit:", type, data);
     
-    if (type === "optimization-started") {
+    if (type === "model-selected") {
+      // Show optimization config form after model selection
+      handleAddDirectMessage("assistant", "Model selected! Now configure your optimization settings:", "optimization-config", {
+        modelId: data.modelId
+      });
+    } else if (type === "optimization-started") {
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
     } else if (type === "optimization-complete") {
       handleAddDirectMessage("assistant", "✅ Model optimization completed successfully!", "optimization-result", {
