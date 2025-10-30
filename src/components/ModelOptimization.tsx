@@ -298,13 +298,23 @@ Be friendly and instructive. Use short explanations and examples where needed.`
       }
 
       const data = await response.json();
+      console.log('Agent response:', data);
       
-      // Extract the agent's message from the response
-      if (data.messages && data.messages.length > 0) {
-        const agentMessage = data.messages.find((msg: any) => msg.type === 'tool' || msg.role === 'assistant');
-        if (agentMessage) {
-          onAgentResponse?.(agentMessage.content || agentMessage.text || '');
-        }
+      // Extract all agent messages from the response
+      if (data.messages && Array.isArray(data.messages)) {
+        // Find assistant messages and display them
+        data.messages.forEach((msg: any) => {
+          if (msg.role === 'assistant' && msg.content) {
+            onAgentResponse?.(msg.content);
+          } else if (msg.type === 'tool' && (msg.content || msg.text)) {
+            onAgentResponse?.(msg.content || msg.text);
+          }
+        });
+      } else if (data.response) {
+        // Handle single response format
+        onAgentResponse?.(data.response);
+      } else if (data.content) {
+        onAgentResponse?.(data.content);
       }
     } catch (error) {
       console.error('Failed to send system prompt to agent:', error);
