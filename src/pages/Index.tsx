@@ -5,6 +5,7 @@ import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChatSidebar } from "@/components/ChatSidebar";
+import { ModelUploader } from "@/components/ModelUploader";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -516,7 +517,25 @@ const Index = () => {
               </TabsContent>
               
               <TabsContent value="models" className="flex-1 m-0 overflow-hidden">
-                <ModelViewer apiUrl={API} selectedModel={selectedModel} />
+                <div className="h-full flex flex-col">
+                  <div className="p-4 border-b flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">3D Models</h3>
+                    <ModelUploader 
+                      apiUrl={API} 
+                      authToken={authToken || ''} 
+                      onUploadComplete={(assetId) => {
+                        console.log("Upload complete, asset ID:", assetId);
+                        toast({
+                          title: "Success",
+                          description: "Model uploaded and registered successfully!",
+                        });
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <ModelViewer apiUrl={API} selectedModel={selectedModel} />
+                  </div>
+                </div>
               </TabsContent>
               
               <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden">
