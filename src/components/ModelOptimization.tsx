@@ -483,23 +483,21 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
           </div>
         )}
 
-        {/* Main Panel */}
-        <div className="border border-black/20 bg-white">
-          <div className="border-b border-black/10 p-6">
-            <div className="flex items-center justify-between mb-2">
+        {/* Main Card */}
+        <Card className="border border-black/20 bg-white shadow-2xl">
+          <CardHeader className="border-b border-black/10 pb-6">
+            <CardTitle className="flex items-center justify-between text-2xl">
               <div className="flex items-center gap-2">
                 <Settings className="h-6 w-6 text-black" />
-                <h1 className="text-2xl font-semibold text-black">Model Optimization</h1>
+                <span className="text-black">Model Optimization</span>
               </div>
-              <button
+              <Button
                 onClick={() => document.getElementById('model-file-input')?.click()}
-                className="px-4 py-2 bg-black text-white hover:bg-black/90 transition-colors"
+                className="bg-black text-white hover:bg-black/90"
               >
-                <div className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  <span>Upload Model</span>
-                </div>
-              </button>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Model
+              </Button>
               <input
                 id="model-file-input"
                 type="file"
@@ -510,13 +508,13 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                   if (file) handleModelUpload(file)
                 }}
               />
-            </div>
-            <p className="text-black/60 text-sm">
+            </CardTitle>
+            <CardDescription className="text-black/60">
               Optimize your 3D models for better performance
-            </p>
-          </div>
+            </CardDescription>
+          </CardHeader>
           
-          <div className="p-6">
+          <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Available Models and Optimized Versions */}
               <div className="grid grid-cols-2 gap-6">
@@ -561,30 +559,32 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                       </div>
                     ) : (
                       models.map((model) => (
-                        <div
+                        <Card
                           key={model.id}
-                          className={`p-3 cursor-pointer transition-colors border-l-2 ${
+                          className={`cursor-pointer transition-all ${
                             selectedModel === model.id
-                              ? "border-l-black bg-black/5"
-                              : "border-l-transparent hover:bg-black/5"
+                              ? "border-black bg-black/20"
+                              : "border-black/10 hover:border-black/30 bg-black/5"
                           }`}
                           onClick={() => setSelectedModel(model.id)}
                         >
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={model.image || "/placeholder.svg"}
-                              alt={model.name}
-                              className="w-12 h-12 rounded object-cover bg-black/10"
-                            />
-                            <div className="flex-1">
-                              <h4 className="text-black font-medium text-sm">{model.name}</h4>
-                              <div className="flex items-center gap-1 text-black/60 text-xs">
-                                <Calendar className="h-3 w-3" />
-                                {model.creationDate}
+                          <CardContent className="p-3">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={model.image || "/placeholder.svg"}
+                                alt={model.name}
+                                className="w-12 h-12 rounded-lg object-cover bg-black/10"
+                              />
+                              <div className="flex-1">
+                                <h4 className="text-black font-medium text-sm">{model.name}</h4>
+                                <div className="flex items-center gap-1 text-black/60 text-xs">
+                                  <Calendar className="h-3 w-3" />
+                                  {model.creationDate}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       ))
                     )}
                     
@@ -631,55 +631,57 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                       </div>
                     ) : (
                       associatedModels.map((version) => (
-                        <div key={version.id} className="p-3 border border-black/10 bg-white">
-                          <div className="space-y-2">
-                            <h4 className="text-black font-medium text-sm">{version.preset_name}</h4>
-                            <p className="text-black/60 text-xs">Status: {version.optimization_status}</p>
+                        <Card key={version.id} className="border-black/10 bg-black/5">
+                          <CardContent className="p-3">
+                            <div className="space-y-2">
+                              <h4 className="text-black font-medium text-sm">{version.preset_name}</h4>
+                              <p className="text-black/60 text-xs">Status: {version.optimization_status}</p>
                               <div className="flex gap-2 flex-wrap">
                                 {version.downloads.glb && (
-                                  <button
+                                  <Button
                                     type="button"
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => handleDownload(version.downloads.glb!, `${version.name}.glb`)}
-                                    className="px-3 py-1 text-xs border border-black/20 text-black hover:bg-black/10 bg-transparent transition-colors"
+                                    className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                                   >
-                                    <div className="flex items-center gap-1">
-                                      <Download className="h-3 w-3" />
-                                      <span>GLB</span>
-                                    </div>
-                                  </button>
+                                    <Download className="h-3 w-3 mr-1" />
+                                    GLB
+                                  </Button>
                                 )}
                                 {version.downloads.usdz && (
-                                  <button
+                                  <Button
                                     type="button"
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => handleDownload(version.downloads.usdz!, `${version.name}.usdz`)}
-                                    className="px-3 py-1 text-xs border border-black/20 text-black hover:bg-black/10 bg-transparent transition-colors"
+                                    className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                                   >
-                                    <div className="flex items-center gap-1">
-                                      <Download className="h-3 w-3" />
-                                      <span>USDZ</span>
-                                    </div>
-                                  </button>
+                                    <Download className="h-3 w-3 mr-1" />
+                                    USDZ
+                                  </Button>
                                 )}
                                 {version.downloads.fbx && (
-                                  <button
+                                  <Button
                                     type="button"
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => handleDownload(version.downloads.fbx!, `${version.name}.fbx`)}
-                                    className="px-3 py-1 text-xs border border-black/20 text-black hover:bg-black/10 bg-transparent transition-colors"
+                                    className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                                   >
-                                    <div className="flex items-center gap-1">
-                                      <Download className="h-3 w-3" />
-                                      <span>FBX</span>
-                                    </div>
-                                  </button>
+                                    <Download className="h-3 w-3 mr-1" />
+                                    FBX
+                                  </Button>
                                 )}
                               </div>
                             </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
                   </div>
                 </div>
+              </div>
 
               {/* Optimization Controls */}
               <div className="grid grid-cols-2 gap-4">
@@ -722,14 +724,14 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                 </div>
               </div>
 
-              <button
+              <Button
                 type="button"
                 onClick={addOptimizationRequest}
                 disabled={!optimizationType || !optimizationStrength || !selectedModel}
-                className="w-full px-4 py-2 bg-black text-white hover:bg-black/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-black text-white hover:bg-black/90"
               >
                 Add to Queue
-              </button>
+              </Button>
 
               {/* Optimization Queue */}
               {optimizationRequests.length > 0 && (
@@ -737,41 +739,43 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                   <Label className="text-black text-sm font-medium">Optimization Queue</Label>
                   <div className="space-y-2 p-3 bg-black/5 rounded-lg border border-black/10">
                     {optimizationRequests.map((request) => (
-                      <div key={request.id} className="flex items-center justify-between p-2 border border-black/10">
+                      <div key={request.id} className="flex items-center justify-between p-2 bg-black/5 rounded border border-black/10">
                         <div>
                           <p className="text-black text-sm font-medium">{request.modelName}</p>
                           <p className="text-black/60 text-xs">{request.optimizationType} - {request.strength}</p>
                         </div>
-                        <button
+                        <Button
                           type="button"
+                          size="sm"
+                          variant="ghost"
                           onClick={() => removeOptimizationRequest(request.id)}
-                          className="p-1 text-black/70 hover:text-black hover:bg-black/10 transition-colors"
+                          className="text-black/70 hover:text-black hover:bg-black/10"
                         >
                           <X className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <button
+              <Button
                 type="submit"
                 disabled={optimizationRequests.length === 0 || isOptimizing}
-                className="w-full px-4 py-3 bg-black text-white hover:bg-black/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-black text-white hover:bg-black/90"
               >
                 {isOptimizing ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Processing...</span>
-                  </div>
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processing...
+                  </>
                 ) : (
                   "Optimize Models"
                 )}
-              </button>
+              </Button>
             </form>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
