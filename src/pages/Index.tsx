@@ -416,6 +416,87 @@ const Index = () => {
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
     console.log("Optimization form submit:", type, data);
     
+    if (type === "model-selected") {
+      // User selected a model, now fetch presets and show optimization config form
+      try {
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        };
+        
+        if (authToken) {
+          headers["Authorization"] = `Bearer ${authToken}`;
+        }
+
+        const presetsResponse = await fetch(`${API}/api/model-optimization/presets`, { headers });
+        if (!presetsResponse.ok) throw new Error("Failed to fetch presets");
+        
+        const presetsData = await presetsResponse.json();
+        
+        // Show optimization config form
+        handleAddDirectMessage("assistant", "Model selected! Now choose your optimization settings:", "optimization-config", {
+          presets: presetsData,
+          modelId: data.modelId
+        });
+      } catch (error) {
+        console.error("Error fetching presets:", error);
+        handleAddDirectMessage("assistant", "Failed to load optimization options. Please try again.");
+      }
+      return;
+    }
+
+    if (type === "start-optimization") {
+      // User submitted optimization config, send to /ask endpoint
+      handleAddDirectMessage("assistant", "⏳ Optimization started... please wait.");
+      
+      try {
+        const optimizationMessage = {
+          tool_call: "optimize_single_model_tool",
+          params: {
+            model_id: data.modelId,
+            preset_id: data.strength,
+            export_name: `optimized_${Date.now()}`,
+            ACCESS_TOKEN: authToken
+          }
+        };
+
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        };
+        
+        if (authToken) {
+          headers["Authorization"] = `Bearer ${authToken}`;
+        }
+
+        const response = await fetch(`${API}/ask`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            query: `Please invoke the optimize_single_model_tool MCP function with these parameters: ${JSON.stringify(optimizationMessage.params)}`,
+            session_id: sessionId,
+            tool_call: optimizationMessage
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Optimization request failed");
+        }
+
+        const responseData = await response.json();
+        
+        // Update session ID if provided
+        if (responseData.session_id) {
+          updateSessionId(responseData.session_id);
+        }
+        
+        handleAddDirectMessage("assistant", `✅ Optimization completed successfully!\n\n${responseData.response || "Your optimized model is ready."}`);
+        
+      } catch (error) {
+        console.error("Optimization failed:", error);
+        handleAddDirectMessage("assistant", `❌ Optimization failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      }
+      return;
+    }
+    
     if (type === "optimization-started") {
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
     } else if (type === "optimization-complete") {
