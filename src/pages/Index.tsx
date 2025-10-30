@@ -417,10 +417,34 @@ const Index = () => {
     console.log("Optimization form submit:", type, data);
     
     if (type === "model-selected") {
-      // Show optimization config form after model selection
-      handleAddDirectMessage("assistant", "Model selected! Now configure your optimization settings:", "optimization-config", {
-        modelId: data.modelId
-      });
+      // Fetch presets before showing optimization config form
+      try {
+        const apiUrl = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+        const authToken = (window as any).authToken;
+        
+        const response = await fetch(`${apiUrl}/api/model-optimization/presets`, {
+          headers: {
+            "Authorization": authToken ? `Bearer ${authToken}` : "",
+            "Content-Type": "application/json"
+          }
+        });
+        
+        if (!response.ok) throw new Error("Failed to fetch presets");
+        
+        const presetsData = await response.json();
+        
+        handleAddDirectMessage("assistant", "Model selected! Now configure your optimization settings:", "optimization-config", {
+          modelId: data.modelId,
+          presets: presetsData
+        });
+      } catch (error) {
+        console.error("Error fetching presets:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load optimization presets",
+          variant: "destructive"
+        });
+      }
     } else if (type === "optimization-started") {
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
     } else if (type === "optimization-complete") {
