@@ -33,6 +33,7 @@ export const OptimizationInlineForm = ({
   onOptimizationComplete,
   onOptimizationError
 }: OptimizationInlineFormProps) => {
+  const [instanceKey] = useState(() => Date.now());
   const [currentStep, setCurrentStep] = useState<"modelSelection" | "optimizationOptions">("modelSelection");
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
@@ -87,14 +88,19 @@ export const OptimizationInlineForm = ({
   };
 
   const handleModelSelect = (modelId: string) => {
+    console.log("handleModelSelect called → modelId:", modelId);
+    
     if (modelId === "upload_new") {
       document.getElementById('model-file-input')?.click();
       return;
     }
     
     setSelectedModel(modelId);
+    console.log("currentStep changing to → optimizationOptions");
     setCurrentStep("optimizationOptions");
   };
+
+  console.log("OptimizationInlineForm rendering, currentStep:", currentStep);
 
   const handleOptimize = async () => {
     if (!selectedModel || !optimizationType || !optimizationStrength) {
@@ -160,8 +166,9 @@ export const OptimizationInlineForm = ({
     }
   };
 
+
   return (
-    <div className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-border mt-3">
+    <div key={instanceKey} className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-border mt-3">
       <h3 className="text-sm font-semibold text-foreground">Model Optimization Settings</h3>
       
       {isFetchingModels ? (
