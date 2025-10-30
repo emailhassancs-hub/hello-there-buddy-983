@@ -13,34 +13,13 @@ import {
   Settings,
   Upload,
   FileIcon,
-  Zap,
-  HelpCircle,
   X,
   Calendar,
   Download,
-  Clock,
   CheckCircle,
   AlertCircle,
-  Play,
   RefreshCw,
-  Server,
 } from "lucide-react"
-
-// Tooltip component for hints
-function HintTooltip({ children, hint }: { children: React.ReactNode; hint: string }) {
-  return (
-    <div className="flex items-center gap-1">
-      {children}
-      <div className="relative group">
-        <HelpCircle className="h-3 w-3 text-gray-500 hover:text-gray-300 cursor-help" />
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 border border-gray-700">
-          {hint}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // API types
 interface ModelInfo {
@@ -92,7 +71,6 @@ interface OptimizationRequest {
   presetId: string
 }
 
-
 // API functions
 async function fetchModels(page: number = 1, perPage: number = 10): Promise<ModelsResponse> {
   return apiFetch<ModelsResponse>(`/api/model-optimization/models?page=${page}&per_page=${perPage}`)
@@ -136,7 +114,6 @@ async function optimizeMultipleModels(optimizations: OptimizationRequest[]): Pro
 
 async function uploadModel(file: File, modelName: string): Promise<any> {
   try {
-    // 1. Get signed URL from backend (API key handled securely)
     const res = await apiFetch<any>(`/api/model-optimization/get-signed-url`, {
       method: "POST",
       body: { 
@@ -146,12 +123,9 @@ async function uploadModel(file: File, modelName: string): Promise<any> {
     });
     
     const { s3_upload_url, asset_id } = res;
-    console.log("Signed URL response:", { s3_upload_url, asset_id });
 
     if (!s3_upload_url) throw new Error("Failed to get signed URL");
 
-    // 2. Upload file to signed URL (frontend handles this)
-    console.log("Uploading file to S3 URL:", s3_upload_url, "File:", file);
     const uploadRes = await fetch(s3_upload_url, {
       method: "PUT",
       body: file,
@@ -159,16 +133,13 @@ async function uploadModel(file: File, modelName: string): Promise<any> {
         "Content-Type": "application/octet-stream",
       },
     });
-    console.log("Upload response status:", uploadRes.status, "statusText:", uploadRes.statusText);
+    
     if (!uploadRes.ok) throw new Error("Upload failed");
 
-    // 3. Complete upload via backend (API key handled securely)
-    console.log("Calling complete upload via backend");
     const completeRes = await apiFetch<any>(`/api/model-optimization/complete-upload/${asset_id}`, {
       method: "GET",
     });
     
-    console.log("Complete upload response:", completeRes);
     if (completeRes) {
       return { success: true, asset_id, message: "Upload completed successfully" };
     } else {
@@ -181,8 +152,6 @@ async function uploadModel(file: File, modelName: string): Promise<any> {
   }
 }
 
-
-// Convert API model to component model
 function convertApiModelToComponentModel(apiModel: ModelInfo, associatedModels: AssociatedModelInfo[] = []) {
   return {
     id: parseInt(apiModel.assetId),
@@ -199,17 +168,13 @@ function convertApiModelToComponentModel(apiModel: ModelInfo, associatedModels: 
 }
 
 export default function ModelOptimization({ isActive = false }: { isActive?: boolean }) {
-  const [activeTab, setActiveTab] = useState<"optimize" | "upload">("optimize")
   const [selectedModel, setSelectedModel] = useState<number | null>(null)
   const [optimizationType, setOptimizationType] = useState("")
   const [optimizationStrength, setOptimizationStrength] = useState("")
   const [optimizationRequests, setOptimizationRequests] = useState<OptimizationRequest[]>([])
-  const [formData, setFormData] = useState({
-    uploadedModel: null as File | null,
-  })
   const [isOptimizing, setIsOptimizing] = useState(false)
 
-  // New state for API data
+  // API data states
   const [models, setModels] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -226,7 +191,6 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [totalItems, setTotalItems] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
 
@@ -249,8 +213,6 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
     fetchOptimizationPresetsData()
   }, [])
 
-
-  // Function to handle direct downloads
   const handleDownload = async (url: string, filename: string) => {
     try {
       const response = await fetch(url)
@@ -269,7 +231,6 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
       window.URL.revokeObjectURL(downloadUrl)
     } catch (error) {
       console.error('Download failed:', error)
-      // Fallback to opening in new tab if direct download fails
       window.open(url, '_blank')
     }
   }
@@ -283,10 +244,8 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
       setModels(convertedModels)
       setCurrentPage(1)
       setTotalPages(response.totalPages)
-      setTotalItems(response.total)
       setHasMore(response.totalPages > 1)
       
-      // Auto-select first model if available and no model is currently selected
       if (convertedModels.length > 0 && !selectedModel) {
         setSelectedModel(convertedModels[0].id)
       }
@@ -326,17 +285,13 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
       setModels(convertedModels)
       setCurrentPage(1)
       setTotalPages(response.totalPages)
-      setTotalItems(response.total)
       setHasMore(response.totalPages > 1)
       
-      // Keep the currently selected model if it still exists in the new list
       const currentSelectedModel = selectedModel
       if (convertedModels.length > 0) {
         if (currentSelectedModel && convertedModels.find(m => m.id === currentSelectedModel)) {
-          // Keep the current selection
           setSelectedModel(currentSelectedModel)
         } else {
-          // Select first model if current selection is no longer available
           setSelectedModel(convertedModels[0].id)
         }
       } else {
@@ -352,7 +307,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
-    const threshold = 50 // pixels from bottom
+    const threshold = 50
     
     if (scrollHeight - scrollTop - clientHeight < threshold && hasMore && !loadingMore) {
       loadMoreModels()
@@ -367,7 +322,6 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
     } catch (err) {
       console.error("Error fetching associated models:", err)
       setAssociatedModels([])
-      // Clear optimized versions for this model if fetch fails
     } finally {
       setLoadingAssociated(false)
     }
@@ -381,7 +335,6 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
     } catch (err) {
       console.error("Error fetching associated models:", err)
       setAssociatedModels([])
-      // Clear optimized versions for this model if fetch fails
     } finally {
       setRefreshingAssociated(false)
     }
@@ -397,8 +350,6 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
     }
   }
 
-
-  // Optimization strength options based on type
   const getStrengthOptions = (type: string) => {
     if (!optimizationPresets) return []
     const presetOptions = optimizationPresets.presets[type] || []
@@ -410,90 +361,62 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
     setIsOptimizing(true)
 
     try {
-      if (activeTab === "upload") {
-        // Handle upload case
-        if (!formData.uploadedModel) {
-          throw new Error("No file selected for upload")
-        }
-
-        const modelName = formData.uploadedModel.name.split(".")[0]
-        const result = await uploadModel(formData.uploadedModel, modelName)
-        
-        if (result.success) {
-          // Clear the uploaded file
-          refreshModelsData()
-          updateFormData("uploadedModel", null)
-          console.log("Upload successful:", result)
-          // Stop the rotator immediately after successful upload
-          setIsOptimizing(false)
-          // Show upload notification
-          setSuccessMessage({
-            title: "Upload Complete!",
-            description: "Your model has been uploaded and is now processing on the server."
-          })
-          setShowSuccessNotification(true)
-          // Hide notification after 5 seconds
-          setTimeout(() => {
-            setShowSuccessNotification(false)
-          }, 5000)
-        } else {
-          throw new Error("Upload failed")
-        }
+      if (optimizationRequests.length === 1) {
+        const request = optimizationRequests[0]
+        await optimizeModel(request.modelId, request.presetId, request.modelName)
       } else {
-        // Handle optimization case
-        console.log("Submitting optimization requests...")
+        await optimizeMultipleModels(optimizationRequests)
+      }
 
-        // Call the optimization API
-        if (optimizationRequests.length === 1) {
-          // Single optimization
-          const request = optimizationRequests[0]
-          await optimizeModel(request.modelId, request.presetId, request.modelName)
-          console.log("Optimization submitted successfully")
-        } else {
-          // Multiple optimizations
-          await optimizeMultipleModels(optimizationRequests)
-          console.log("Multiple optimizations submitted successfully")
-        }
+      setOptimizationRequests([])
+      
+      setSuccessMessage({
+        title: "Optimization Submitted!",
+        description: "Your optimization request has been submitted successfully."
+      })
+      setShowSuccessNotification(true)
+      setTimeout(() => {
+        setShowSuccessNotification(false)
+      }, 5000)
+      
+      if (selectedModel) {
+        setTimeout(() => {
+          refreshAssociatedModelsData(selectedModel.toString())
+        }, 2000)
+      }
+    } catch (error) {
+      console.error("Optimization failed:", error)
+    } finally {
+      setIsOptimizing(false)
+    }
+  }
 
-        setOptimizationRequests([]) // Clear the requests after submitting
-        
-        // Show success notification
+  const handleModelUpload = async (file: File) => {
+    if (!file) return
+    
+    setIsOptimizing(true)
+    try {
+      const modelName = file.name.split(".")[0]
+      const result = await uploadModel(file, modelName)
+      
+      if (result.success) {
         setSuccessMessage({
-          title: "Optimization Submitted!",
-          description: "Your optimization request has been submitted. Refresh optimized versions to see the results."
+          title: "Upload Complete!",
+          description: "Your model has been uploaded successfully."
         })
         setShowSuccessNotification(true)
         setTimeout(() => {
           setShowSuccessNotification(false)
         }, 5000)
         
-        // Refresh associated models after a brief delay
-        if (selectedModel) {
-          setTimeout(() => {
-            refreshAssociatedModelsData(selectedModel.toString())
-          }, 2000)
-        }
+        await refreshModelsData()
+      } else {
+        throw new Error("Upload failed")
       }
     } catch (error) {
-      console.error(activeTab === "upload" ? "Upload failed:" : "Optimization failed:", error)
-      
-      if (activeTab === "upload") {
-        // Stop the rotator for upload errors
-        setIsOptimizing(false)
-      }
+      console.error("Upload failed:", error)
     } finally {
       setIsOptimizing(false)
-    }
-  }
-
-  const updateFormData = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleModelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      updateFormData("uploadedModel", file)
     }
   }
 
@@ -501,7 +424,6 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
     if (optimizationType && optimizationStrength && selectedModel) {
       const selectedModelData = models.find((m) => m.id === selectedModel)
       
-      // Find the preset text for display
       const presetOptions = optimizationPresets?.presets[optimizationType] || []
       const selectedPreset = presetOptions.find(option => option.id === optimizationStrength)
       
@@ -517,11 +439,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
         setOptimizationRequests(prev => [...prev, newRequest])
         setOptimizationType("")
         setOptimizationStrength("")
-      } else {
-        console.error("Could not find preset for:", { optimizationType, optimizationStrength, selectedPreset })
       }
-    } else {
-      console.log("Missing required values:", { optimizationType, optimizationStrength, selectedModel })
     }
   }
 
@@ -529,445 +447,333 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
     setOptimizationRequests(optimizationRequests.filter((req) => req.id !== id))
   }
 
-
   const selectedModelData = models.find((m) => m.id === selectedModel)
 
   return (
-    <div className="p-6">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-black text-white p-6">
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+      
+      <div className="max-w-7xl mx-auto">
         {/* Success Notification */}
         {showSuccessNotification && (
-          <div className="mb-6 p-4 bg-green-900/50 border border-green-700 rounded-lg flex items-center gap-3 animate-in fade-in-0 slide-in-from-top-2">
-            <div className="flex items-center justify-center w-10 h-10 bg-green-600 rounded-full">
-              <CheckCircle className="h-5 w-5 text-white" />
+          <div className="mb-6 p-4 bg-white/10 border border-white/20 rounded-lg flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-white rounded-full">
+              <CheckCircle className="h-5 w-5 text-black" />
             </div>
             <div className="flex-1">
-              <h3 className="text-green-300 font-semibold">{successMessage.title}</h3>
-              <p className="text-green-200 text-sm">{successMessage.description}</p>
+              <h3 className="text-white font-semibold">{successMessage.title}</h3>
+              <p className="text-white/70 text-sm">{successMessage.description}</p>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowSuccessNotification(false)}
-              className="text-green-300 hover:text-green-100 hover:bg-green-800/50"
+              className="text-white/70 hover:text-white hover:bg-white/10"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         )}
 
-        {/* Form Section */}
-        <Card className="shadow-xl border border-gray-800 bg-gray-900/95 backdrop-blur-sm">
-          <CardHeader className="pb-6">
-            <CardTitle className="flex items-center gap-2 text-2xl">
-                              <Settings className="h-6 w-6 text-v0-purple" />
-              Optimization Settings
-            </CardTitle>
-            <CardDescription className="text-gray-400">Configure your 3D model optimization parameters</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Input Type Tabs */}
-              <div className="space-y-4">
-                <HintTooltip hint="Choose between automatic optimization or upload your own model">
-                  <Label className="text-gray-200 text-sm font-medium">Optimization Type</Label>
-                </HintTooltip>
-                <div className="flex gap-2 p-1 bg-gray-800 rounded-lg border border-gray-700">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("optimize")}
-                                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                      activeTab === "optimize"
-                        ? "bg-gradient-to-r from-v0-purple to-v0-blue text-white shadow-sm"
-                        : "text-gray-400 hover:text-gray-200 hover:bg-gray-700"
-                    }`}
-                  >
-                    <Zap className="h-4 w-4" />
-                    Auto Optimize
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("upload")}
-                                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                      activeTab === "upload"
-                        ? "bg-gradient-to-r from-v0-purple to-v0-blue text-white shadow-sm"
-                        : "text-gray-400 hover:text-gray-200 hover:bg-gray-700"
-                    }`}
-                  >
-                    <Upload className="h-4 w-4" />
-                    Upload Model
-                  </button>
-                </div>
+        {/* Main Card */}
+        <Card className="border border-white/20 bg-black shadow-2xl">
+          <CardHeader className="border-b border-white/10 pb-6">
+            <CardTitle className="flex items-center justify-between text-2xl">
+              <div className="flex items-center gap-2">
+                <Settings className="h-6 w-6 text-white" />
+                <span className="text-white">Model Optimization</span>
               </div>
-
-              {/* Tab Content */}
-              <div className="space-y-6">
-                {activeTab === "optimize" && (
-                  <div className="space-y-6">
-                    {/* Available Models and Optimized Versions */}
-                    <div className="grid grid-cols-2 gap-6">
-                      {/* Available Models */}
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <HintTooltip hint="Select a model to view its optimization options">
-                            <Label className="text-gray-200 text-sm font-medium">Available Models</Label>
-                          </HintTooltip>
-                          <Button
-                            onClick={refreshModelsData}
-                            disabled={loading || refreshingModels}
-                            size="sm"
-                            variant="outline"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent"
-                          >
-                            <RefreshCw className={`h-3 w-3 mr-1 ${loading || refreshingModels ? 'animate-spin' : ''}`} />
-                            Refresh
-                          </Button>
-                        </div>
-                        <div className="h-96 overflow-y-auto space-y-3 p-2 bg-gray-800 rounded-lg border border-gray-700" onScroll={handleScroll}>
-                          {loading || refreshingModels ? (
-                            <div className="flex items-center justify-center h-full min-h-[300px]">
-                              <Loader2 className="h-6 w-6 animate-spin text-v0-blue" />
-                            </div>
-                          ) : error ? (
-                            <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-                              <AlertCircle className="h-8 w-8 text-red-500 mb-2" />
-                              <p className="text-red-400 text-sm">{error}</p>
-                              <Button
-                                onClick={refreshModelsData}
-                                size="sm"
-                                className="mt-2 bg-v0-blue hover:bg-v0-blue/80"
-                              >
-                                Retry
-                              </Button>
-                            </div>
-                          ) : models.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-                              <FileIcon className="h-8 w-8 text-gray-500 mb-2" />
-                              <p className="text-gray-400 text-sm">No models available</p>
-                            </div>
-                          ) : (
-                            models.map((model) => (
-                              <Card
-                                key={model.id}
-                                                              className={`cursor-pointer transition-all ${
-                                selectedModel === model.id
-                                  ? "border-v0-purple bg-v0-purple/10"
-                                  : "border-gray-700 hover:border-gray-600"
-                              }`}
-                                onClick={() => setSelectedModel(model.id)}
-                              >
-                                <CardContent className="p-3">
-                                  <div className="flex items-center gap-3">
-                                    <img
-                                      src={model.image || "/placeholder.svg"}
-                                      alt={model.name}
-                                      className="w-12 h-12 rounded-lg object-cover bg-gray-700"
-                                    />
-                                    <div className="flex-1">
-                                      <h4 className="text-white font-medium text-sm">{model.name}</h4>
-                                      <div className="flex items-center gap-1 text-gray-400 text-xs">
-                                        <Calendar className="h-3 w-3" />
-                                        {model.creationDate}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))
-                          )}
-                          
-                          {/* Loading more indicator */}
-                          {loadingMore && (
-                            <div className="flex items-center justify-center py-4">
-                              <Loader2 className="h-5 w-5 animate-spin text-v0-blue" />
-                              <span className="ml-2 text-gray-400 text-sm">Loading more models...</span>
-                            </div>
-                          )}
-                          
-                          {/* End of list indicator */}
-                          {!hasMore && models.length > 0 && (
-                            <div className="text-center py-4">
-                              <span className="text-gray-500 text-xs">No more models to load</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Optimized Versions */}
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <HintTooltip hint="View optimized versions of the selected model">
-                            <Label className="text-gray-200 text-sm font-medium">Optimized Versions</Label>
-                          </HintTooltip>
-                          <Button
-                            onClick={() => selectedModel && refreshAssociatedModelsData(selectedModel.toString())}
-                            disabled={loadingAssociated || refreshingAssociated || !selectedModel}
-                            size="sm"
-                            variant="outline"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent"
-                          >
-                            <RefreshCw className={`h-3 w-3 mr-1 ${loadingAssociated || refreshingAssociated ? 'animate-spin' : ''}`} />
-                            Refresh
-                          </Button>
-                        </div>
-                        <div className="h-96 overflow-y-auto space-y-3 p-2 bg-gray-800 rounded-lg border border-gray-700">
-                          {loadingAssociated || refreshingAssociated ? (
-                            <div className="flex items-center justify-center h-full min-h-[300px]">
-                              <Loader2 className="h-6 w-6 animate-spin text-v0-blue" />
-                            </div>
-                          ) : associatedModels.length > 0 ? (
-                            associatedModels.map((assocModel) => {
-                              const version = {
-                                id: parseInt(assocModel.id),
-                                name: `${assocModel.preset_name} - ${assocModel.optimization_status}`,
-                                type: assocModel.preset_name,
-                                downloads: assocModel.downloads
-                              }
-                              return (
-                                <Card key={version.id} className="border-gray-700">
-                                  <CardContent className="p-3">
-                                    <div className="space-y-3">
-                                      <h4 className="text-white font-medium text-sm">{version.name}</h4>
-                                      <div className="flex gap-2">
-                                        {version.downloads?.fbx && (
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent text-xs"
-                                            onClick={() => handleDownload(version.downloads.fbx!, `optimized_${version.name}.fbx`)}
-                                          >
-                                            <Download className="h-3 w-3 mr-1" />
-                                            FBX
-                                          </Button>
-                                        )}
-                                        {version.downloads?.glb && (
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent text-xs"
-                                            onClick={() => handleDownload(version.downloads.glb!, `optimized_${version.name}.glb`)}
-                                          >
-                                            <Download className="h-3 w-3 mr-1" />
-                                            GLB
-                                          </Button>
-                                        )}
-                                        {version.downloads?.usdz && (
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-gray-600 text-gray-300 hover:bg-gray-700 bg-transparent text-xs"
-                                            onClick={() => handleDownload(version.downloads.usdz!, `optimized_${version.name}.usdz`)}
-                                          >
-                                            <Download className="h-3 w-3 mr-1" />
-                                            USDZ
-                                          </Button>
-                                        )}
-                                        {(!version.downloads?.fbx && !version.downloads?.glb && !version.downloads?.usdz) && (
-                                          <span className="text-gray-500 text-xs">No downloads available</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              )
-                            })
-                          ) : (
-                            <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-                              <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                                <Settings className="h-8 w-8 text-gray-500" />
-                              </div>
-                              <p className="text-gray-400 text-sm">No optimized versions available</p>
-                              <p className="text-gray-500 text-xs mt-1">
-                                Select a model to view its optimization options
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Optimization Form */}
-                    <div className="space-y-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <HintTooltip hint="Select the type of optimization to apply">
-                            <Label className="text-gray-200 text-sm font-medium">Optimization Type</Label>
-                          </HintTooltip>
-                          <Select value={optimizationType} onValueChange={setOptimizationType}>
-                            <SelectTrigger className="bg-gray-800 border-gray-700 text-white focus:border-v0-purple focus:ring-v0-purple/20">
-                              <SelectValue placeholder="Select optimization type" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-gray-700">
-                              {optimizationPresets && Object.keys(optimizationPresets.presets).map(type => (
-                                <SelectItem
-                                  key={type}
-                                  value={type}
-                                  className="text-white hover:bg-gray-700 focus:bg-gray-700"
-                                >
-                                  {type}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <HintTooltip hint="Select the optimization strength">
-                            <Label className="text-gray-200 text-sm font-medium">Optimization Strength</Label>
-                          </HintTooltip>
-                          <Select
-                            value={optimizationStrength}
-                            onValueChange={setOptimizationStrength}
-                            disabled={!optimizationType}
-                          >
-                            <SelectTrigger className="bg-gray-800 border-gray-700 text-white focus:border-v0-purple focus:ring-v0-purple/20">
-                              <SelectValue placeholder="Select strength" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-gray-700">
-                              {optimizationType && optimizationPresets?.presets[optimizationType]?.map((option) => (
-                                <SelectItem
-                                  key={option.id}
-                                  value={option.id}
-                                  className="text-white hover:bg-gray-700 focus:bg-gray-700"
-                                >
-                                  {option.text}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <Button
-                        type="button"
-                        onClick={addOptimizationRequest}
-                        disabled={!optimizationType || !optimizationStrength || !selectedModel}
-                        className="w-full bg-gradient-to-r from-v0-purple to-v0-blue text-white"
-                      >
-                        Select Optimization Settings
-                      </Button>
-                    </div>
-
-                    {/* Optimization Requests */}
-                    {/* Selected Optimizations - Always visible with placeholder */}
-                    <div className="space-y-4">
-                      <Label className="text-gray-200 text-sm font-medium">Selected Optimizations</Label>
-                      <div className="min-h-[200px] max-h-80 overflow-y-auto space-y-3 p-4 bg-gray-800 rounded-lg border border-gray-700">
-                        {optimizationRequests.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center h-40 text-center">
-                            <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                              <Settings className="h-8 w-8 text-gray-500" />
-                            </div>
-                            <p className="text-gray-400 text-sm">No optimizations selected</p>
-                            <p className="text-gray-500 text-xs mt-1">
-                              Click "Select Optimization Settings" to add optimizations
-                            </p>
-                          </div>
-                        ) : (
-                          optimizationRequests
-                            .slice()
-                            .reverse()
-                            .map((request) => (
-                              <Card key={request.id} className="border-gray-700">
-                                <CardContent className="p-4">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <h4 className="text-white font-medium">{request.modelName}</h4>
-                                      <p className="text-gray-400 text-sm">
-                                        {request.optimizationType} - {request.strength}
-                                      </p>
-                                    </div>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => removeOptimizationRequest(request.id)}
-                                      className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))
-                        )}
-                      </div>
-                    </div>
+              <Button
+                onClick={() => document.getElementById('model-file-input')?.click()}
+                className="bg-white text-black hover:bg-white/90"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Model
+              </Button>
+              <input
+                id="model-file-input"
+                type="file"
+                accept=".glb,.gltf,.fbx,.obj"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleModelUpload(file)
+                }}
+              />
+            </CardTitle>
+            <CardDescription className="text-white/60">
+              Optimize your 3D models for better performance
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Available Models and Optimized Versions */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* Available Models */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-white text-sm font-medium">Available Models</Label>
+                    <Button
+                      type="button"
+                      onClick={refreshModelsData}
+                      disabled={loading || refreshingModels}
+                      size="sm"
+                      variant="outline"
+                      className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                    >
+                      <RefreshCw className={`h-3 w-3 mr-1 ${loading || refreshingModels ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
                   </div>
-                )}
-
-                {activeTab === "upload" && (
-                  <div className="space-y-4">
-                    <HintTooltip hint="Upload a 3D model file that you want to optimize">
-                      <Label className="text-gray-200 text-sm font-medium">Upload 3D Model</Label>
-                    </HintTooltip>
-                    <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center hover:border-gray-600 transition-colors">
-                      <input
-                        type="file"
-                        id="modelUpload"
-                        accept=".glb,.gltf,.fbx,.obj"
-                        onChange={handleModelUpload}
-                        className="hidden"
-                      />
-                      <label htmlFor="modelUpload" className="cursor-pointer flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center">
-                          <Upload className="h-8 w-8 text-gray-400" />
-                        </div>
-                        <div>
-                          <p className="text-gray-200 font-medium">Upload 3D Model</p>
-                          <p className="text-gray-500 text-sm">Supports GLB, GLTF, FBX, OBJ</p>
-                                                        <p className="text-v0-blue text-xs mt-1">Maximum file size: 2GB</p>
-                        </div>
-                      </label>
-                    </div>
-
-                    {formData.uploadedModel && (
-                      <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
-                        <FileIcon className="h-5 w-5 text-v0-purple" />
-                        <span className="text-gray-200 text-sm flex-1">{formData.uploadedModel.name}</span>
+                  <div className="h-96 overflow-y-auto space-y-3 p-2 bg-white/5 rounded-lg border border-white/10 hide-scrollbar" onScroll={handleScroll}>
+                    {loading || refreshingModels ? (
+                      <div className="flex items-center justify-center h-full min-h-[300px]">
+                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      </div>
+                    ) : error ? (
+                      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
+                        <AlertCircle className="h-8 w-8 text-white mb-2" />
+                        <p className="text-white/60 text-sm">{error}</p>
                         <Button
                           type="button"
-                          variant="outline"
+                          onClick={refreshModelsData}
                           size="sm"
-                          onClick={() => updateFormData("uploadedModel", null)}
-                          className="border-gray-600 text-gray-400 hover:bg-gray-700 bg-transparent"
+                          className="mt-2 bg-white text-black hover:bg-white/90"
                         >
-                          Remove
+                          Retry
                         </Button>
+                      </div>
+                    ) : models.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
+                        <FileIcon className="h-8 w-8 text-white/50 mb-2" />
+                        <p className="text-white/60 text-sm">No models available</p>
+                      </div>
+                    ) : (
+                      models.map((model) => (
+                        <Card
+                          key={model.id}
+                          className={`cursor-pointer transition-all ${
+                            selectedModel === model.id
+                              ? "border-white bg-white/20"
+                              : "border-white/10 hover:border-white/30 bg-white/5"
+                          }`}
+                          onClick={() => setSelectedModel(model.id)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={model.image || "/placeholder.svg"}
+                                alt={model.name}
+                                className="w-12 h-12 rounded-lg object-cover bg-white/10"
+                              />
+                              <div className="flex-1">
+                                <h4 className="text-white font-medium text-sm">{model.name}</h4>
+                                <div className="flex items-center gap-1 text-white/60 text-xs">
+                                  <Calendar className="h-3 w-3" />
+                                  {model.creationDate}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                    
+                    {loadingMore && (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-white" />
                       </div>
                     )}
                   </div>
-                )}
+                </div>
+
+                {/* Optimized Versions */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-white text-sm font-medium">Optimized Versions</Label>
+                    {selectedModel && (
+                      <Button
+                        type="button"
+                        onClick={() => refreshAssociatedModelsData(selectedModel.toString())}
+                        disabled={loadingAssociated || refreshingAssociated}
+                        size="sm"
+                        variant="outline"
+                        className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                      >
+                        <RefreshCw className={`h-3 w-3 mr-1 ${loadingAssociated || refreshingAssociated ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    )}
+                  </div>
+                  <div className="h-96 overflow-y-auto space-y-3 p-2 bg-white/5 rounded-lg border border-white/10 hide-scrollbar">
+                    {loadingAssociated ? (
+                      <div className="flex items-center justify-center h-full min-h-[300px]">
+                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      </div>
+                    ) : !selectedModel ? (
+                      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
+                        <FileIcon className="h-8 w-8 text-white/50 mb-2" />
+                        <p className="text-white/60 text-sm">Select a model to view optimized versions</p>
+                      </div>
+                    ) : associatedModels.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
+                        <FileIcon className="h-8 w-8 text-white/50 mb-2" />
+                        <p className="text-white/60 text-sm">No optimized versions available</p>
+                      </div>
+                    ) : (
+                      associatedModels.map((version) => (
+                        <Card key={version.id} className="border-white/10 bg-white/5">
+                          <CardContent className="p-3">
+                            <div className="space-y-2">
+                              <h4 className="text-white font-medium text-sm">{version.preset_name}</h4>
+                              <p className="text-white/60 text-xs">Status: {version.optimization_status}</p>
+                              <div className="flex gap-2 flex-wrap">
+                                {version.downloads.glb && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDownload(version.downloads.glb!, `${version.name}.glb`)}
+                                    className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                                  >
+                                    <Download className="h-3 w-3 mr-1" />
+                                    GLB
+                                  </Button>
+                                )}
+                                {version.downloads.usdz && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDownload(version.downloads.usdz!, `${version.name}.usdz`)}
+                                    className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                                  >
+                                    <Download className="h-3 w-3 mr-1" />
+                                    USDZ
+                                  </Button>
+                                )}
+                                {version.downloads.fbx && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDownload(version.downloads.fbx!, `${version.name}.fbx`)}
+                                    className="border-white/20 text-white hover:bg-white/10 bg-transparent"
+                                  >
+                                    <Download className="h-3 w-3 mr-1" />
+                                    FBX
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {/* Submit Button */}
+              {/* Optimization Controls */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-white text-sm">Optimization Type</Label>
+                  <Select value={optimizationType} onValueChange={setOptimizationType}>
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black border-white/20">
+                      {optimizationPresets && Object.keys(optimizationPresets.presets).map((type) => (
+                        <SelectItem key={type} value={type} className="text-white hover:bg-white/10">
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white text-sm">Strength</Label>
+                  <Select 
+                    value={optimizationStrength} 
+                    onValueChange={setOptimizationStrength}
+                    disabled={!optimizationType}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select strength" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black border-white/20">
+                      {optimizationType && optimizationPresets && 
+                        optimizationPresets.presets[optimizationType]?.map((option) => (
+                          <SelectItem key={option.id} value={option.id} className="text-white hover:bg-white/10">
+                            {option.text}
+                          </SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                onClick={addOptimizationRequest}
+                disabled={!optimizationType || !optimizationStrength || !selectedModel}
+                className="w-full bg-white text-black hover:bg-white/90"
+              >
+                Add to Queue
+              </Button>
+
+              {/* Optimization Queue */}
+              {optimizationRequests.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-white text-sm font-medium">Optimization Queue</Label>
+                  <div className="space-y-2 p-3 bg-white/5 rounded-lg border border-white/10">
+                    {optimizationRequests.map((request) => (
+                      <div key={request.id} className="flex items-center justify-between p-2 bg-white/5 rounded border border-white/10">
+                        <div>
+                          <p className="text-white text-sm font-medium">{request.modelName}</p>
+                          <p className="text-white/60 text-xs">{request.optimizationType} - {request.strength}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => removeOptimizationRequest(request.id)}
+                          className="text-white/70 hover:text-white hover:bg-white/10"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Button
                 type="submit"
-                                  className="w-full h-12 text-lg font-medium bg-gradient-to-r from-v0-purple to-v0-blue text-white border-0"
-                disabled={
-                  isOptimizing ||
-                  (activeTab === "upload" && !formData.uploadedModel) ||
-                  (activeTab === "optimize" && optimizationRequests.length === 0)
-                }
+                disabled={optimizationRequests.length === 0 || isOptimizing}
+                className="w-full bg-white text-black hover:bg-white/90"
               >
                 {isOptimizing ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    {activeTab === "upload" ? "Uploading Model..." : "Optimizing Models..."}
+                    Processing...
                   </>
                 ) : (
-                  <>
-                    {activeTab === "upload" ? (
-                      <Upload className="mr-2 h-5 w-5" />
-                    ) : (
-                      <Settings className="mr-2 h-5 w-5" />
-                    )}
-                    {activeTab === "upload" ? "Upload Model" : "Optimize Models"}
-                  </>
+                  "Optimize Models"
                 )}
               </Button>
             </form>
-
           </CardContent>
         </Card>
       </div>
