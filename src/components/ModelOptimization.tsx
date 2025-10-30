@@ -627,8 +627,7 @@ Be friendly and instructive. Use short explanations and examples where needed.`
                       onClick={refreshModelsData}
                       disabled={loading || refreshingModels}
                       size="sm"
-                      variant="outline"
-                      className="border-black/20 text-black hover:bg-black/10 bg-transparent"
+                      className="bg-black text-white hover:bg-black/90"
                     >
                       <RefreshCw className={`h-3 w-3 mr-1 ${loading || refreshingModels ? 'animate-spin' : ''}`} />
                       Refresh
@@ -706,8 +705,7 @@ Be friendly and instructive. Use short explanations and examples where needed.`
                         onClick={() => refreshAssociatedModelsData(selectedModel.toString())}
                         disabled={loadingAssociated || refreshingAssociated}
                         size="sm"
-                        variant="outline"
-                        className="border-black/20 text-black hover:bg-black/10 bg-transparent"
+                        className="bg-black text-white hover:bg-black/90"
                       >
                         <RefreshCw className={`h-3 w-3 mr-1 ${loadingAssociated || refreshingAssociated ? 'animate-spin' : ''}`} />
                         Refresh
