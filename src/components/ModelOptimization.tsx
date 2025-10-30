@@ -169,11 +169,10 @@ function convertApiModelToComponentModel(apiModel: ModelInfo, associatedModels: 
 
 interface ModelOptimizationProps {
   isActive?: boolean
-  onAgentResponse?: (response: string) => void
-  onProcessing?: (isProcessing: boolean) => void
+  onSendMessage?: (message: string) => void
 }
 
-export default function ModelOptimization({ isActive = false, onAgentResponse, onProcessing }: ModelOptimizationProps) {
+export default function ModelOptimization({ isActive = false, onSendMessage }: ModelOptimizationProps) {
   const [selectedModel, setSelectedModel] = useState<number | null>(null)
   const [optimizationType, setOptimizationType] = useState("")
   const [optimizationStrength, setOptimizationStrength] = useState("")
@@ -226,7 +225,7 @@ export default function ModelOptimization({ isActive = false, onAgentResponse, o
     }
   }, [isActive, optimizationPresets])
 
-  const sendSystemPromptToAgent = async () => {
+  const sendSystemPromptToAgent = () => {
     const systemPrompt = `User ka model upload ho gaya!
 
 Hi agent, how are you?
@@ -272,55 +271,8 @@ INSTRUCTIONS TO AGENT:
 
 Be friendly and instructive. Use short explanations and examples where needed.`
 
-    try {
-      onProcessing?.(true);
-      
-      const authToken = (window as any).authToken;
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
-      }
-
-      const response = await fetch('http://localhost:8000/ask', {
-        method: 'POST',
-        mode: 'cors',
-        headers,
-        body: JSON.stringify({
-          query: systemPrompt
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to send system prompt: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Agent response:', data);
-      
-      // Extract all agent messages from the response
-      if (data.messages && Array.isArray(data.messages)) {
-        // Find assistant messages and display them
-        data.messages.forEach((msg: any) => {
-          if (msg.role === 'assistant' && msg.content) {
-            onAgentResponse?.(msg.content);
-          } else if (msg.type === 'tool' && (msg.content || msg.text)) {
-            onAgentResponse?.(msg.content || msg.text);
-          }
-        });
-      } else if (data.response) {
-        // Handle single response format
-        onAgentResponse?.(data.response);
-      } else if (data.content) {
-        onAgentResponse?.(data.content);
-      }
-    } catch (error) {
-      console.error('Failed to send system prompt to agent:', error);
-    } finally {
-      onProcessing?.(false);
-    }
+    // Send as a chat message
+    onSendMessage?.(systemPrompt);
   }
 
   const handleDownload = async (url: string, filename: string) => {
@@ -637,7 +589,8 @@ Be friendly and instructive. Use short explanations and examples where needed.`
                       onClick={refreshModelsData}
                       disabled={loading || refreshingModels}
                       size="sm"
-                      className="bg-black text-white hover:bg-black/90"
+                      variant="outline"
+                      className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                     >
                       <RefreshCw className={`h-3 w-3 mr-1 ${loading || refreshingModels ? 'animate-spin' : ''}`} />
                       Refresh
@@ -715,7 +668,8 @@ Be friendly and instructive. Use short explanations and examples where needed.`
                         onClick={() => refreshAssociatedModelsData(selectedModel.toString())}
                         disabled={loadingAssociated || refreshingAssociated}
                         size="sm"
-                        className="bg-black text-white hover:bg-black/90"
+                        variant="outline"
+                        className="border-black/20 text-black hover:bg-black/10 bg-transparent"
                       >
                         <RefreshCw className={`h-3 w-3 mr-1 ${loadingAssociated || refreshingAssociated ? 'animate-spin' : ''}`} />
                         Refresh
