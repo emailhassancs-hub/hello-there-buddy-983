@@ -1,4 +1,6 @@
 // API utility function for model optimization
+const BASE_URL = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+
 export async function apiFetch<T>(
   endpoint: string,
   options?: {
@@ -7,7 +9,6 @@ export async function apiFetch<T>(
     headers?: Record<string, string>;
   }
 ): Promise<T> {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
   const authToken = (window as any).authToken;
   
   const config: RequestInit = {
@@ -27,7 +28,7 @@ export async function apiFetch<T>(
     config.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(`${baseUrl}${endpoint}`, config);
+  const response = await fetch(`${BASE_URL}${endpoint}`, config);
 
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
