@@ -851,8 +851,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 size="sm"
                 className="flex-shrink-0 h-9 gap-1.5 px-2 rounded-lg hover:bg-muted/50"
               >
-                <img src={toolsIcon} alt="Tools" className="w-4 h-4" />
-                <span className="text-sm">Tools</span>
+                <img src={toolsIcon} alt="Tools" className="w-5 h-5" />
+                <span className="text-xs">Tools</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
