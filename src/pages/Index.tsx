@@ -58,18 +58,15 @@ const Index = () => {
 
   const API = "http://localhost:8000";
 
-  // Token capture from URL or localStorage
+  // Token capture from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
-    
     if (token) {
-      console.log("🔑 Token captured from URL:", token);
+      console.log("🔑 Token captured:", token);
       setAuthToken(token);
       // Store globally for child components
       (window as any).authToken = token;
-      // Store in localStorage for persistence
-      localStorage.setItem("auth_token", token);
       
       fetch("http://localhost:8000/store-token", {
         method: "POST",
@@ -83,15 +80,7 @@ const Index = () => {
         .then(data => console.log("✅ Token sent successfully:", data))
         .catch(err => console.error("❌ Error sending token:", err));
     } else {
-      // Try to load from localStorage
-      const storedToken = localStorage.getItem("auth_token");
-      if (storedToken) {
-        console.log("🔑 Token loaded from localStorage");
-        setAuthToken(storedToken);
-        (window as any).authToken = storedToken;
-      } else {
-        console.warn("⚠️ No token found in URL or localStorage");
-      }
+      console.warn("⚠️ No token found in URL");
     }
   }, []);
 
