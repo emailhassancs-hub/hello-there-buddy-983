@@ -417,16 +417,25 @@ const Index = () => {
     console.log("Optimization form submit:", type, data);
     
     if (type === "model-selected") {
-      // User selected a model, now show optimization config form
+      // User confirmed model selection, now fetch presets and show optimization config form
       try {
-        const response = await fetch(`${API}/api/model-optimization/presets`, {
+        // Fetch optimization presets from the backend
+        const BASE_URL = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+        const response = await fetch(`${BASE_URL}/api/model-optimization/presets`, {
           headers: {
-            "Authorization": `Bearer ${authToken}`
+            "Authorization": `Bearer ${authToken}`,
+            "Content-Type": "application/json"
           }
         });
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch presets");
+        }
+        
         const presets = await response.json();
         
-        handleAddDirectMessage("assistant", "", "optimization-config", {
+        // Show optimization configuration form in chat
+        handleAddDirectMessage("assistant", "Great! Now configure your optimization settings:", "optimization-config", {
           presets,
           modelId: data.modelId
         });
@@ -435,14 +444,17 @@ const Index = () => {
         handleAddDirectMessage("assistant", "Failed to load optimization settings. Please try again.");
       }
     } else if (type === "upload-new") {
-      // Trigger model upload
+      // Trigger model upload via file input
       document.getElementById('model-file-input')?.click();
     } else if (type === "start-optimization") {
-      // Start optimization process
+      // User submitted optimization configuration, start the optimization process
       handleAddDirectMessage("assistant", "⏳ Optimizing your model... please wait");
       
       try {
-        const response = await fetch(`${API}/api/model-optimization/optimize/single`, {
+        const BASE_URL = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+        
+        // Call optimize single model endpoint
+        const response = await fetch(`${BASE_URL}/api/model-optimization/optimize/single`, {
           method: 'POST',
           headers: {
             "Content-Type": "application/json",
@@ -457,26 +469,44 @@ const Index = () => {
           })
         });
         
-        if (!response.ok) throw new Error("Optimization failed");
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || "Optimization failed");
+        }
         
-        // Wait for optimization to process
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        const optimizationResult = await response.json();
+        console.log("Optimization started:", optimizationResult);
         
-        // Fetch result
-        const resultResponse = await fetch(`${API}/api/model-optimization/models/${data.modelId}/associated`, {
+        // Wait for optimization to process (adjust time based on typical processing time)
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // Fetch the optimized model result
+        const resultResponse = await fetch(`${BASE_URL}/api/model-optimization/models/${data.modelId}/associated`, {
           headers: {
-            "Authorization": `Bearer ${authToken}`
+            "Authorization": `Bearer ${authToken}`,
+            "Content-Type": "application/json"
           }
         });
-        const resultData = await resultResponse.json();
-        const latestResult = resultData.models[0];
         
-        handleAddDirectMessage("assistant", "✅ Model optimization complete! Your optimized model is ready.", "optimization-result", {
-          result: latestResult
-        });
+        if (!resultResponse.ok) {
+          throw new Error("Failed to fetch optimization result");
+        }
+        
+        const resultData = await resultResponse.json();
+        
+        // Get the latest optimized model (first in the array)
+        if (resultData.models && resultData.models.length > 0) {
+          const latestResult = resultData.models[0];
+          
+          handleAddDirectMessage("assistant", "✅ Model optimization complete! Your optimized model is ready.", "optimization-result", {
+            result: latestResult
+          });
+        } else {
+          throw new Error("No optimization results found");
+        }
       } catch (error) {
         console.error("Optimization failed:", error);
-        handleAddDirectMessage("assistant", "❌ Optimization failed. Please try again.");
+        handleAddDirectMessage("assistant", `❌ Optimization failed: ${error instanceof Error ? error.message : "Unknown error"}. Please try again.`);
       }
     } else if (type === "reset") {
       // Reset workflow - user can start over
