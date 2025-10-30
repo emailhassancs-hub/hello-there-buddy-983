@@ -225,7 +225,7 @@ export default function ModelOptimization({ isActive = false, onSendMessage }: M
     }
   }, [isActive, optimizationPresets])
 
-  const sendSystemPromptToAgent = () => {
+  const sendSystemPromptToAgent = async () => {
     const systemPrompt = `User ka model upload ho gaya!
 
 Hi agent, how are you?
@@ -271,8 +271,42 @@ INSTRUCTIONS TO AGENT:
 
 Be friendly and instructive. Use short explanations and examples where needed.`
 
-    // Send as a chat message
-    onSendMessage?.(systemPrompt);
+    // Send the prompt to the backend silently (without adding to chat)
+    try {
+      const API_URL = "http://localhost:8000";
+      const authToken = (window as any).authToken;
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`${API_URL}/ask`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ 
+          query: systemPrompt,
+          session_id: localStorage.getItem("mcp_session_id")
+        }),
+      });
+
+      const data = await response.json();
+
+      // Only display the agent's response messages, not the system prompt
+      if (data.messages && Array.isArray(data.messages)) {
+        data.messages.forEach((msg: any) => {
+          if (msg.type === "ai" || msg.type === "tool") {
+            onSendMessage?.(msg.content || "");
+          }
+        });
+      } else if (data.response) {
+        onSendMessage?.(data.response);
+      }
+    } catch (error) {
+      console.error("Error sending system prompt:", error);
+    }
   }
 
   const handleDownload = async (url: string, filename: string) => {
