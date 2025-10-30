@@ -337,23 +337,24 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         description: "Getting upload credentials",
       });
 
-      const signedUrlResponse = await fetch(`${apiUrl}/api/model-optimization/get-signed-url`, {
+      const signedUrlResponse = await fetch("http://localhost:8000/get-signed-url", {
         method: "POST",
+        mode: "cors",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
-          model_name: modelName,
-          filename: filename,
+          model_name: filename,
+          access_token: authToken,
         }),
       });
 
       if (!signedUrlResponse.ok) {
-        throw new Error("Failed to get signed URL");
+        throw new Error(`Request failed with status ${signedUrlResponse.status}`);
       }
 
       const { s3_upload_url, asset_id } = await signedUrlResponse.json();
+      console.log("✅ Received signed URL:", { s3_upload_url, asset_id });
 
       // Step 2: Upload to S3
       toast({
@@ -379,6 +380,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
       const completeResponse = await fetch(`${apiUrl}/api/model-optimization/complete-upload/${asset_id}`, {
         method: "GET",
+        mode: "cors",
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -397,7 +399,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
       console.log("Model registered successfully:", result);
     } catch (error) {
-      console.error("Model optimization error:", error);
+      console.error("❌ Model optimization error:", error);
       toast({
         title: "Upload failed",
         description: error instanceof Error ? error.message : "Failed to upload model",
