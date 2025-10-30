@@ -256,16 +256,32 @@ Once the user selects a category and reduction level, call the appropriate tool:
 Your role: act as a helpful assistant that explains the differences between optimization types in simple, clear terms and helps the user make an informed choice.`
 
     try {
-      await apiFetch('/ask', {
+      const authToken = (window as any).authToken;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch('http://localhost:8000/ask', {
         method: 'POST',
-        body: {
-          systemPrompt: systemPrompt,
+        mode: 'cors',
+        headers,
+        body: JSON.stringify({
+          message: systemPrompt,
           timestamp: new Date().toISOString()
-        }
-      })
-      console.log('System prompt sent to agent successfully')
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send system prompt: ${response.status}`);
+      }
+
+      console.log('System prompt sent to agent successfully');
     } catch (error) {
-      console.error('Failed to send system prompt to agent:', error)
+      console.error('Failed to send system prompt to agent:', error);
     }
   }
 
