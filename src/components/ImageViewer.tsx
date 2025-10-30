@@ -56,7 +56,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       
       // Map the response to ImageItem format
       const mapped: ImageItem[] = imageList.map((item: any) => ({
-        name: item.prompt?.substring(0, 50) + '...' || item.id || 'generated-image.png',
+        name: item.prompt || item.id || 'generated-image.png',
         url: item.imagePath || item.img_url || '',
         timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
       })).filter((item: ImageItem) => item.url);
@@ -162,7 +162,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                     />
                   </div>
                   <div className="p-3 border-t border-border/50">
-                    <p className="text-sm font-medium text-foreground truncate" title={image.name}>
+                    <p className="text-sm font-medium text-foreground line-clamp-2 whitespace-pre-wrap break-words" title={image.name}>
                       {image.name}
                     </p>
                   </div>
@@ -193,7 +193,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                 />
               </div>
               <div className="p-4 border-t border-border/50 bg-card">
-                <p className="text-sm font-medium text-foreground">{selectedImage.name}</p>
+                <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words">{selectedImage.name}</p>
               </div>
             </div>
           )}
