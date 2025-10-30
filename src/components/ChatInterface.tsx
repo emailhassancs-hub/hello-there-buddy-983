@@ -6,7 +6,8 @@ import ReactMarkdown from "react-markdown";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Wrench, Box } from "lucide-react";
+import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box } from "lucide-react";
+import toolsIcon from "@/assets/tools-icon.png";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import TypewriterText from "./TypewriterText";
@@ -847,10 +848,11 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                size="icon"
-                className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
+                size="sm"
+                className="flex-shrink-0 h-9 gap-1.5 px-2 rounded-lg hover:bg-muted/50"
               >
-                <Wrench className="w-4 h-4" />
+                <img src={toolsIcon} alt="Tools" className="w-4 h-4" />
+                <span className="text-sm">Tools</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
