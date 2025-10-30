@@ -100,45 +100,43 @@ export const OptimizationInlineForm = ({
     onOptimizationStart();
 
     try {
-      const response = await fetch(`${apiUrl}/api/model-optimization/optimize/single`, {
+      // Send message to /ask endpoint asking agent to invoke optimize_single_model_tool
+      const message = `Please invoke the optimize_single_model_tool with the following parameters:
+- model_id: ${selectedModel}
+- preset_id: ${optimizationStrength}
+- export_name: optimized_${Date.now()}
+- ACCESS_TOKEN: ${authToken}
+
+Please optimize this model using the optimize_single_model_tool MCP function.`;
+
+      const response = await fetch(`${apiUrl}/ask`, {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify({
-          model_id: selectedModel,
-          config: {
-            preset_id: optimizationStrength,
-            exportName: `optimized_${Date.now()}`
-          }
+          message: message,
+          conversationId: `optimization_${Date.now()}`
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Optimization failed");
+        throw new Error(errorData.message || "Optimization request failed");
       }
 
-      // Wait for optimization to process
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      // Fetch the optimized model result
-      const resultResponse = await fetch(`${apiUrl}/api/model-optimization/models/${selectedModel}/associated`, {
-        headers: {
-          "Authorization": `Bearer ${authToken}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!resultResponse.ok) throw new Error("Failed to fetch optimization result");
-
-      const resultData = await resultResponse.json();
-
-      if (resultData.models && resultData.models.length > 0) {
-        onOptimizationComplete(resultData.models[0]);
+      const data = await response.json();
+      
+      // The agent should return the optimization result
+      if (data.response) {
+        onOptimizationComplete({
+          message: data.response,
+          modelId: selectedModel,
+          presetId: optimizationStrength
+        });
       } else {
-        throw new Error("No optimization results found");
+        throw new Error("No response from agent");
       }
     } catch (error) {
       console.error("Optimization failed:", error);
