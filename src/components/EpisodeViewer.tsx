@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -97,6 +97,9 @@ const EpisodeViewer = ({
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle>Extend Your Story</DialogTitle>
+                    <DialogDescription>
+                      Optionally provide a direction for the next episode of your story
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
