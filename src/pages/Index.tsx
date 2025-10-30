@@ -28,7 +28,7 @@ interface Message {
   toolName?: string;
   status?: "awaiting_confirmation" | "complete";
   interruptMessage?: string;
-  formType?: "model-selection" | "optimization-config" | "optimization-result";
+  formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: any;
 }
 
@@ -416,101 +416,91 @@ const Index = () => {
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
     console.log("Optimization form submit:", type, data);
     
-    if (type === "model-selected") {
-      // User confirmed model selection, now fetch presets and show optimization config form
-      try {
-        // Fetch optimization presets from the backend
-        const BASE_URL = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
-        const response = await fetch(`${BASE_URL}/api/model-optimization/presets`, {
-          headers: {
-            "Authorization": `Bearer ${authToken}`,
-            "Content-Type": "application/json"
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch presets");
-        }
-        
-        const presets = await response.json();
-        
-        // Show optimization configuration form in chat
-        handleAddDirectMessage("assistant", "Great! Now configure your optimization settings:", "optimization-config", {
-          presets,
-          modelId: data.modelId
-        });
-      } catch (error) {
-        console.error("Failed to fetch presets:", error);
-        handleAddDirectMessage("assistant", "Failed to load optimization settings. Please try again.");
-      }
-    } else if (type === "upload-new") {
-      // Trigger model upload via file input
-      document.getElementById('model-file-input')?.click();
-    } else if (type === "start-optimization") {
-      // User submitted optimization configuration, start the optimization process
-      handleAddDirectMessage("assistant", "⏳ Optimizing your model... please wait");
-      
-      try {
-        const BASE_URL = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
-        
-        // Call optimize single model endpoint
-        const response = await fetch(`${BASE_URL}/api/model-optimization/optimize/single`, {
-          method: 'POST',
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            model_id: data.modelId.toString(),
-            config: {
-              preset_id: data.strength,
-              exportName: `optimized_${Date.now()}`
-            }
-          })
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || "Optimization failed");
-        }
-        
-        const optimizationResult = await response.json();
-        console.log("Optimization started:", optimizationResult);
-        
-        // Wait for optimization to process (adjust time based on typical processing time)
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
-        // Fetch the optimized model result
-        const resultResponse = await fetch(`${BASE_URL}/api/model-optimization/models/${data.modelId}/associated`, {
-          headers: {
-            "Authorization": `Bearer ${authToken}`,
-            "Content-Type": "application/json"
-          }
-        });
-        
-        if (!resultResponse.ok) {
-          throw new Error("Failed to fetch optimization result");
-        }
-        
-        const resultData = await resultResponse.json();
-        
-        // Get the latest optimized model (first in the array)
-        if (resultData.models && resultData.models.length > 0) {
-          const latestResult = resultData.models[0];
-          
-          handleAddDirectMessage("assistant", "✅ Model optimization complete! Your optimized model is ready.", "optimization-result", {
-            result: latestResult
-          });
-        } else {
-          throw new Error("No optimization results found");
-        }
-      } catch (error) {
-        console.error("Optimization failed:", error);
-        handleAddDirectMessage("assistant", `❌ Optimization failed: ${error instanceof Error ? error.message : "Unknown error"}. Please try again.`);
-      }
+    if (type === "optimization-started") {
+      handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
+    } else if (type === "optimization-complete") {
+      handleAddDirectMessage("assistant", "✅ Model optimization completed successfully!", "optimization-result", {
+        result: data.result
+      });
+    } else if (type === "optimization-error") {
+      handleAddDirectMessage("assistant", `❌ Optimization failed: ${data.error}. Please try again.`);
     } else if (type === "reset") {
       // Reset workflow - user can start over
       handleAddDirectMessage("assistant", "Ready to optimize another model! Click the Model Optimization tab to begin.");
+    } else if (type === "model-optimization-clicked") {
+      // When Model Optimization button is clicked
+      // Send system prompt silently to /ask endpoint
+      const systemPrompt = `You are a 3D model optimization assistant. When a user requests model optimization, explain the following:
+
+Available optimization categories:
+- **Simple**: General purpose optimization for most 3D models
+- **Batch**: Optimize multiple models at once with consistent settings
+- **Hard Surface**: Specialized for mechanical, architectural, or man-made objects
+- **Foliage**: Optimized for plants, trees, and organic vegetation
+- **Animated**: Preserve animation data while reducing polygon count
+
+Optimization strength levels:
+- **10-30%**: Light optimization, preserves most detail
+- **35-60%**: Moderate optimization, balanced quality/performance
+- **70-95%**: Aggressive optimization, maximum performance
+
+The process:
+1. Select a model from your library or upload a new one
+2. Choose the optimization type that matches your model
+3. Select the reduction strength based on your needs
+4. Download optimized files in GLB, USDZ, or FBX formats`;
+
+      // Show simple user message first
+      handleAddDirectMessage("user", "Model optimization invoked.");
+      
+      // Send system prompt to backend and get response
+      try {
+        const payload: any = {
+          query: systemPrompt,
+        };
+        
+        if (sessionId) {
+          payload.session_id = sessionId;
+        }
+
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        };
+        
+        if (authToken) {
+          headers["Authorization"] = `Bearer ${authToken}`;
+        }
+
+        const response = await fetch(`${API}/ask`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        // Update session ID if provided
+        if (data.session_id) {
+          updateSessionId(data.session_id);
+        }
+
+        // Show agent's response
+        if (data.messages && Array.isArray(data.messages)) {
+          const assistantMessages = data.messages.filter((msg: any) => msg.type === "ai");
+          if (assistantMessages.length > 0) {
+            const lastAssistantMsg = assistantMessages[assistantMessages.length - 1];
+            handleAddDirectMessage("assistant", lastAssistantMsg.content || "", "optimization-inline");
+          }
+        } else if (data.response) {
+          handleAddDirectMessage("assistant", data.response, "optimization-inline");
+        } else {
+          // Fallback if no response from backend
+          handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
+        }
+      } catch (error) {
+        console.error("Error fetching optimization guide:", error);
+        handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
+      }
     }
   };
 
@@ -579,6 +569,26 @@ const Index = () => {
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />
       </div>
+      
+      {/* Hidden file input for model uploads */}
+      <input
+        id="model-file-input"
+        type="file"
+        accept=".glb,.fbx,.obj,.gltf"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            // Handle model upload here if needed
+            console.log("Model file selected:", file.name);
+            toast({
+              title: "Upload not implemented",
+              description: "Model upload from optimization form is not yet implemented",
+            });
+          }
+          e.target.value = '';
+        }}
+      />
       
       {/* Chat Sidebar */}
       <ChatSidebar

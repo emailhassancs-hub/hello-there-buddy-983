@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import TypewriterText from "./TypewriterText";
 import { ModelSelectionForm, OptimizationConfigForm, OptimizationResultForm } from "./OptimizationForms";
+import { OptimizationInlineForm } from "./OptimizationInlineForm";
 
 interface ToolCall {
   id: string;
@@ -29,7 +30,7 @@ interface Message {
   status?: "awaiting_confirmation" | "complete";
   interruptMessage?: string;
   imagePaths?: string[];
-  formType?: "model-selection" | "optimization-config" | "optimization-result";
+  formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: any;
 }
 
@@ -414,7 +415,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   };
 
   const triggerModelUpload = () => {
-    modelFileInputRef.current?.click();
+    // Trigger the model optimization flow
+    onOptimizationFormSubmit?.("model-optimization-clicked", {});
   };
 
   return (
@@ -690,6 +692,22 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                         onReset={() => onOptimizationFormSubmit?.("reset", {})}
                       />
                     </div>
+                  )}
+
+                  {message.formType === "optimization-inline" && (
+                    <OptimizationInlineForm
+                      apiUrl={apiUrl}
+                      authToken={(window as any).authToken || null}
+                      onOptimizationStart={() => {
+                        onOptimizationFormSubmit?.("optimization-started", {});
+                      }}
+                      onOptimizationComplete={(result) => {
+                        onOptimizationFormSubmit?.("optimization-complete", { result });
+                      }}
+                      onOptimizationError={(error) => {
+                        onOptimizationFormSubmit?.("optimization-error", { error });
+                      }}
+                    />
                   )}
                   
                   {message.toolName && !(
