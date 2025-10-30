@@ -483,13 +483,13 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
           </div>
         )}
 
-        {/* Main Card */}
-        <Card className="border border-black/20 bg-white shadow-2xl">
-          <CardHeader className="border-b border-black/10 pb-6">
-            <CardTitle className="flex items-center justify-between text-2xl">
+        {/* Main Panel - No Card styling */}
+        <div className="bg-white">
+          <div className="pb-6">
+            <div className="flex items-center justify-between text-2xl">
               <div className="flex items-center gap-2">
                 <Settings className="h-6 w-6 text-black" />
-                <span className="text-black">Model Optimization</span>
+                <span className="text-black font-semibold">Model Optimization</span>
               </div>
               <Button
                 onClick={() => document.getElementById('model-file-input')?.click()}
@@ -508,13 +508,13 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                   if (file) handleModelUpload(file)
                 }}
               />
-            </CardTitle>
-            <CardDescription className="text-black/60">
+            </div>
+            <p className="text-black/60 mt-2">
               Optimize your 3D models for better performance
-            </CardDescription>
-          </CardHeader>
+            </p>
+          </div>
           
-          <CardContent className="p-6">
+          <div className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Available Models and Optimized Versions */}
               <div className="grid grid-cols-2 gap-6">
@@ -702,13 +702,13 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white text-sm">Strength</Label>
+                  <Label className="text-black text-sm">Optimization Strength</Label>
                   <Select 
                     value={optimizationStrength} 
                     onValueChange={setOptimizationStrength}
                     disabled={!optimizationType}
                   >
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectTrigger className="bg-black/5 border-black/10 text-black">
                       <SelectValue placeholder="Select strength" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-black/20">
@@ -774,8 +774,8 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
                 )}
               </Button>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
