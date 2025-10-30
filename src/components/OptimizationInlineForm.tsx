@@ -100,14 +100,16 @@ export const OptimizationInlineForm = ({
     onOptimizationStart();
 
     try {
-      // Send message to /ask endpoint asking agent to invoke optimize_single_model_tool
-      const message = `Please invoke the optimize_single_model_tool with the following parameters:
-- model_id: ${selectedModel}
-- preset_id: ${optimizationStrength}
-- export_name: optimized_${Date.now()}
-- ACCESS_TOKEN: ${authToken}
-
-Please optimize this model using the optimize_single_model_tool MCP function.`;
+      // Send structured message to /ask endpoint asking agent to invoke optimize_single_model_tool
+      const optimizationMessage = {
+        tool_call: "optimize_single_model_tool",
+        params: {
+          model_id: selectedModel,
+          preset_id: optimizationStrength,
+          export_name: `optimized_${Date.now()}`,
+          ACCESS_TOKEN: authToken
+        }
+      };
 
       const response = await fetch(`${apiUrl}/ask`, {
         method: 'POST',
@@ -116,8 +118,9 @@ Please optimize this model using the optimize_single_model_tool MCP function.`;
           "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify({
-          message: message,
-          conversationId: `optimization_${Date.now()}`
+          message: `Please invoke the optimize_single_model_tool MCP function with these parameters: ${JSON.stringify(optimizationMessage.params)}`,
+          conversationId: `optimization_${Date.now()}`,
+          tool_call: optimizationMessage
         })
       });
 
