@@ -582,25 +582,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                         
                         return (
                           <div key={`${toolCall.id}-${idx}`} className="bg-background border border-border rounded-lg p-4 space-y-3">
-                            {/* Tool header */}
-                            <div className="flex items-center justify-end">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowRawJson(prev => ({ ...prev, [toolCall.id]: !prev[toolCall.id] }))}
-                                className="h-7 text-xs"
-                              >
-                                {showRawJson[toolCall.id] ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                                Raw JSON
-                              </Button>
-                            </div>
-
-                            {/* Raw JSON view */}
-                            {showRawJson[toolCall.id] && (
-                              <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-48 font-mono">
-                                {JSON.stringify(toolCall.args, null, 2)}
-                              </pre>
-                            )}
 
                             {/* Editable parameters */}
                             <div className="space-y-3">
@@ -653,18 +634,11 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       })}
                     </div>
 
-                    {/* Action buttons */}
+                    {/* Action button */}
                     <div className="flex gap-2 pt-2">
                       <Button 
-                        variant="outline" 
-                        onClick={() => handleCancel(message.toolCalls!)}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
                         onClick={() => handleConfirm(message.toolCalls!)}
-                        className="flex-1"
+                        className="w-full"
                       >
                         Confirm
                       </Button>
