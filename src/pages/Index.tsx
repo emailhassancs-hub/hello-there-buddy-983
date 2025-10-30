@@ -28,6 +28,8 @@ interface Message {
   toolName?: string;
   status?: "awaiting_confirmation" | "complete";
   interruptMessage?: string;
+  formType?: "model-selection" | "optimization-config" | "optimization-result";
+  formData?: any;
 }
 
 interface StoryState {
@@ -135,8 +137,8 @@ const Index = () => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), toolName }]);
   };
 
-  const handleAddDirectMessage = (role: "user" | "assistant", text: string) => {
-    setMessages((prev) => [...prev, { role, text, timestamp: new Date() }]);
+  const handleAddDirectMessage = (role: "user" | "assistant", text: string, formType?: string, formData?: any) => {
+    setMessages((prev) => [...prev, { role, text, timestamp: new Date(), formType: formType as any, formData }]);
   };
 
   const handleSendMessage = async (text: string) => {
@@ -404,6 +406,81 @@ const Index = () => {
         description: "Unable to load the selected story.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleImageGenerated = () => {
+    setImageRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleOptimizationFormSubmit = async (type: string, data: any) => {
+    console.log("Optimization form submit:", type, data);
+    
+    if (type === "model-selected") {
+      // User selected a model, now show optimization config form
+      try {
+        const response = await fetch(`${API}/api/model-optimization/presets`, {
+          headers: {
+            "Authorization": `Bearer ${authToken}`
+          }
+        });
+        const presets = await response.json();
+        
+        handleAddDirectMessage("assistant", "", "optimization-config", {
+          presets,
+          modelId: data.modelId
+        });
+      } catch (error) {
+        console.error("Failed to fetch presets:", error);
+        handleAddDirectMessage("assistant", "Failed to load optimization settings. Please try again.");
+      }
+    } else if (type === "upload-new") {
+      // Trigger model upload
+      document.getElementById('model-file-input')?.click();
+    } else if (type === "start-optimization") {
+      // Start optimization process
+      handleAddDirectMessage("assistant", "⏳ Optimizing your model... please wait");
+      
+      try {
+        const response = await fetch(`${API}/api/model-optimization/optimize/single`, {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            model_id: data.modelId.toString(),
+            config: {
+              preset_id: data.strength,
+              exportName: `optimized_${Date.now()}`
+            }
+          })
+        });
+        
+        if (!response.ok) throw new Error("Optimization failed");
+        
+        // Wait for optimization to process
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Fetch result
+        const resultResponse = await fetch(`${API}/api/model-optimization/models/${data.modelId}/associated`, {
+          headers: {
+            "Authorization": `Bearer ${authToken}`
+          }
+        });
+        const resultData = await resultResponse.json();
+        const latestResult = resultData.models[0];
+        
+        handleAddDirectMessage("assistant", "✅ Model optimization complete! Your optimized model is ready.", "optimization-result", {
+          result: latestResult
+        });
+      } catch (error) {
+        console.error("Optimization failed:", error);
+        handleAddDirectMessage("assistant", "❌ Optimization failed. Please try again.");
+      }
+    } else if (type === "reset") {
+      // Reset workflow - user can start over
+      handleAddDirectMessage("assistant", "Ready to optimize another model! Click the Model Optimization tab to begin.");
     }
   };
 

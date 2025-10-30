@@ -11,6 +11,7 @@ import toolsIcon from "@/assets/tools-icon.png";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import TypewriterText from "./TypewriterText";
+import { ModelSelectionForm, OptimizationConfigForm, OptimizationResultForm } from "./OptimizationForms";
 
 interface ToolCall {
   id: string;
@@ -28,6 +29,8 @@ interface Message {
   status?: "awaiting_confirmation" | "complete";
   interruptMessage?: string;
   imagePaths?: string[];
+  formType?: "model-selection" | "optimization-config" | "optimization-result";
+  formData?: any;
 }
 
 interface ChatInterfaceProps {
@@ -38,9 +41,10 @@ interface ChatInterfaceProps {
   apiUrl: string;
   onModelSelect?: (modelUrl: string, thumbnailUrl: string, workflow: string) => void;
   onImageGenerated?: () => void;
+  onOptimizationFormSubmit?: (type: string, data: any) => void;
 }
 
-const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated, onOptimizationFormSubmit }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -640,6 +644,40 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     
                     return <TypewriterText text={message.text} speed={3} />;
                   })()}
+
+                  {/* Render interactive optimization forms */}
+                  {message.formType === "model-selection" && message.formData && (
+                    <div className="mt-3">
+                      <ModelSelectionForm
+                        models={message.formData.models}
+                        onModelSelect={(modelId) => onOptimizationFormSubmit?.("model-selected", { modelId })}
+                        onUploadNew={() => onOptimizationFormSubmit?.("upload-new", {})}
+                      />
+                    </div>
+                  )}
+
+                  {message.formType === "optimization-config" && message.formData && (
+                    <div className="mt-3">
+                      <OptimizationConfigForm
+                        presets={message.formData.presets}
+                        onSubmit={(type, strength) => onOptimizationFormSubmit?.("start-optimization", { type, strength, modelId: message.formData.modelId })}
+                        isLoading={false}
+                      />
+                    </div>
+                  )}
+
+                  {message.formType === "optimization-result" && message.formData && (
+                    <div className="mt-3">
+                      <OptimizationResultForm
+                        result={message.formData.result}
+                        onDownload={(url, filename) => {
+                          // Handle download
+                          window.open(url, '_blank');
+                        }}
+                        onReset={() => onOptimizationFormSubmit?.("reset", {})}
+                      />
+                    </div>
+                  )}
                   
                   {message.toolName && !(
                     message.toolName.includes('image_to_3d') || 
