@@ -3,6 +3,7 @@ import ChatInterface from "@/components/ChatInterface";
 import EpisodeViewer from "@/components/EpisodeViewer";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
+import ModelOptimization from "@/components/ModelOptimization";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { ModelUploader } from "@/components/ModelUploader";
@@ -10,7 +11,7 @@ import { ModelUploader } from "@/components/ModelUploader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, BookOpen, Box } from "lucide-react";
+import { Image as ImageIcon, BookOpen, Box, Settings } from "lucide-react";
 
 interface ToolCall {
   id: string;
@@ -506,6 +507,10 @@ const Index = () => {
                   <Box className="w-4 h-4" />
                   3D Model Viewer
                 </TabsTrigger>
+                <TabsTrigger value="optimization" className="gap-2">
+                  <Settings className="w-4 h-4" />
+                  Model Optimization
+                </TabsTrigger>
                 <TabsTrigger value="episodes" className="gap-2">
                   <BookOpen className="w-4 h-4" />
                   Episode Viewer
@@ -536,6 +541,10 @@ const Index = () => {
                     <ModelViewer apiUrl={API} selectedModel={selectedModel} />
                   </div>
                 </div>
+              </TabsContent>
+              
+              <TabsContent value="optimization" className="flex-1 m-0 overflow-hidden">
+                <ModelOptimization isActive={activeTab === "optimization"} />
               </TabsContent>
               
               <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden">
