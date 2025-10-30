@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ReactMarkdown from "react-markdown";
-import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box } from "lucide-react";
@@ -378,11 +378,12 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         description: "Registering your model for optimization",
       });
 
-      const completeResponse = await fetch(`${apiUrl}/api/model-optimization/complete-upload/${asset_id}`, {
+      const completeResponse = await fetch(`http://localhost:8000/complete-upload/${asset_id}`, {
         method: "GET",
         mode: "cors",
         headers: {
-          Authorization: `Bearer ${authToken}`,
+          "Authorization": `Bearer ${authToken}`,
+          "Content-Type": "application/json",
         },
       });
 
@@ -892,6 +893,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       {/* Image Zoom Dialog */}
       <Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
         <DialogContent className="max-w-5xl w-full p-0 overflow-hidden">
+          <DialogTitle className="sr-only">Image Preview</DialogTitle>
+          <DialogDescription className="sr-only">
+            Full size image preview
+          </DialogDescription>
           <DialogClose className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
