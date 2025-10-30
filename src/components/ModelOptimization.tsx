@@ -311,11 +311,11 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
       }
     }
 
-    // Only run initial polling when component is active
+    // Only run initial polling when component becomes active
     if (isActive) {
       runInitialPolling()
     }
-  }, [activeTab, isActive]) // Depend on activeTab and isActive to run when switching tabs or becoming active
+  }, [isActive]) // Only depend on isActive - don't re-run when switching between optimize/upload tabs
 
   // Function to handle direct downloads
   const handleDownload = async (url: string, filename: string) => {
