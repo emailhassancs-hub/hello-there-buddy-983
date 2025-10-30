@@ -169,10 +169,11 @@ function convertApiModelToComponentModel(apiModel: ModelInfo, associatedModels: 
 
 interface ModelOptimizationProps {
   isActive?: boolean
-  onSendMessage?: (message: string) => void
+  onAgentResponse?: (response: string) => void
+  onProcessing?: (isProcessing: boolean) => void
 }
 
-export default function ModelOptimization({ isActive = false, onSendMessage }: ModelOptimizationProps) {
+export default function ModelOptimization({ isActive = false, onAgentResponse, onProcessing }: ModelOptimizationProps) {
   const [selectedModel, setSelectedModel] = useState<number | null>(null)
   const [optimizationType, setOptimizationType] = useState("")
   const [optimizationStrength, setOptimizationStrength] = useState("")
@@ -225,7 +226,7 @@ export default function ModelOptimization({ isActive = false, onSendMessage }: M
     }
   }, [isActive, optimizationPresets])
 
-  const sendSystemPromptToAgent = () => {
+  const sendSystemPromptToAgent = async () => {
     const systemPrompt = `User ka model upload ho gaya!
 
 Hi agent, how are you?
@@ -271,8 +272,45 @@ INSTRUCTIONS TO AGENT:
 
 Be friendly and instructive. Use short explanations and examples where needed.`
 
-    // Send as a chat message
-    onSendMessage?.(systemPrompt);
+    try {
+      onProcessing?.(true);
+      
+      const authToken = (window as any).authToken;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch('http://localhost:8000/ask', {
+        method: 'POST',
+        mode: 'cors',
+        headers,
+        body: JSON.stringify({
+          query: systemPrompt
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send system prompt: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Extract the agent's message from the response
+      if (data.messages && data.messages.length > 0) {
+        const agentMessage = data.messages.find((msg: any) => msg.type === 'tool' || msg.role === 'assistant');
+        if (agentMessage) {
+          onAgentResponse?.(agentMessage.content || agentMessage.text || '');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to send system prompt to agent:', error);
+    } finally {
+      onProcessing?.(false);
+    }
   }
 
   const handleDownload = async (url: string, filename: string) => {

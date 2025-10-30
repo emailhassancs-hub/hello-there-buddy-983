@@ -546,7 +546,24 @@ const Index = () => {
               <TabsContent value="optimization" className="flex-1 m-0 overflow-auto hide-scrollbar">
                 <ModelOptimization 
                   isActive={activeTab === "optimization"}
-                  onSendMessage={handleSendMessage}
+                  onAgentResponse={(response) => {
+                    setMessages(prev => [...prev, {
+                      role: 'assistant',
+                      text: response,
+                      timestamp: new Date()
+                    }]);
+                  }}
+                  onProcessing={(isProcessing) => {
+                    if (isProcessing) {
+                      setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        text: 'Processing your model...',
+                        timestamp: new Date()
+                      }]);
+                    } else {
+                      setMessages(prev => prev.filter(m => m.text !== 'Processing your model...'));
+                    }
+                  }}
                 />
               </TabsContent>
               
