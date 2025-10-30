@@ -635,7 +635,7 @@ The process:
             onSendMessage={handleSendMessage}
             onToolConfirmation={handleToolConfirmation}
             isGenerating={isGenerating}
-            apiUrl={API}
+            apiUrl={apiUrl}
             onModelSelect={handleModelSelect}
             onImageGenerated={() => setImageRefreshTrigger(prev => prev + 1)}
             onOptimizationFormSubmit={handleOptimizationFormSubmit}
