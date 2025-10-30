@@ -213,62 +213,6 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
     fetchOptimizationPresetsData()
   }, [])
 
-  // Send system prompt to /ask endpoint when component is active
-  useEffect(() => {
-    if (isActive && optimizationPresets) {
-      sendSystemPromptToAgent()
-    }
-  }, [isActive, optimizationPresets])
-
-  const sendSystemPromptToAgent = async () => {
-    if (!optimizationPresets) return
-
-    const systemPrompt = `SYSTEM MESSAGE:
-User has successfully uploaded a model through the Model Optimization tool.  
-The agent must now guide the user through available optimization options.
-
-Message to Agent:
-"User ka model upload ho gaya!  
-Hi agent, how are you?  
-W salam.  
-The user is ready to optimize the model."
-
-Below are the available optimization categories and presets. You must use this data to explain to the user their options and guide them to choose the most suitable optimization type.
-
-${JSON.stringify(optimizationPresets.presets, null, 2)}
-
-**Category Guide:**
-- Simple Optimize → Safest, default choice (preserves structure & UVs)
-- Batch Optimize → For assets with multiple meshes
-- Hard Surface Model → For vehicles, weapons, and architecture (preserves edges)
-- Foliage → For plants, trees, and grass
-- Animated Object → For rigged or animated models
-
-**Reduction Recommendations:**
-- 10–30% → Light optimization (best visual quality)
-- 35–60% → Balanced optimization (recommended)
-- 70–95% → Extreme optimization (maximum reduction, possible quality loss)
-
-Once the user selects a category and reduction level, call the appropriate tool:
-- \`optimize_single_model_tool\` → for one model  
-- \`optimize_multiple_models_tool\` → for multiple models  
-
-Your role: act as a helpful assistant that explains the differences between optimization types in simple, clear terms and helps the user make an informed choice.`
-
-    try {
-      await apiFetch('/ask', {
-        method: 'POST',
-        body: {
-          systemPrompt: systemPrompt,
-          timestamp: new Date().toISOString()
-        }
-      })
-      console.log('System prompt sent to agent successfully')
-    } catch (error) {
-      console.error('Failed to send system prompt to agent:', error)
-    }
-  }
-
   const handleDownload = async (url: string, filename: string) => {
     try {
       const response = await fetch(url)
