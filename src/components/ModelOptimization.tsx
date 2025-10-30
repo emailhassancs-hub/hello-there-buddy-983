@@ -167,7 +167,12 @@ function convertApiModelToComponentModel(apiModel: ModelInfo, associatedModels: 
   }
 }
 
-export default function ModelOptimization({ isActive = false }: { isActive?: boolean }) {
+interface ModelOptimizationProps {
+  isActive?: boolean
+  onSendMessage?: (message: string) => void
+}
+
+export default function ModelOptimization({ isActive = false, onSendMessage }: ModelOptimizationProps) {
   const [selectedModel, setSelectedModel] = useState<number | null>(null)
   const [optimizationType, setOptimizationType] = useState("")
   const [optimizationStrength, setOptimizationStrength] = useState("")
@@ -220,7 +225,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
     }
   }, [isActive, optimizationPresets])
 
-  const sendSystemPromptToAgent = async () => {
+  const sendSystemPromptToAgent = () => {
     const systemPrompt = `User ka model upload ho gaya!
 
 Hi agent, how are you?
@@ -266,33 +271,8 @@ INSTRUCTIONS TO AGENT:
 
 Be friendly and instructive. Use short explanations and examples where needed.`
 
-    try {
-      const authToken = (window as any).authToken;
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
-      }
-
-      const response = await fetch('http://localhost:8000/ask', {
-        method: 'POST',
-        mode: 'cors',
-        headers,
-        body: JSON.stringify({
-          query: systemPrompt
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to send system prompt: ${response.status}`);
-      }
-
-      console.log('System prompt sent to agent successfully');
-    } catch (error) {
-      console.error('Failed to send system prompt to agent:', error);
-    }
+    // Send as a chat message
+    onSendMessage?.(systemPrompt);
   }
 
   const handleDownload = async (url: string, filename: string) => {
