@@ -221,39 +221,50 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
   }, [isActive, optimizationPresets])
 
   const sendSystemPromptToAgent = async () => {
-    if (!optimizationPresets) return
+    const systemPrompt = `User ka model upload ho gaya!
 
-    const systemPrompt = `SYSTEM MESSAGE:
-User has successfully uploaded a model through the Model Optimization tool.  
-The agent must now guide the user through available optimization options.
+Hi agent, how are you?
+W salam.
 
-Message to Agent:
-"User ka model upload ho gaya!  
-Hi agent, how are you?  
-W salam.  
-The user is ready to optimize the model."
+The user has uploaded a model through the Model Optimization tool and is now ready to begin optimization.
 
-Below are the available optimization categories and presets. You must use this data to explain to the user their options and guide them to choose the most suitable optimization type.
+Please greet the user and then guide them through the available optimization options listed below. 
 
-${JSON.stringify(optimizationPresets.presets, null, 2)}
+────────────────
+OPTIMIZATION CATEGORIES:
 
-**Category Guide:**
-- Simple Optimize → Safest, default choice (preserves structure & UVs)
-- Batch Optimize → For assets with multiple meshes
-- Hard Surface Model → For vehicles, weapons, and architecture (preserves edges)
-- Foliage → For plants, trees, and grass
-- Animated Object → For rigged or animated models
+1️⃣ Simple Optimize → Safest and default option. Preserves structure, topology, normals, and UVs.
+   Suitable for all models.
+   Presets: 10%–95% reduction.
 
-**Reduction Recommendations:**
-- 10–30% → Light optimization (best visual quality)
-- 35–60% → Balanced optimization (recommended)
-- 70–95% → Extreme optimization (maximum reduction, possible quality loss)
+2️⃣ Batch Optimize → Optimizes multiple models or scenes together.
+   For multi-model assets.
 
-Once the user selects a category and reduction level, call the appropriate tool:
-- \`optimize_single_model_tool\` → for one model  
-- \`optimize_multiple_models_tool\` → for multiple models  
+3️⃣ Hard Surface Model → Designed for mechanical, vehicle, weapon, and architectural models.
+   Preserves sharp edges and hard details.
 
-Your role: act as a helpful assistant that explains the differences between optimization types in simple, clear terms and helps the user make an informed choice.`
+4️⃣ Foliage → For organic models like trees, grass, and plants.
+   Best for natural shapes and environmental assets.
+
+5️⃣ Animated Object → For models with rigging and animation data.
+   Maintains bones and animation integrity.
+
+────────────────
+REDUCTION LEVELS:
+
+- 10–30% → Light optimization (best quality, minor size reduction)
+- 35–60% → Balanced optimization (recommended choice)
+- 70–95% → Extreme optimization (maximum size reduction, quality loss likely)
+
+────────────────
+INSTRUCTIONS TO AGENT:
+- Explain these options clearly to the user.
+- Help the user choose the right optimization category and reduction level.
+- Once selected, pass the corresponding preset_id into either:
+  • optimize_single_model_tool → for one model, or  
+  • optimize_multiple_models_tool → for multiple models.
+
+Be friendly and instructive. Use short explanations and examples where needed.`
 
     try {
       const authToken = (window as any).authToken;
@@ -270,8 +281,7 @@ Your role: act as a helpful assistant that explains the differences between opti
         mode: 'cors',
         headers,
         body: JSON.stringify({
-          message: systemPrompt,
-          timestamp: new Date().toISOString()
+          query: systemPrompt
         })
       });
 
