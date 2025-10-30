@@ -33,6 +33,7 @@ export const OptimizationInlineForm = ({
   onOptimizationComplete,
   onOptimizationError
 }: OptimizationInlineFormProps) => {
+  const [currentStep, setCurrentStep] = useState<"modelSelection" | "optimizationOptions">("modelSelection");
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [optimizationType, setOptimizationType] = useState<string>("");
@@ -83,6 +84,16 @@ export const OptimizationInlineForm = ({
     } catch (error) {
       console.error("Error fetching presets:", error);
     }
+  };
+
+  const handleModelSelect = (modelId: string) => {
+    if (modelId === "upload_new") {
+      document.getElementById('model-file-input')?.click();
+      return;
+    }
+    
+    setSelectedModel(modelId);
+    setCurrentStep("optimizationOptions");
   };
 
   const handleOptimize = async () => {
@@ -159,73 +170,95 @@ export const OptimizationInlineForm = ({
         </div>
       ) : (
         <div className="grid gap-4">
-          <div className="space-y-2">
-            <Label className="text-sm">Select Model</Label>
-            <Select value={selectedModel} onValueChange={setSelectedModel}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a model" />
-              </SelectTrigger>
-              <SelectContent>
-                {models.map((model) => (
-                  <SelectItem key={model.id} value={model.id.toString()}>
-                    {model.name}
-                  </SelectItem>
-                ))}
-                <SelectItem value="upload_new">+ Upload new model for optimization</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Step 1: Model Selection */}
+          {currentStep === "modelSelection" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Select Model</Label>
+                <Select value={selectedModel} onValueChange={handleModelSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.map((model) => (
+                      <SelectItem key={model.id} value={model.id.toString()}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="upload_new">+ Upload new model for optimization</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
-          <div className="space-y-2">
-            <Label className="text-sm">Optimization Type</Label>
-            <Select value={optimizationType} onValueChange={setOptimizationType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {OPTIMIZATION_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Step 2: Optimization Options */}
+          {currentStep === "optimizationOptions" && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground mb-2">
+                Selected Model ID: <span className="font-medium text-foreground">{selectedModel}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentStep("modelSelection")}
+                  className="ml-2 h-6 text-xs"
+                >
+                  Change
+                </Button>
+              </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm">Optimization Strength</Label>
-            <Select 
-              value={optimizationStrength} 
-              onValueChange={setOptimizationStrength}
-              disabled={!optimizationType}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select strength" />
-              </SelectTrigger>
-              <SelectContent>
-                {optimizationType && presets[optimizationType]?.map((preset) => (
-                  <SelectItem key={preset.id} value={preset.id}>
-                    {preset.text}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Optimization Type</Label>
+                <Select value={optimizationType} onValueChange={setOptimizationType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OPTIMIZATION_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <Button
-            onClick={handleOptimize}
-            disabled={!selectedModel || !optimizationType || !optimizationStrength || isLoading}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Optimize Model"
-            )}
-          </Button>
+              <div className="space-y-2">
+                <Label className="text-sm">Optimization Strength</Label>
+                <Select 
+                  value={optimizationStrength} 
+                  onValueChange={setOptimizationStrength}
+                  disabled={!optimizationType}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select strength" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {optimizationType && presets[optimizationType]?.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        {preset.text}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button
+                onClick={handleOptimize}
+                disabled={!optimizationType || !optimizationStrength || isLoading}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Optimize Model"
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
