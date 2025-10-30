@@ -37,9 +37,10 @@ interface ModelSelectionFormProps {
 export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew }: ModelSelectionFormProps) => {
   const [selectedModel, setSelectedModel] = useState<number | null>(null);
 
-  const handleSelect = (modelId: number) => {
-    setSelectedModel(modelId);
-    onModelSelect(modelId);
+  const handleConfirm = () => {
+    if (selectedModel) {
+      onModelSelect(selectedModel);
+    }
   };
 
   return (
@@ -54,7 +55,7 @@ export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew }: Model
                 ? "border-primary bg-primary/10"
                 : "border-border hover:border-primary/50"
             }`}
-            onClick={() => handleSelect(model.id)}
+            onClick={() => setSelectedModel(model.id)}
           >
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
@@ -75,14 +76,24 @@ export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew }: Model
           </Card>
         ))}
       </div>
-      <Button
-        onClick={onUploadNew}
-        variant="outline"
-        className="w-full"
-      >
-        <Upload className="h-4 w-4 mr-2" />
-        Upload a new model instead
-      </Button>
+      
+      <div className="flex gap-2">
+        <Button
+          onClick={handleConfirm}
+          disabled={!selectedModel}
+          className="flex-1"
+        >
+          Confirm Selection
+        </Button>
+        <Button
+          onClick={onUploadNew}
+          variant="outline"
+          className="flex-1"
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          Upload New
+        </Button>
+      </div>
     </div>
   );
 };
