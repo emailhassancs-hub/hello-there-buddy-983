@@ -135,6 +135,10 @@ const Index = () => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), toolName }]);
   };
 
+  const handleAddDirectMessage = (role: "user" | "assistant", text: string) => {
+    setMessages((prev) => [...prev, { role, text, timestamp: new Date() }]);
+  };
+
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
 
@@ -547,6 +551,7 @@ const Index = () => {
                 <ModelOptimization 
                   isActive={activeTab === "optimization"}
                   onSendMessage={handleSendMessage}
+                  onAddDirectMessage={handleAddDirectMessage}
                 />
               </TabsContent>
               

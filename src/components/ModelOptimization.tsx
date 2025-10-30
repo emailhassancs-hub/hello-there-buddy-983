@@ -170,9 +170,10 @@ function convertApiModelToComponentModel(apiModel: ModelInfo, associatedModels: 
 interface ModelOptimizationProps {
   isActive?: boolean
   onSendMessage?: (message: string) => void
+  onAddDirectMessage?: (role: "user" | "assistant", text: string) => void
 }
 
-export default function ModelOptimization({ isActive = false, onSendMessage }: ModelOptimizationProps) {
+export default function ModelOptimization({ isActive = false, onSendMessage, onAddDirectMessage }: ModelOptimizationProps) {
   const [selectedModel, setSelectedModel] = useState<number | null>(null)
   const [optimizationType, setOptimizationType] = useState("")
   const [optimizationStrength, setOptimizationStrength] = useState("")
@@ -271,7 +272,10 @@ INSTRUCTIONS TO AGENT:
 
 Be friendly and instructive. Use short explanations and examples where needed.`
 
-    // Send the prompt to the backend silently (without adding to chat)
+    // Step 1: Display placeholder message in chat
+    onAddDirectMessage?.("user", "💡 Model optimization invoked...");
+
+    // Step 2: Send the actual system prompt to backend silently
     try {
       const API_URL = "http://localhost:8000";
       const authToken = (window as any).authToken;
@@ -294,18 +298,19 @@ Be friendly and instructive. Use short explanations and examples where needed.`
 
       const data = await response.json();
 
-      // Only display the agent's response messages, not the system prompt
+      // Step 3: Display only the agent's response (not sending it back to backend)
       if (data.messages && Array.isArray(data.messages)) {
         data.messages.forEach((msg: any) => {
           if (msg.type === "ai" || msg.type === "tool") {
-            onSendMessage?.(msg.content || "");
+            onAddDirectMessage?.("assistant", msg.content || "");
           }
         });
       } else if (data.response) {
-        onSendMessage?.(data.response);
+        onAddDirectMessage?.("assistant", data.response);
       }
     } catch (error) {
       console.error("Error sending system prompt:", error);
+      onAddDirectMessage?.("assistant", "Sorry, there was an error initializing model optimization. Please try again.");
     }
   }
 
