@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Calendar, Upload, Download, CheckCircle, Loader2 } from "lucide-react";
 
 interface ModelInfo {
@@ -102,29 +103,112 @@ export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew }: Model
   );
 };
 
+interface RunningJob {
+  optimize_id: number;
+  asset_id: number | null;
+  preset_id: number | null;
+}
+
 interface OptimizationConfigFormProps {
   presets: OptimizationPresets;
   onSubmit: (type: string, strength: string) => void;
   isLoading: boolean;
+  apiUrl?: string;
+  authToken?: string | null;
+  modelId?: number;
 }
 
-export const OptimizationConfigForm = ({ presets, onSubmit, isLoading }: OptimizationConfigFormProps) => {
+export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, authToken, modelId }: OptimizationConfigFormProps) => {
   const [optimizationType, setOptimizationType] = useState("");
   const [optimizationStrength, setOptimizationStrength] = useState("");
+  const [pollingStatus, setPollingStatus] = useState<string>("");
+  const [isPolling, setIsPolling] = useState(false);
 
-  const handleSubmit = () => {
-    if (optimizationType && optimizationStrength) {
-      onSubmit(optimizationType, optimizationStrength);
+  const fetchRunningJobs = async (): Promise<RunningJob[]> => {
+    if (!apiUrl || !authToken) return [];
+    
+    try {
+      const response = await fetch(`${apiUrl}/api/model-optimization/jobs/running`, {
+        headers: {
+          "Authorization": `Bearer ${authToken}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch running jobs");
+      const data = await response.json();
+      return data.jobs || [];
+    } catch (error) {
+      console.error("Error fetching running jobs:", error);
+      return [];
     }
   };
+
+  const pollUntilComplete = async (
+    assetId: number,
+    presetId: number,
+    pollIntervalSeconds: number = 5,
+    timeoutSeconds: number = 1800
+  ): Promise<void> => {
+    const deadline = Date.now() + timeoutSeconds * 1000;
+
+    while (Date.now() < deadline) {
+      setPollingStatus("🔍 Checking optimization status...");
+      
+      const jobs = await fetchRunningJobs();
+      let found = false;
+
+      for (const job of jobs) {
+        if (job.asset_id === assetId && job.preset_id === presetId) {
+          found = true;
+          setPollingStatus(`⚙️ Optimizing model... (Job ID: ${job.optimize_id})`);
+          break;
+        }
+      }
+
+      if (!found) {
+        setPollingStatus("✅ Optimization complete!");
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, pollIntervalSeconds * 1000));
+    }
+
+    throw new Error("Optimization timed out");
+  };
+
+  const handleSubmit = async () => {
+    if (optimizationType && optimizationStrength) {
+      setIsPolling(true);
+      setPollingStatus("🚀 Starting optimization...");
+      
+      onSubmit(optimizationType, optimizationStrength);
+      
+      // Start polling if we have the necessary data
+      if (apiUrl && authToken && modelId) {
+        try {
+          await pollUntilComplete(modelId, parseInt(optimizationStrength));
+        } catch (error) {
+          console.error("Polling error:", error);
+          setPollingStatus("❌ Optimization failed");
+        } finally {
+          setIsPolling(false);
+          setTimeout(() => setPollingStatus(""), 3000);
+        }
+      }
+    }
+  };
+
+  const isFormDisabled = !optimizationType || !optimizationStrength || isLoading || isPolling;
 
   return (
     <div className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-border">
       <h3 className="text-sm font-semibold text-foreground">Configure Optimization Settings</h3>
+      
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-sm">Optimization Type</Label>
-          <Select value={optimizationType} onValueChange={setOptimizationType}>
+          <Select value={optimizationType} onValueChange={setOptimizationType} disabled={isPolling}>
             <SelectTrigger>
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
@@ -143,7 +227,7 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading }: Optimiz
           <Select 
             value={optimizationStrength} 
             onValueChange={setOptimizationStrength}
-            disabled={!optimizationType}
+            disabled={!optimizationType || isPolling}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select strength" />
@@ -161,18 +245,29 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading }: Optimiz
         </div>
       </div>
 
+      {pollingStatus && (
+        <Alert className="bg-primary/10 border-primary/20">
+          <div className="flex items-center gap-2">
+            {isPolling && <Loader2 className="h-4 w-4 animate-spin" />}
+            <AlertDescription className="text-sm">
+              {pollingStatus}
+            </AlertDescription>
+          </div>
+        </Alert>
+      )}
+
       <Button
         onClick={handleSubmit}
-        disabled={!optimizationType || !optimizationStrength || isLoading}
+        disabled={isFormDisabled}
         className="w-full"
       >
-        {isLoading ? (
+        {isLoading || isPolling ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Optimizing...
+            Optimizing Model...
           </>
         ) : (
-          "Start Optimization"
+          "Optimize Model"
         )}
       </Button>
     </div>
