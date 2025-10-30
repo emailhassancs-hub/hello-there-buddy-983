@@ -342,15 +342,15 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         description: "Getting upload credentials",
       });
 
-      const signedUrlResponse = await fetch("http://localhost:8000/get-signed-url", {
+      const signedUrlResponse = await fetch(`${apiUrl}/api/model-optimization/get-signed-url`, {
         method: "POST",
-        mode: "cors",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify({
           model_name: filename,
-          access_token: authToken,
+          filename: filename,
         }),
       });
 
@@ -383,9 +383,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         description: "Registering your model for optimization",
       });
 
-      const completeResponse = await fetch(`http://localhost:8000/complete-upload/${asset_id}`, {
+      const completeResponse = await fetch(`${apiUrl}/api/model-optimization/complete-upload/${asset_id}`, {
         method: "GET",
-        mode: "cors",
         headers: {
           "Authorization": `Bearer ${authToken}`,
           "Content-Type": "application/json",

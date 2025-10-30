@@ -60,9 +60,9 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const { toast } = useToast();
 
-  const API = "http://localhost:8000";
   const apiUrl = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
-
+  const API = apiUrl;
+ 
   // Token capture from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -73,7 +73,7 @@ const Index = () => {
       // Store globally for child components
       (window as any).authToken = token;
       
-      fetch("http://localhost:8000/store-token", {
+      fetch(`${apiUrl}/store-token`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -624,7 +624,7 @@ The process:
         currentSessionId={sessionId}
         onSelectSession={handleLoadSession}
         onNewChat={handleNewChat}
-        apiUrl={API}
+        apiUrl={apiUrl}
       />
       
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
@@ -669,7 +669,7 @@ The process:
               </TabsList>
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
-                <ImageViewer apiUrl={API} refreshTrigger={imageRefreshTrigger} />
+                <ImageViewer apiUrl={apiUrl} refreshTrigger={imageRefreshTrigger} />
               </TabsContent>
               
               <TabsContent value="models" className="flex-1 m-0 overflow-hidden">
@@ -677,7 +677,7 @@ The process:
                   <div className="p-4 border-b flex justify-between items-center">
                     <h3 className="text-lg font-semibold">3D Models</h3>
                     <ModelUploader 
-                      apiUrl={API} 
+                      apiUrl={apiUrl} 
                       authToken={authToken || ''} 
                       onUploadComplete={(assetId) => {
                         console.log("Upload complete, asset ID:", assetId);
@@ -689,7 +689,7 @@ The process:
                     />
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <ModelViewer apiUrl={API} selectedModel={selectedModel} />
+                    <ModelViewer apiUrl={apiUrl} selectedModel={selectedModel} />
                   </div>
                 </div>
               </TabsContent>
