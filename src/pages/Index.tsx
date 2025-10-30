@@ -61,6 +61,7 @@ const Index = () => {
   const { toast } = useToast();
 
   const API = "http://localhost:8000";
+  const apiUrl = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
 
   // Token capture from URL
   useEffect(() => {
@@ -419,7 +420,6 @@ const Index = () => {
     if (type === "model-selected") {
       // Fetch presets before showing optimization config form
       try {
-        const apiUrl = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
         const authToken = (window as any).authToken;
         
         const response = await fetch(`${apiUrl}/api/model-optimization/presets`, {
