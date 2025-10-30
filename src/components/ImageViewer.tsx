@@ -172,7 +172,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                     />
                   </div>
                   <div className="p-3 border-t border-border/50">
-                    <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words" title={image.name}>
+                    <p className="text-sm font-medium text-foreground line-clamp-2" title={image.name}>
                       {image.name}
                     </p>
                   </div>
