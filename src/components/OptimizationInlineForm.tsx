@@ -33,8 +33,6 @@ export const OptimizationInlineForm = ({
   onOptimizationComplete,
   onOptimizationError
 }: OptimizationInlineFormProps) => {
-  const [instanceKey] = useState(() => Date.now());
-  const [currentStep, setCurrentStep] = useState<"modelSelection" | "optimizationOptions">("modelSelection");
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [optimizationType, setOptimizationType] = useState<string>("");
@@ -87,21 +85,6 @@ export const OptimizationInlineForm = ({
     }
   };
 
-  const handleModelSelect = (modelId: string) => {
-    console.log("handleModelSelect called → modelId:", modelId);
-    
-    if (modelId === "upload_new") {
-      document.getElementById('model-file-input')?.click();
-      return;
-    }
-    
-    setSelectedModel(modelId);
-    console.log("currentStep changing to → optimizationOptions");
-    setCurrentStep("optimizationOptions");
-  };
-
-  console.log("OptimizationInlineForm rendering, currentStep:", currentStep);
-
   const handleOptimize = async () => {
     if (!selectedModel || !optimizationType || !optimizationStrength) {
       onOptimizationError("Please select all options");
@@ -117,46 +100,45 @@ export const OptimizationInlineForm = ({
     onOptimizationStart();
 
     try {
-      // Send structured message to /ask endpoint asking agent to invoke optimize_single_model_tool
-      const optimizationMessage = {
-        tool_call: "optimize_single_model_tool",
-        params: {
-          model_id: selectedModel,
-          preset_id: optimizationStrength,
-          export_name: `optimized_${Date.now()}`,
-          ACCESS_TOKEN: authToken
-        }
-      };
-
-      const response = await fetch(`${apiUrl}/ask`, {
+      const response = await fetch(`${apiUrl}/api/model-optimization/optimize/single`, {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${authToken}`
         },
         body: JSON.stringify({
-          message: `Please invoke the optimize_single_model_tool MCP function with these parameters: ${JSON.stringify(optimizationMessage.params)}`,
-          conversationId: `optimization_${Date.now()}`,
-          tool_call: optimizationMessage
+          model_id: selectedModel,
+          config: {
+            preset_id: optimizationStrength,
+            exportName: `optimized_${Date.now()}`
+          }
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Optimization request failed");
+        throw new Error(errorData.message || "Optimization failed");
       }
 
-      const data = await response.json();
-      
-      // The agent should return the optimization result
-      if (data.response) {
-        onOptimizationComplete({
-          message: data.response,
-          modelId: selectedModel,
-          presetId: optimizationStrength
-        });
+      // Wait for optimization to process
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      // Fetch the optimized model result
+      const resultResponse = await fetch(`${apiUrl}/api/model-optimization/models/${selectedModel}/associated`, {
+        headers: {
+          "Authorization": `Bearer ${authToken}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!resultResponse.ok) throw new Error("Failed to fetch optimization result");
+
+      const resultData = await resultResponse.json();
+
+      if (resultData.models && resultData.models.length > 0) {
+        onOptimizationComplete(resultData.models[0]);
       } else {
-        throw new Error("No response from agent");
+        throw new Error("No optimization results found");
       }
     } catch (error) {
       console.error("Optimization failed:", error);
@@ -166,9 +148,8 @@ export const OptimizationInlineForm = ({
     }
   };
 
-
   return (
-    <div key={instanceKey} className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-border mt-3">
+    <div className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-border mt-3">
       <h3 className="text-sm font-semibold text-foreground">Model Optimization Settings</h3>
       
       {isFetchingModels ? (
@@ -177,95 +158,73 @@ export const OptimizationInlineForm = ({
         </div>
       ) : (
         <div className="grid gap-4">
-          {/* Step 1: Model Selection */}
-          {currentStep === "modelSelection" && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-sm">Select Model</Label>
-                <Select value={selectedModel} onValueChange={handleModelSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map((model) => (
-                      <SelectItem key={model.id} value={model.id.toString()}>
-                        {model.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="upload_new">+ Upload new model for optimization</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label className="text-sm">Select Model</Label>
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a model" />
+              </SelectTrigger>
+              <SelectContent>
+                {models.map((model) => (
+                  <SelectItem key={model.id} value={model.id.toString()}>
+                    {model.name}
+                  </SelectItem>
+                ))}
+                <SelectItem value="upload_new">+ Upload new model for optimization</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Step 2: Optimization Options */}
-          {currentStep === "optimizationOptions" && (
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground mb-2">
-                Selected Model ID: <span className="font-medium text-foreground">{selectedModel}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCurrentStep("modelSelection")}
-                  className="ml-2 h-6 text-xs"
-                >
-                  Change
-                </Button>
-              </div>
+          <div className="space-y-2">
+            <Label className="text-sm">Optimization Type</Label>
+            <Select value={optimizationType} onValueChange={setOptimizationType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {OPTIMIZATION_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm">Optimization Type</Label>
-                <Select value={optimizationType} onValueChange={setOptimizationType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {OPTIMIZATION_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="space-y-2">
+            <Label className="text-sm">Optimization Strength</Label>
+            <Select 
+              value={optimizationStrength} 
+              onValueChange={setOptimizationStrength}
+              disabled={!optimizationType}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select strength" />
+              </SelectTrigger>
+              <SelectContent>
+                {optimizationType && presets[optimizationType]?.map((preset) => (
+                  <SelectItem key={preset.id} value={preset.id}>
+                    {preset.text}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm">Optimization Strength</Label>
-                <Select 
-                  value={optimizationStrength} 
-                  onValueChange={setOptimizationStrength}
-                  disabled={!optimizationType}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select strength" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {optimizationType && presets[optimizationType]?.map((preset) => (
-                      <SelectItem key={preset.id} value={preset.id}>
-                        {preset.text}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                onClick={handleOptimize}
-                disabled={!optimizationType || !optimizationStrength || isLoading}
-                className="w-full"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  "Optimize Model"
-                )}
-              </Button>
-            </div>
-          )}
+          <Button
+            onClick={handleOptimize}
+            disabled={!selectedModel || !optimizationType || !optimizationStrength || isLoading}
+            className="w-full"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Optimize Model"
+            )}
+          </Button>
         </div>
       )}
     </div>
