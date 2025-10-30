@@ -489,7 +489,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                                 onClick={() => setZoomedImage(parsed.img_url)}
                               />
                               {parsed.prompt && (
-                                <p className="text-xs text-muted-foreground italic">{parsed.prompt}</p>
+                                <p className="text-xs text-muted-foreground italic whitespace-pre-wrap break-words">{parsed.prompt}</p>
                               )}
                             </div>
                           );
@@ -559,8 +559,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
               </div>
             )}
 
-            {/* Inline confirmation UI */}
-            {message.status === "awaiting_confirmation" && message.toolCalls && (
+            {/* Inline confirmation UI - only show for the last message with awaiting_confirmation */}
+            {message.status === "awaiting_confirmation" && message.toolCalls && index === messages.length - 1 && (
               <div className="flex justify-start mt-4">
                 <div className="max-w-[85%] mr-4">
                   <div className="bg-accent/10 border-2 border-accent rounded-2xl p-5 shadow-soft space-y-4">
