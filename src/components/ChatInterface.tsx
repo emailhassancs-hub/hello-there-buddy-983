@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Wrench, Box } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import TypewriterText from "./TypewriterText";
@@ -46,6 +46,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modelFileInputRef = useRef<HTMLInputElement>(null);
   const [editedArgs, setEditedArgs] = useState<Record<string, Record<string, any>>>({});
   const [showRawJson, setShowRawJson] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -310,6 +311,102 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
   const triggerFileUpload = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleModelOptimization = async (file: File) => {
+    try {
+      const authToken = (window as any).authToken;
+      
+      if (!authToken) {
+        toast({
+          title: "Authentication required",
+          description: "Please authenticate first to upload models.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Extract model name from filename (without extension)
+      const modelName = file.name.replace(/\.[^/.]+$/, "");
+      const filename = file.name;
+
+      // Step 1: Get signed URL
+      toast({
+        title: "Preparing upload...",
+        description: "Getting upload credentials",
+      });
+
+      const signedUrlResponse = await fetch(`${apiUrl}/api/model-optimization/get-signed-url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          model_name: modelName,
+          filename: filename,
+        }),
+      });
+
+      if (!signedUrlResponse.ok) {
+        throw new Error("Failed to get signed URL");
+      }
+
+      const { s3_upload_url, asset_id } = await signedUrlResponse.json();
+
+      // Step 2: Upload to S3
+      toast({
+        title: "Uploading...",
+        description: "Uploading your model to storage",
+      });
+
+      const uploadResponse = await fetch(s3_upload_url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload model to S3");
+      }
+
+      // Step 3: Complete upload/register model
+      toast({
+        title: "Registering...",
+        description: "Registering your model for optimization",
+      });
+
+      const completeResponse = await fetch(`${apiUrl}/api/model-optimization/complete-upload/${asset_id}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!completeResponse.ok) {
+        throw new Error("Model registration failed");
+      }
+
+      const result = await completeResponse.json();
+
+      toast({
+        title: "Success!",
+        description: "Your model has been uploaded and registered for optimization.",
+      });
+
+      console.log("Model registered successfully:", result);
+    } catch (error) {
+      console.error("Model optimization error:", error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload model",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const triggerModelUpload = () => {
+    modelFileInputRef.current?.click();
   };
 
   return (
@@ -684,6 +781,20 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           className="hidden"
         />
         
+        <input
+          ref={modelFileInputRef}
+          type="file"
+          accept=".glb,.fbx,.obj,.gltf"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              handleModelOptimization(file);
+            }
+            e.target.value = '';
+          }}
+          className="hidden"
+        />
+        
         {/* Image thumbnails */}
         {uploadedImages.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
@@ -727,6 +838,25 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
               <DropdownMenuItem>
                 <FileText className="w-4 h-4 mr-2" />
                 Upload Episode
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Tools button (next to Plus) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
+              >
+                <Wrench className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuItem onClick={triggerModelUpload}>
+                <Box className="w-4 h-4 mr-2" />
+                Model Optimization
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
