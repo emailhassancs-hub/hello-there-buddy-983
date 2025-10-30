@@ -489,7 +489,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                                 onClick={() => setZoomedImage(parsed.img_url)}
                               />
                               {parsed.prompt && (
-                                <p className="text-xs text-muted-foreground italic">{parsed.prompt}</p>
+                                <p className="text-xs text-muted-foreground italic whitespace-pre-wrap break-words">{parsed.prompt}</p>
                               )}
                             </div>
                           );
