@@ -25,34 +25,24 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
   const fetchImages = async () => {
     setIsLoading(true);
     try {
-      // Resolve auth token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      let authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
-
+      const authToken = (window as any).authToken;
+      
       if (!authToken) {
-        console.warn("No auth token available for image history request");
-        toast({
-          title: "Not authenticated",
-          description: "Missing access token. Launch the app with ?token=...",
-          variant: "destructive",
-        });
+        console.warn("No auth token available");
         setImages([]);
         setIsLoading(false);
         return;
       }
-
-      // Cache globally for other components
-      (window as any).authToken = authToken;
 
       const response = await fetch(
         "https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-generation/history?limit=50&offset=0",
         {
           method: "GET",
           headers: {
-            accept: "*/*",
-            Authorization: `Bearer ${authToken}`,
+            "accept": "*/*",
+            "Authorization": `Bearer ${authToken}`,
           },
-        },
+        }
       );
       
       if (!response.ok) {
@@ -66,7 +56,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       
       // Map the response to ImageItem format
       const mapped: ImageItem[] = imageList.map((item: any) => ({
-        name: item.prompt || item.id || 'generated-image.png',
+        name: item.prompt?.substring(0, 50) + '...' || item.id || 'generated-image.png',
         url: item.imagePath || item.img_url || '',
         timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
       })).filter((item: ImageItem) => item.url);
@@ -172,7 +162,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                     />
                   </div>
                   <div className="p-3 border-t border-border/50">
-                    <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words" title={image.name}>
+                    <p className="text-sm font-medium text-foreground truncate" title={image.name}>
                       {image.name}
                     </p>
                   </div>
@@ -203,7 +193,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                 />
               </div>
               <div className="p-4 border-t border-border/50 bg-card">
-                <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words">{selectedImage.name}</p>
+                <p className="text-sm font-medium text-foreground">{selectedImage.name}</p>
               </div>
             </div>
           )}
