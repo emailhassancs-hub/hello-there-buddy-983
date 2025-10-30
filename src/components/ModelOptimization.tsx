@@ -450,7 +450,7 @@ export default function ModelOptimization({ isActive = false }: { isActive?: boo
   const selectedModelData = models.find((m) => m.id === selectedModel)
 
   return (
-    <div className="min-h-screen bg-white text-black p-6">
+    <div className="h-full bg-white text-black p-6 overflow-y-auto hide-scrollbar">
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;

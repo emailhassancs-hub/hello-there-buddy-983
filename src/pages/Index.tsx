@@ -543,7 +543,7 @@ const Index = () => {
                 </div>
               </TabsContent>
               
-              <TabsContent value="optimization" className="flex-1 m-0 overflow-hidden">
+              <TabsContent value="optimization" className="flex-1 m-0 overflow-auto hide-scrollbar">
                 <ModelOptimization isActive={activeTab === "optimization"} />
               </TabsContent>
               
