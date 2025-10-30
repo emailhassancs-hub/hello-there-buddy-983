@@ -599,6 +599,7 @@ const Index = () => {
             apiUrl={API}
             onModelSelect={handleModelSelect}
             onImageGenerated={() => setImageRefreshTrigger(prev => prev + 1)}
+            onOptimizationFormSubmit={handleOptimizationFormSubmit}
           />
         </ResizablePanel>
 
