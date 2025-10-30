@@ -650,8 +650,21 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     <div className="mt-3">
                       <ModelSelectionForm
                         models={message.formData.models}
-                        onModelSelect={(modelId) => onOptimizationFormSubmit?.("model-selected", { modelId })}
-                        onUploadNew={() => onOptimizationFormSubmit?.("upload-new", {})}
+                        onModelSelect={(modelId) => {
+                          console.log("ModelSelectionForm onModelSelect called with:", modelId);
+                          console.log("onOptimizationFormSubmit exists?", !!onOptimizationFormSubmit);
+                          if (onOptimizationFormSubmit) {
+                            onOptimizationFormSubmit("model-selected", { modelId });
+                          } else {
+                            console.error("onOptimizationFormSubmit is not defined!");
+                          }
+                        }}
+                        onUploadNew={() => {
+                          console.log("Upload new clicked");
+                          if (onOptimizationFormSubmit) {
+                            onOptimizationFormSubmit("upload-new", {});
+                          }
+                        }}
                       />
                     </div>
                   )}

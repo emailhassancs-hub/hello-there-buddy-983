@@ -38,8 +38,12 @@ export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew }: Model
   const [selectedModel, setSelectedModel] = useState<number | null>(null);
 
   const handleConfirm = () => {
+    console.log("Confirm button clicked, selectedModel:", selectedModel);
     if (selectedModel) {
+      console.log("Calling onModelSelect with modelId:", selectedModel);
       onModelSelect(selectedModel);
+    } else {
+      console.log("No model selected");
     }
   };
 
