@@ -141,14 +141,28 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
       const params = new URLSearchParams(window.location.search);
       const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
       
+      console.log('🔑 Auth token found:', authToken ? 'YES' : 'NO');
+      
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${apiUrl}/api/model-generation-3d/user-history`, { headers });
-      if (!response.ok) throw new Error("Failed to load models");
+      const apiEndpoint = `${apiUrl}/api/model-generation-3d/user-history`;
+      console.log('📡 Fetching from:', apiEndpoint);
+
+      const response = await fetch(apiEndpoint, { 
+        headers,
+        method: 'GET'
+      });
+      
+      console.log('📊 Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load models: ${response.status} ${response.statusText}`);
+      }
       
       const data = await response.json();
+      console.log('✅ Data received:', data);
       
       // Transform API response to match ModelData interface
       const transformedModels: ModelData[] = (data.items || [])
@@ -183,10 +197,10 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
       
       setModels(transformedModels);
     } catch (error) {
-      console.error("Error loading models:", error);
+      console.error("❌ Error loading models:", error);
       toast({
         title: "Load Failed",
-        description: "Unable to load 3D models",
+        description: error instanceof Error ? error.message : "Unable to load 3D models",
         variant: "destructive",
       });
     }
