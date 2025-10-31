@@ -462,14 +462,56 @@ const Index = () => {
       // Display friendly message to user
       handleAddDirectMessage("assistant", "Agent working on Optimization");
       
-      // Send instruction to agent via normal chat flow (not displayed)
+      // Send instruction to agent silently (not displayed in chat)
       const agentInstruction = `Invoke the tool 'optimize_single_model_tool' using the following parameters: ${JSON.stringify(payload)}`;
       
       // Show optimizing status
       handleAddDirectMessage("assistant", "🔧 Optimizing your model...");
       
-      // Send to /ask endpoint through normal message handler
-      await handleSendMessage(agentInstruction);
+      // Send to backend silently without displaying in chat
+      try {
+        const requestPayload: any = {
+          query: agentInstruction,
+        };
+        
+        if (sessionId) {
+          requestPayload.session_id = sessionId;
+        }
+
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        };
+        
+        if (authToken) {
+          headers["Authorization"] = `Bearer ${authToken}`;
+        }
+
+        const response = await fetch(`${API}/ask`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(requestPayload),
+        });
+
+        const responseData = await response.json();
+
+        // Update session ID if provided
+        if (responseData.session_id) {
+          updateSessionId(responseData.session_id);
+        }
+
+        // Append any messages from the backend
+        if (responseData.messages && Array.isArray(responseData.messages)) {
+          const newMessages = responseData.messages.map((msg: any) => ({
+            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
+            text: msg.content || "",
+            toolName: msg.type === "tool" ? msg.name : undefined,
+          }));
+          setMessages((prev) => [...prev, ...newMessages]);
+        }
+      } catch (error) {
+        console.error("Error sending optimization instruction:", error);
+        handleAddDirectMessage("assistant", "❌ Failed to start optimization. Please try again.");
+      }
     } else if (type === "optimization-started") {
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
     } else if (type === "optimization-complete") {
