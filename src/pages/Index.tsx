@@ -459,11 +459,10 @@ const Index = () => {
         modelId: modelId
       };
       
-      // Display the payload as a user message in the chat
-      const payloadMessage = `Optimize model with these parameters:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``;
-      handleAddDirectMessage("user", payloadMessage);
+      // Display friendly message to user
+      handleAddDirectMessage("user", "Invoking the Optimization method using right parameters for model optimization");
       
-      // Send instruction to agent via normal chat flow
+      // Send instruction to agent via normal chat flow (not displayed)
       const agentInstruction = `Invoke the tool 'optimize_single_model_tool' using the following parameters: ${JSON.stringify(payload)}`;
       
       // Show optimizing status
