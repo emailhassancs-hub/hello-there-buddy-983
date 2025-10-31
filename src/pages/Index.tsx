@@ -421,9 +421,7 @@ const Index = () => {
     if (type === "model-selected") {
       // Fetch presets before showing optimization config form
       try {
-        const authToken = (window as any).authToken;
-        
-        const response = await fetch(`${apiUrl}/api/model-optimization/presets`, {
+        const response = await fetch(`https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/model-optimization/presets`, {
           headers: {
             "Authorization": authToken ? `Bearer ${authToken}` : "",
             "Content-Type": "application/json"
@@ -453,7 +451,7 @@ const Index = () => {
       // Find the preset text for the selected strength
       const presetText = presets?.presets?.[optType]?.find((p: any) => p.id === strength)?.text || strength;
       
-      // Transform to correct payload format
+      // Build the payload
       const payload = {
         optimization_type: optType,
         presetId: strength,
@@ -461,30 +459,18 @@ const Index = () => {
         modelId: modelId
       };
       
-      handleAddDirectMessage("assistant", "Optimizing the model…");
+      // Display the payload as a user message in the chat
+      const payloadMessage = `Optimize model with these parameters:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``;
+      handleAddDirectMessage("user", payloadMessage);
       
-      // Send to /ask endpoint to invoke the agent with optimize_single_model_tool
-      try {
-        const agentMessage = `Invoke the tool 'optimize_single_model_tool' using the following payload:\n\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``;
-        
-        const response = await fetch('http://localhost:8000/ask', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message: agentMessage })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Agent request failed: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        handleAddDirectMessage("assistant", data.message || "✅ Optimization completed successfully!");
-      } catch (error) {
-        console.error("Optimization error:", error);
-        handleAddDirectMessage("assistant", `❌ Optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
+      // Send instruction to agent via normal chat flow
+      const agentInstruction = `Invoke the tool 'optimize_single_model_tool' using the following parameters: ${JSON.stringify(payload)}`;
+      
+      // Show optimizing status
+      handleAddDirectMessage("assistant", "🔧 Optimizing your model...");
+      
+      // Send to /ask endpoint through normal message handler
+      await handleSendMessage(agentInstruction);
     } else if (type === "optimization-started") {
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
     } else if (type === "optimization-complete") {
