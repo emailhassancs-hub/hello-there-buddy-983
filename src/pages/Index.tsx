@@ -463,16 +463,24 @@ const Index = () => {
       
       handleAddDirectMessage("assistant", "Optimizing the model…");
       
-      // Send to /ask endpoint as a simple JSON string
+      // Send to /ask endpoint to invoke the agent with optimize_single_model_tool
       try {
-        const message = JSON.stringify(payload);
+        const agentMessage = `Invoke the tool 'optimize_single_model_tool' using the following payload:\n\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``;
         
-        const response = await apiFetch<any>('/ask', {
+        const response = await fetch('http://localhost:8000/ask', {
           method: 'POST',
-          body: { message: message }
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: agentMessage })
         });
         
-        handleAddDirectMessage("assistant", response.message || "✅ Optimization completed successfully!");
+        if (!response.ok) {
+          throw new Error(`Agent request failed: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        handleAddDirectMessage("assistant", data.message || "✅ Optimization completed successfully!");
       } catch (error) {
         console.error("Optimization error:", error);
         handleAddDirectMessage("assistant", `❌ Optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
