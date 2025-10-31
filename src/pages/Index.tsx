@@ -445,6 +445,16 @@ const Index = () => {
           variant: "destructive"
         });
       }
+    } else if (type === "start-optimization") {
+      // User submitted the optimization config form
+      const { type: optType, strength, modelId } = data;
+      
+      // Display what was selected
+      handleAddDirectMessage("user", `Starting optimization:\n- Type: ${optType}\n- Strength: ${strength}\n- Model ID: ${modelId}`);
+      handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
+      
+      // TODO: Actually trigger the optimization API call here
+      // For now, this is handled by the OptimizationConfigForm's internal polling
     } else if (type === "optimization-started") {
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
     } else if (type === "optimization-complete") {
