@@ -459,39 +459,18 @@ const Index = () => {
         modelId: modelId
       };
       
-      // Display user-friendly messages
-      handleAddDirectMessage("user", "Got your optimization parameters for starting the process");
-      handleAddDirectMessage("assistant", "Invoking the Optimization method using right parameters for model optimization");
+      // Display the payload as a user message in the chat
+      const payloadMessage = `Optimize model with these parameters:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``;
+      handleAddDirectMessage("user", payloadMessage);
       
-      // Send instruction to agent
+      // Send instruction to agent via normal chat flow
       const agentInstruction = `Invoke the tool 'optimize_single_model_tool' using the following parameters: ${JSON.stringify(payload)}`;
       
-      // Make API call directly without adding instruction to chat
-      try {
-        const response = await fetch(`${apiUrl}/ask`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query: agentInstruction })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Optimization request failed: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        // Display only user-friendly response, filter out raw tool results
-        if (data.response && !data.response.includes('Tool result:')) {
-          handleAddDirectMessage("assistant", data.response);
-        } else {
-          handleAddDirectMessage("assistant", "✅ Optimization completed successfully!");
-        }
-      } catch (error) {
-        console.error("Optimization error:", error);
-        handleAddDirectMessage("assistant", `❌ Optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
+      // Show optimizing status
+      handleAddDirectMessage("assistant", "🔧 Optimizing your model...");
+      
+      // Send to /ask endpoint through normal message handler
+      await handleSendMessage(agentInstruction);
     } else if (type === "optimization-started") {
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
     } else if (type === "optimization-complete") {
