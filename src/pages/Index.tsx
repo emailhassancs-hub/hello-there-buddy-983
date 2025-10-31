@@ -61,7 +61,7 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const { toast } = useToast();
 
-  const apiUrl = "http://localhost:8000";
+  const apiUrl = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
   const API = apiUrl;
  
   // Token capture from URL
@@ -461,25 +461,18 @@ const Index = () => {
         modelId: modelId
       };
       
-      // Show optimizing notice as a user/system message (not agent)
-      handleAddDirectMessage("user", "Optimizing the model…");
+      handleAddDirectMessage("assistant", "Optimizing the model…");
       
+      // Send to /ask endpoint to invoke the agent with optimize_single_model_tool
       try {
         const agentMessage = `Invoke the tool 'optimize_single_model_tool' using the following payload:\n\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``;
         
-        const headers: HeadersInit = { "Content-Type": "application/json" };
-        if (authToken) {
-          headers["Authorization"] = `Bearer ${authToken}`;
-        }
-        const askBody: any = { query: agentMessage };
-        if (sessionId) {
-          askBody.session_id = sessionId;
-        }
-
         const response = await fetch('http://localhost:8000/ask', {
           method: 'POST',
-          headers,
-          body: JSON.stringify(askBody)
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: agentMessage })
         });
         
         if (!response.ok) {
@@ -487,14 +480,7 @@ const Index = () => {
         }
         
         const data = await response.json();
-        
-        // Display the agent output as the assistant reply
-        if (data?.messages && Array.isArray(data.messages)) {
-          const lastAi = data.messages.filter((m: any) => m.type === 'ai').pop();
-          handleAddDirectMessage("assistant", lastAi?.content || data.response || data.message || "✅ Optimization request sent.");
-        } else {
-          handleAddDirectMessage("assistant", data.response || data.message || "✅ Optimization request sent.");
-        }
+        handleAddDirectMessage("assistant", data.message || "✅ Optimization completed successfully!");
       } catch (error) {
         console.error("Optimization error:", error);
         handleAddDirectMessage("assistant", `❌ Optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -536,52 +522,53 @@ The process:
       // Show simple user message first
       handleAddDirectMessage("user", "Model optimization invoked.");
       
-      // Send system prompt to backend and then show model selection form
+      // Send system prompt to backend and get response
       try {
+        const payload: any = {
+          query: systemPrompt,
+        };
+        
+        if (sessionId) {
+          payload.session_id = sessionId;
+        }
+
         const headers: HeadersInit = {
           "Content-Type": "application/json",
         };
+        
         if (authToken) {
           headers["Authorization"] = `Bearer ${authToken}`;
         }
-        
-        // Send guidance prompt to the agent via localhost
-        const response = await fetch('http://localhost:8000/ask', {
+
+        const response = await fetch(`${API}/ask`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ message: systemPrompt }),
+          body: JSON.stringify(payload),
         });
-        
+
         const data = await response.json();
-        
-        // Show agent's response (if any)
-        if (data?.messages && Array.isArray(data.messages)) {
+
+        // Update session ID if provided
+        if (data.session_id) {
+          updateSessionId(data.session_id);
+        }
+
+        // Show agent's response
+        if (data.messages && Array.isArray(data.messages)) {
           const assistantMessages = data.messages.filter((msg: any) => msg.type === "ai");
           if (assistantMessages.length > 0) {
             const lastAssistantMsg = assistantMessages[assistantMessages.length - 1];
-            handleAddDirectMessage("assistant", lastAssistantMsg.content || "");
+            handleAddDirectMessage("assistant", lastAssistantMsg.content || "", "optimization-inline");
           }
-        } else if (data?.response) {
-          handleAddDirectMessage("assistant", data.response);
+        } else if (data.response) {
+          handleAddDirectMessage("assistant", data.response, "optimization-inline");
+        } else {
+          // Fallback if no response from backend
+          handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
         }
-        
-        // Fetch available models and render the selection form
-        const modelsRes = await fetch(`${apiUrl}/api/model-optimization/models?page=1&per_page=10`, {
-          headers,
-        });
-        const modelsJson = await modelsRes.json().catch(() => ({ models: [] }));
-        const models = (modelsJson.models || []).map((m: any) => ({
-          id: parseInt(m.assetId),
-          name: m.fileName,
-          image: m.thumbnailUrl || "/placeholder.svg?height=100&width=100",
-          creationDate: new Date(m.createdAt).toLocaleDateString(),
-        }));
-        
-        handleAddDirectMessage("assistant", "", "model-selection", { models });
       } catch (error) {
-        console.error("Error initializing optimization flow:", error);
-        // Fallback: show empty selection
-        handleAddDirectMessage("assistant", "", "model-selection", { models: [] });
+        console.error("Error fetching optimization guide:", error);
+        handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
       }
     }
   };
