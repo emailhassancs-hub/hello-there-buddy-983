@@ -69,10 +69,11 @@ const Index = () => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
     if (token) {
-      console.log("🔑 Token captured:", token);
+      console.log("🔑 Token captured from URL:", token);
       setAuthToken(token);
-      // Store globally for child components
+      // Store globally for child components and API calls
       (window as any).authToken = token;
+      localStorage.setItem("auth_token", token);
       
       fetch(`${apiUrl}/store-token`, {
         method: "POST",
@@ -83,10 +84,18 @@ const Index = () => {
         body: JSON.stringify({ token }),
       })
         .then(res => res.json())
-        .then(data => console.log("✅ Token sent successfully:", data))
-        .catch(err => console.error("❌ Error sending token:", err));
+        .then(data => console.log("✅ Token stored successfully on backend:", data))
+        .catch(err => console.error("❌ Error storing token on backend:", err));
     } else {
-      console.warn("⚠️ No token found in URL");
+      // Try to load from localStorage or window as fallback
+      const storedToken = localStorage.getItem("auth_token") || (window as any).authToken;
+      if (storedToken) {
+        console.log("🔑 Token loaded from storage:", storedToken);
+        setAuthToken(storedToken);
+        (window as any).authToken = storedToken;
+      } else {
+        console.warn("⚠️ No token found in URL or storage");
+      }
     }
   }, []);
 
@@ -421,9 +430,13 @@ const Index = () => {
     if (type === "model-selected") {
       // Fetch presets before showing optimization config form
       try {
+        // Get the latest token from URL, window, or localStorage
+        const params = new URLSearchParams(window.location.search);
+        const currentToken = params.get("token") || authToken || (window as any).authToken || localStorage.getItem("auth_token");
+        
         const response = await fetch(`https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/model-optimization/presets`, {
           headers: {
-            "Authorization": authToken ? `Bearer ${authToken}` : "",
+            "Authorization": currentToken ? `Bearer ${currentToken}` : "",
             "Content-Type": "application/json"
           }
         });

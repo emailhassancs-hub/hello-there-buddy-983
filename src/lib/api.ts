@@ -9,7 +9,9 @@ export async function apiFetch<T>(
     headers?: Record<string, string>;
   }
 ): Promise<T> {
-  const authToken = (window as any).authToken;
+  // Get access token from URL first, then window, then localStorage
+  const params = new URLSearchParams(window.location.search);
+  const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
   
   const config: RequestInit = {
     method: options?.method || "GET",

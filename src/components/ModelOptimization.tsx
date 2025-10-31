@@ -278,7 +278,10 @@ Be friendly and instructive. Use short explanations and examples where needed.`
     // Step 2: Send the actual system prompt to backend silently
     try {
       const API_URL = "http://localhost:8000";
-      const authToken = (window as any).authToken;
+      // Get access token from URL first, then window, then localStorage
+      const params = new URLSearchParams(window.location.search);
+      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      
       const headers: HeadersInit = {
         "Content-Type": "application/json",
       };

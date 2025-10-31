@@ -37,10 +37,13 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const fetchSessions = async () => {
     setIsLoading(true);
     try {
+      // Get access token from URL first, then window, then localStorage
+      const params = new URLSearchParams(window.location.search);
+      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      
       const headers: HeadersInit = {
         "Content-Type": "application/json",
       };
-      const authToken = (window as any).authToken;
       
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
@@ -102,10 +105,13 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     }
 
     try {
+      // Get access token from URL first, then window, then localStorage
+      const params = new URLSearchParams(window.location.search);
+      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      
       const headers: HeadersInit = {
         "Content-Type": "application/json",
       };
-      const authToken = (window as any).authToken;
       
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
