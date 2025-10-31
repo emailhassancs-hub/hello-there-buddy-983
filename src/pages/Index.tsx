@@ -186,11 +186,19 @@ const Index = () => {
 
       // Append any messages from the backend
       if (data.messages && Array.isArray(data.messages)) {
-        const newMessages = data.messages.map((msg: any) => ({
-          role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
-          text: msg.content || "",
-          toolName: msg.type === "tool" ? msg.name : undefined,
-        }));
+        const newMessages = data.messages
+          .filter((msg: any) => {
+            // Filter out tool result messages from optimize_single_3d_model_tool
+            if (msg.type === "tool" && msg.name === "optimize_single_3d_model_tool") {
+              return false;
+            }
+            return true;
+          })
+          .map((msg: any) => ({
+            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
+            text: msg.content || "",
+            toolName: msg.type === "tool" ? msg.name : undefined,
+          }));
         setMessages((prev) => [...prev, ...newMessages]);
       }
 
