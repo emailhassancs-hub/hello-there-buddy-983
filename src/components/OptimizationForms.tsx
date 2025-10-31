@@ -208,7 +208,14 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, a
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-sm">Optimization Type</Label>
-          <Select value={optimizationType} onValueChange={setOptimizationType} disabled={isPolling}>
+          <Select 
+            value={optimizationType} 
+            onValueChange={(value) => {
+              setOptimizationType(value);
+              setOptimizationStrength(""); // reset strength when type changes
+            }} 
+            disabled={isPolling}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
@@ -230,13 +237,15 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, a
             disabled={!optimizationType || isPolling}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select strength" />
+              <SelectValue placeholder={
+                optimizationType ? "Select strength" : "Select optimization type first"
+              } />
             </SelectTrigger>
             <SelectContent>
               {optimizationType && 
-                presets.presets[optimizationType]?.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    {option.text}
+                presets.presets[optimizationType]?.map((preset) => (
+                  <SelectItem key={preset.id} value={preset.id}>
+                    {preset.text}
                   </SelectItem>
                 ))
               }
