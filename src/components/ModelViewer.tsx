@@ -13,17 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 
 interface ModelData {
-  id: string;
   workflow: string;
   filename: string;
   name: string;
   type: string;
   modelUrl: string;
   thumbnailUrl?: string;
-  prompt?: string;
-  status: string;
-  creditsUsed?: number;
-  createdAt?: string;
 }
 
 interface ModelViewerProps {
@@ -136,71 +131,22 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
       const headers: HeadersInit = {
         "Content-Type": "application/json",
       };
-      
-      // Get access token from URL, window, or localStorage
-      const params = new URLSearchParams(window.location.search);
-      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
-      
-      console.log('🔑 Auth token found:', authToken ? 'YES' : 'NO');
+      const authToken = (window as any).authToken;
       
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const apiEndpoint = `${apiUrl}/api/model-generation-3d/user-history`;
-      console.log('📡 Fetching from:', apiEndpoint);
-
-      const response = await fetch(apiEndpoint, { 
-        headers,
-        method: 'GET'
-      });
-      
-      console.log('📊 Response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to load models: ${response.status} ${response.statusText}`);
-      }
+      const response = await fetch(`${apiUrl}/models`, { headers });
+      if (!response.ok) throw new Error("Failed to load models");
       
       const data = await response.json();
-      console.log('✅ Data received:', data);
-      
-      // Transform API response to match ModelData interface
-      const transformedModels: ModelData[] = (data.items || [])
-        .filter((item: any) => item.status === "COMPLETED") // Only show completed models
-        .map((item: any) => {
-          // Map generationType to workflow
-          const workflowMap: Record<string, string> = {
-            'TEXT_TO_3D': 'text_to_3d',
-            'IMAGE_TO_3D': 'image_to_3d',
-            'POST_PROCESS': 'post_processing'
-          };
-          
-          // Extract file extension from modelPath
-          const modelPath = item.modelPath || '';
-          const fileExtension = modelPath.toLowerCase().endsWith('.glb') ? '.glb' : 
-                              modelPath.toLowerCase().endsWith('.fbx') ? '.fbx' : '.gltf';
-          
-          return {
-            id: item.id,
-            workflow: workflowMap[item.generationType] || 'text_to_3d',
-            filename: modelPath.split('/').pop() || `model_${item.id}`,
-            name: item.prompt || `Model ${item.id.substring(0, 8)}`,
-            type: fileExtension,
-            modelUrl: item.modelPath,
-            thumbnailUrl: item.thumbnailPath,
-            prompt: item.prompt,
-            status: item.status,
-            creditsUsed: item.creditsUsed,
-            createdAt: item.createdAt
-          };
-        });
-      
-      setModels(transformedModels);
+      setModels(data.models || []);
     } catch (error) {
-      console.error("❌ Error loading models:", error);
+      console.error("Error loading models:", error);
       toast({
         title: "Load Failed",
-        description: error instanceof Error ? error.message : "Unable to load 3D models",
+        description: "Unable to load 3D models",
         variant: "destructive",
       });
     }
@@ -216,13 +162,11 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
 
   const getThumbnailUrl = (thumbnailUrl?: string) => {
     if (!thumbnailUrl) return null;
-    // API returns full URLs, use them directly
-    return thumbnailUrl.startsWith('http') ? thumbnailUrl : `${apiUrl}${thumbnailUrl}`;
+    return `${apiUrl}${thumbnailUrl}`;
   };
 
   const getModelUrl = (modelUrl: string) => {
-    // API returns full URLs, use them directly
-    return modelUrl.startsWith('http') ? modelUrl : `${apiUrl}${modelUrl}`;
+    return `${apiUrl}${modelUrl}`;
   };
 
   // Group models by workflow
