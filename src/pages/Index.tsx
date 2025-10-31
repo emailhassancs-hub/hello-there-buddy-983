@@ -467,10 +467,19 @@ const Index = () => {
       try {
         const agentMessage = `Invoke the tool 'optimize_single_model_tool' using the following payload:\n\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``;
         
+        const headers: HeadersInit = { "Content-Type": "application/json" };
+        if (authToken) {
+          headers["Authorization"] = `Bearer ${authToken}`;
+        }
+        const askBody: any = { query: agentMessage };
+        if (sessionId) {
+          askBody.session_id = sessionId;
+        }
+
         const response = await fetch('http://localhost:8000/ask', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: agentMessage })
+          headers,
+          body: JSON.stringify(askBody)
         });
         
         if (!response.ok) {
