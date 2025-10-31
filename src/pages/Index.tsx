@@ -61,7 +61,7 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const { toast } = useToast();
 
-  const apiUrl = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+  const apiUrl = "http://localhost:8000";
   const API = apiUrl;
  
   // Token capture from URL
