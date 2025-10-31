@@ -464,8 +464,13 @@ const Index = () => {
       // Find the preset text for the selected strength
       const presetText = presets?.presets?.[optType]?.find((p: any) => p.id === strength)?.text || strength;
       
-      // Build the payload
+      // Extract the ACCESS_TOKEN from URL, window, or localStorage
+      const params = new URLSearchParams(window.location.search);
+      const accessToken = params.get("token") || authToken || (window as any).authToken || localStorage.getItem("auth_token");
+      
+      // Build the payload with ACCESS_TOKEN
       const payload = {
+        ACCESS_TOKEN: accessToken,
         optimization_type: optType,
         presetId: strength,
         reduction_strength: presetText,
