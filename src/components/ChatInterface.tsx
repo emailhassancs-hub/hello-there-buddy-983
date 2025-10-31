@@ -674,7 +674,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     <div className="mt-3">
                       <OptimizationConfigForm
                         presets={message.formData.presets}
-                        onSubmit={(type, strength) => onOptimizationFormSubmit?.("start-optimization", { type, strength, modelId: message.formData.modelId })}
+                        onSubmit={(type, strength) => onOptimizationFormSubmit?.("start-optimization", { type, strength, modelId: message.formData.modelId, presets: message.formData.presets })}
                         isLoading={false}
                         apiUrl={apiUrl}
                         authToken={(window as any).authToken || null}

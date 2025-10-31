@@ -447,9 +447,20 @@ const Index = () => {
       }
     } else if (type === "start-optimization") {
       // User submitted the optimization config form
+      const { type: optType, strength, modelId, presets } = data;
       
-      // Display the actual JSON payload
-      handleAddDirectMessage("user", `Starting optimization with payload:\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``);
+      // Find the preset text for the selected strength
+      const presetText = presets?.presets?.[optType]?.find((p: any) => p.id === strength)?.text || strength;
+      
+      // Transform to correct payload format
+      const payload = {
+        optimization_type: optType,
+        presetId: strength,
+        reduction_strength: presetText,
+        modelId: modelId
+      };
+      
+      handleAddDirectMessage("user", `Starting optimization with payload:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``);
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
       
       // TODO: Actually trigger the optimization API call here
