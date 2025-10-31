@@ -145,7 +145,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${apiUrl}/model-generation-3d/user-history`, { headers });
+      const response = await fetch(`${apiUrl}/api/model-generation-3d/user-history`, { headers });
       if (!response.ok) throw new Error("Failed to load models");
       
       const data = await response.json();
