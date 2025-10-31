@@ -447,10 +447,9 @@ const Index = () => {
       }
     } else if (type === "start-optimization") {
       // User submitted the optimization config form
-      const { type: optType, strength, modelId } = data;
       
-      // Display what was selected
-      handleAddDirectMessage("user", `Starting optimization:\n- Type: ${optType}\n- Strength: ${strength}\n- Model ID: ${modelId}`);
+      // Display the actual JSON payload
+      handleAddDirectMessage("user", `Starting optimization with payload:\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``);
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
       
       // TODO: Actually trigger the optimization API call here
