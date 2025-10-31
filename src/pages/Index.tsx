@@ -460,7 +460,7 @@ const Index = () => {
       };
       
       // Display friendly message to user
-      handleAddDirectMessage("user", "Invoking the Optimization method using right parameters for model optimization");
+      handleAddDirectMessage("user", "Processing the optimization flow....");
       
       // Send instruction to agent via normal chat flow (not displayed)
       const agentInstruction = `Invoke the tool 'optimize_single_model_tool' using the following parameters: ${JSON.stringify(payload)}`;
