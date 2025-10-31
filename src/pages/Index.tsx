@@ -7,6 +7,7 @@ import ModelOptimization from "@/components/ModelOptimization";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { ModelUploader } from "@/components/ModelUploader";
+import { apiFetch } from "@/lib/api";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -461,10 +462,22 @@ const Index = () => {
       };
       
       handleAddDirectMessage("user", `Starting optimization with payload:\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``);
-      handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
+      handleAddDirectMessage("assistant", "🔧 Optimizing your model...");
       
-      // TODO: Actually trigger the optimization API call here
-      // For now, this is handled by the OptimizationConfigForm's internal polling
+      // Send to /ask endpoint to invoke the agent with optimize_single_model_tool
+      try {
+        const agentMessage = `Please use the optimize_single_model_tool to optimize the model with the following parameters: ${JSON.stringify(payload)}`;
+        
+        const response = await apiFetch<any>('/ask', {
+          method: 'POST',
+          body: { message: agentMessage }
+        });
+        
+        handleAddDirectMessage("assistant", response.message || "✅ Optimization completed successfully!");
+      } catch (error) {
+        console.error("Optimization error:", error);
+        handleAddDirectMessage("assistant", `❌ Optimization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     } else if (type === "optimization-started") {
       handleAddDirectMessage("assistant", "⏳ Optimization in progress, please wait…");
     } else if (type === "optimization-complete") {
