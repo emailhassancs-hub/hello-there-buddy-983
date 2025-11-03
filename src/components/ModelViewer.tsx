@@ -13,12 +13,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 
 interface ModelData {
-  workflow: string;
-  filename: string;
-  name: string;
-  type: string;
-  modelUrl: string;
+  id: string;
+  generationType: string;
+  status: "COMPLETED" | "PENDING" | "QUEUED";
+  modelUrl?: string;
   thumbnailUrl?: string;
+  prompt: string;
+  creditsUsed: number;
+  createdAt: string;
 }
 
 interface ModelViewerProps {
@@ -115,6 +117,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [cameraHeight, setCameraHeight] = useState([3]);
   const [bgColor, setBgColor] = useState("#e5e5e5");
   const [token, setToken] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"TEXT_TO_3D" | "IMAGE_TO_3D" | "POST_PROCESS">("TEXT_TO_3D");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -125,12 +128,14 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
 
   // Use external selected model if provided, otherwise use internal
   const selectedModel = externalSelectedModel ? {
-    workflow: externalSelectedModel.workflow,
-    filename: externalSelectedModel.modelUrl.split('/').pop() || '',
-    name: externalSelectedModel.modelUrl.split('/').pop()?.replace(/\.[^/.]+$/, '') || '',
-    type: externalSelectedModel.modelUrl.endsWith('.glb') ? '.glb' : '.fbx',
+    id: '',
+    generationType: externalSelectedModel.workflow.toUpperCase().replace('', '_') as any,
+    status: "COMPLETED" as const,
     modelUrl: externalSelectedModel.modelUrl,
-    thumbnailUrl: externalSelectedModel.thumbnailUrl
+    thumbnailUrl: externalSelectedModel.thumbnailUrl,
+    prompt: externalSelectedModel.modelUrl.split('/').pop()?.replace(/\.[^/.]+$/, '') || '',
+    creditsUsed: 0,
+    createdAt: new Date().toISOString()
   } : internalSelectedModel;
 
   const loadModels = async () => {
@@ -144,7 +149,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
     }
 
     try {
-      const response = await fetch(`${apiUrl}/models`, {
+      const response = await fetch(`${apiUrl}/model-history?limit=100&offset=0`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -153,7 +158,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
       if (!response.ok) throw new Error("Failed to load models");
       
       const data = await response.json();
-      setModels(data.models || []);
+      setModels(data.items || []);
     } catch (error) {
       console.error("Error loading models:", error);
       toast({
@@ -174,35 +179,21 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
     setLoadError(null);
   }, [selectedModel]);
 
-  const getThumbnailUrl = (thumbnailUrl?: string) => {
-    if (!thumbnailUrl) return null;
-    return `${apiUrl}${thumbnailUrl}`;
-  };
+  // Filter models by active tab
+  const filteredModels = models.filter(m => m.generationType === activeTab && m.status === "COMPLETED");
 
-  const getModelUrl = (modelUrl: string) => {
-    return `${apiUrl}${modelUrl}`;
-  };
-
-  // Group models by workflow
-  const groupedModels = models.reduce((acc, model) => {
-    if (!acc[model.workflow]) {
-      acc[model.workflow] = [];
-    }
-    acc[model.workflow].push(model);
-    return acc;
-  }, {} as Record<string, ModelData[]>);
-
-  const workflowTitles: Record<string, string> = {
-    text_to_3d: "🧱 Text to 3D Models",
-    image_to_3d: "🖼️ Image to 3D Models",
-    post_processing: "🧰 Post Processing Models"
+  const getModelType = (url?: string) => {
+    if (!url) return '.glb';
+    if (url.endsWith('.fbx')) return '.fbx';
+    if (url.endsWith('.gltf')) return '.gltf';
+    return '.glb';
   };
 
   return (
     <div className="flex flex-col h-full bg-background">
       {/* 3D Viewer - Top Section */}
       <div className="flex-1 flex flex-col" style={{ minHeight: '70%' }}>
-        {selectedModel ? (
+        {selectedModel && selectedModel.modelUrl ? (
           <div className="flex-1 relative bg-background">
             {loadError && (
               <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
@@ -307,8 +298,8 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
               
               <Suspense fallback={null}>
                 <Model 
-                  url={getModelUrl(selectedModel.modelUrl)} 
-                  type={selectedModel.type} 
+                  url={selectedModel.modelUrl} 
+                  type={getModelType(selectedModel.modelUrl)} 
                   onError={setLoadError} 
                 />
               </Suspense>
@@ -326,7 +317,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
         )}
       </div>
 
-      {/* Workflow Sections - Bottom Section with Tabs */}
+      {/* Category Tabs - Bottom Section */}
       <div className="border-t border-border/50 flex flex-col" style={{ height: '30%', maxHeight: '350px' }}>
         <div className="p-3 border-b border-border/50 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -343,161 +334,66 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
           </Button>
         </div>
 
-        <Tabs defaultValue="text_to_3d" className="flex-1 flex flex-col">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
           <TabsList className="mx-3 mt-2 w-auto gap-2">
-            <TabsTrigger value="text_to_3d" className="text-xs">
-              🧱 Text to 3D
+            <TabsTrigger value="TEXT_TO_3D" className="text-xs">
+              📝 Text to 3D
             </TabsTrigger>
-            <TabsTrigger value="image_to_3d" className="text-xs">
+            <TabsTrigger value="IMAGE_TO_3D" className="text-xs">
               🖼️ Image to 3D
             </TabsTrigger>
-            <TabsTrigger value="post_processing" className="text-xs">
+            <TabsTrigger value="POST_PROCESS" className="text-xs">
               🧰 Post Processing
             </TabsTrigger>
           </TabsList>
 
-          {models.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              No models available
-            </div>
-          ) : (
-            <>
-              <TabsContent value="text_to_3d" className="flex-1 mt-2">
-                <ScrollArea className="h-full">
-                  <div className="px-3 pb-3">
-                    {groupedModels.text_to_3d && groupedModels.text_to_3d.length > 0 ? (
-                      <div className="flex gap-2 flex-wrap">
-                        {groupedModels.text_to_3d.map((model) => (
-                          <div
-                            key={`${model.workflow}-${model.filename}`}
-                            className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
-                              selectedModel?.filename === model.filename && selectedModel?.workflow === model.workflow
-                                ? 'border-primary shadow-lg'
-                                : 'border-border'
-                            }`}
-                            onClick={() => setInternalSelectedModel(model)}
-                            style={{ width: '80px' }}
-                          >
-                            {model.thumbnailUrl ? (
-                              <img 
-                                src={getThumbnailUrl(model.thumbnailUrl) || ''} 
-                                alt={model.name}
-                                className="w-full h-20 object-cover rounded-t-md"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  {model.type.toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                            <div className="p-1.5">
-                              <p className="text-xs font-medium truncate">{model.name}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground text-sm">
-                        No text to 3D models available
-                      </div>
-                    )}
+          <TabsContent value={activeTab} className="flex-1 mt-2">
+            <ScrollArea className="h-full">
+              <div className="px-3 pb-3">
+                {filteredModels.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    No {activeTab === "TEXT_TO_3D" ? "text to 3D" : activeTab === "IMAGE_TO_3D" ? "image to 3D" : "post processing"} models available
                   </div>
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="image_to_3d" className="flex-1 mt-2">
-                <ScrollArea className="h-full">
-                  <div className="px-3 pb-3">
-                    {groupedModels.image_to_3d && groupedModels.image_to_3d.length > 0 ? (
-                      <div className="flex gap-2 flex-wrap">
-                        {groupedModels.image_to_3d.map((model) => (
-                          <div
-                            key={`${model.workflow}-${model.filename}`}
-                            className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
-                              selectedModel?.filename === model.filename && selectedModel?.workflow === model.workflow
-                                ? 'border-primary shadow-lg'
-                                : 'border-border'
-                            }`}
-                            onClick={() => setInternalSelectedModel(model)}
-                            style={{ width: '80px' }}
-                          >
-                            {model.thumbnailUrl ? (
-                              <img 
-                                src={getThumbnailUrl(model.thumbnailUrl) || ''} 
-                                alt={model.name}
-                                className="w-full h-20 object-cover rounded-t-md"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  {model.type.toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                            <div className="p-1.5">
-                              <p className="text-xs font-medium truncate">{model.name}</p>
-                            </div>
+                ) : (
+                  <div className="flex gap-2 flex-wrap">
+                    {filteredModels.map((model) => (
+                      <div
+                        key={model.id}
+                        className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
+                          selectedModel?.id === model.id
+                            ? 'border-primary shadow-lg'
+                            : 'border-border'
+                        }`}
+                        onClick={() => setInternalSelectedModel(model)}
+                        style={{ width: '80px' }}
+                      >
+                        {model.thumbnailUrl ? (
+                          <img 
+                            src={model.thumbnailUrl} 
+                            alt={model.prompt}
+                            className="w-full h-20 object-cover rounded-t-md"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {getModelType(model.modelUrl).toUpperCase()}
+                            </span>
                           </div>
-                        ))}
+                        )}
+                        <div className="p-1.5">
+                          <p className="text-xs font-medium truncate">{model.prompt}</p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground text-sm">
-                        No image to 3D models available
-                      </div>
-                    )}
+                    ))}
                   </div>
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="post_processing" className="flex-1 mt-2">
-                <ScrollArea className="h-full">
-                  <div className="px-3 pb-3">
-                    {groupedModels.post_processing && groupedModels.post_processing.length > 0 ? (
-                      <div className="flex gap-2 flex-wrap">
-                        {groupedModels.post_processing.map((model) => (
-                          <div
-                            key={`${model.workflow}-${model.filename}`}
-                            className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
-                              selectedModel?.filename === model.filename && selectedModel?.workflow === model.workflow
-                                ? 'border-primary shadow-lg'
-                                : 'border-border'
-                            }`}
-                            onClick={() => setInternalSelectedModel(model)}
-                            style={{ width: '80px' }}
-                          >
-                            {model.thumbnailUrl ? (
-                              <img 
-                                src={getThumbnailUrl(model.thumbnailUrl) || ''} 
-                                alt={model.name}
-                                className="w-full h-20 object-cover rounded-t-md"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  {model.type.toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                            <div className="p-1.5">
-                              <p className="text-xs font-medium truncate">{model.name}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground text-sm">
-                        No post processing models available
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            </>
-          )}
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
