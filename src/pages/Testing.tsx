@@ -77,61 +77,65 @@ function Testing() {
 
       {/* Stats */}
       {stats && (
-        <Card className="w-full max-w-2xl mb-6">
-          <CardHeader>
-            <CardTitle>Stats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Total Generations: {stats.totalGenerations || 0}</p>
-          </CardContent>
-        </Card>
+        <div className="bg-gradient-to-br from-primary/20 to-primary/10 backdrop-blur-sm rounded-full px-8 py-6 shadow-lg border border-primary/20 mb-8">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-1">Total Generations</p>
+            <p className="text-4xl font-bold text-primary">{stats.totalGenerations || 0}</p>
+          </div>
+        </div>
       )}
 
       {/* Models */}
       <section className="w-full max-w-5xl">
-        <h2 className="text-xl font-semibold mb-3">Completed Models</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <h2 className="text-xl font-semibold mb-6 text-center">Completed Models</h2>
+        <div className="flex flex-wrap gap-6 justify-center">
           {models.map((model: any) => (
-            <Card key={model.id} className="flex flex-col">
-              <CardContent className="p-3">
+            <div
+              key={model.id}
+              className="bg-card/80 backdrop-blur-sm rounded-3xl shadow-xl border border-border/50 p-4 hover:scale-105 transition-transform duration-300 w-64"
+            >
+              <div className="relative rounded-2xl overflow-hidden mb-3 aspect-square">
                 <img
                   src={model.thumbnailUrl}
                   alt="Thumbnail"
-                  className="rounded-lg h-40 object-cover mb-2 w-full"
+                  className="w-full h-full object-cover"
                 />
-                <p className="font-semibold text-sm">{model.name}</p>
-                <p className="text-xs text-muted-foreground">{model.type}</p>
-                <a
-                  href={model.modelUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary text-sm mt-2 inline-block hover:underline"
-                >
-                  View Model
-                </a>
-              </CardContent>
-            </Card>
+              </div>
+              <p className="font-semibold text-sm mb-1">{model.name}</p>
+              <p className="text-xs text-muted-foreground mb-3">{model.type}</p>
+              <a
+                href={model.modelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-full text-xs font-medium transition-colors"
+              >
+                View Model
+              </a>
+            </div>
           ))}
         </div>
       </section>
 
       {/* Thumbnails */}
-      <section className="w-full max-w-5xl mt-10">
-        <h2 className="text-xl font-semibold mb-3">Thumbnails</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <section className="w-full max-w-5xl mt-12">
+        <h2 className="text-xl font-semibold mb-6 text-center">Thumbnails</h2>
+        <div className="flex flex-wrap gap-4 justify-center">
           {thumbnails.map((thumb: any) => (
-            <Card key={thumb.id} className="flex flex-col items-center">
-              <CardContent className="p-2">
+            <div
+              key={thumb.id}
+              className="bg-card/80 backdrop-blur-sm rounded-full shadow-lg border border-border/50 p-3 hover:scale-110 transition-transform duration-300 w-40 h-40 flex flex-col items-center justify-center"
+            >
+              <div className="relative rounded-full overflow-hidden w-28 h-28 mb-2">
                 <img
                   src={thumb.path}
                   alt="Thumbnail"
-                  className="rounded-lg h-32 object-cover"
+                  className="w-full h-full object-cover"
                 />
-                <p className="text-xs text-muted-foreground mt-1 text-center truncate w-full">
-                  {thumb.prompt}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+              <p className="text-xs text-muted-foreground text-center truncate w-full px-2">
+                {thumb.prompt}
+              </p>
+            </div>
           ))}
         </div>
       </section>
