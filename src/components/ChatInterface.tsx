@@ -559,6 +559,45 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       return null;
                     }
 
+                    // Check if message is a plain URL (some tools return just the URL)
+                    const urlPattern = /^https?:\/\/.+/;
+                    if (urlPattern.test(message.text.trim())) {
+                      const ImageWithFallback = () => {
+                        const [hasError, setHasError] = useState(false);
+                        
+                        if (hasError) {
+                          return (
+                            <div className="text-sm text-muted-foreground">
+                              Image preview unavailable.{' '}
+                              <a 
+                                href={message.text.trim()} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="underline hover:text-primary"
+                              >
+                                View link
+                              </a>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <div className="space-y-2">
+                            <img 
+                              src={message.text.trim()}
+                              alt="Tool response thumbnail"
+                              className="rounded-xl max-w-[200px] h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                              style={{ marginTop: '8px' }}
+                              onError={() => setHasError(true)}
+                              onClick={() => setZoomedImage(message.text.trim())}
+                            />
+                          </div>
+                        );
+                      };
+                      
+                      return <ImageWithFallback />;
+                    }
+
                     // Check if message contains image response (JSON object with img_url or thumbnail_url)
                     try {
                       const parsed = JSON.parse(message.text);
