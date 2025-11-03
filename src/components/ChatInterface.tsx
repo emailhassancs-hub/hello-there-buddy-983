@@ -559,9 +559,50 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       return null;
                     }
 
-                    // Check if message contains image response (JSON object with img_url)
+                    // Check if message contains image response (JSON object with img_url or thumbnail_url)
                     try {
                       const parsed = JSON.parse(message.text);
+                      
+                      // Check for thumbnail_url in the response (priority)
+                      if (parsed?.thumbnail_url) {
+                        const ImageWithFallback = () => {
+                          const [hasError, setHasError] = useState(false);
+                          
+                          if (hasError) {
+                            return (
+                              <div className="text-sm text-muted-foreground">
+                                Image preview unavailable.{' '}
+                                <a 
+                                  href={parsed.thumbnail_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="underline hover:text-primary"
+                                >
+                                  View image
+                                </a>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <div className="space-y-2">
+                              <img 
+                                src={parsed.thumbnail_url}
+                                alt={parsed.prompt || 'Generated thumbnail'}
+                                className="rounded-xl max-w-[200px] h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                                style={{ marginTop: '8px' }}
+                                onError={() => setHasError(true)}
+                                onClick={() => setZoomedImage(parsed.thumbnail_url)}
+                              />
+                              {parsed.prompt && (
+                                <p className="text-xs text-muted-foreground italic whitespace-pre-wrap break-words">{parsed.prompt}</p>
+                              )}
+                            </div>
+                          );
+                        };
+                        
+                        return <ImageWithFallback />;
+                      }
                       
                       // Check for img_url in the response
                       if (parsed?.img_url) {
