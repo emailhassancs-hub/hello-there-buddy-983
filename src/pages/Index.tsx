@@ -7,6 +7,7 @@ import ModelOptimization from "@/components/ModelOptimization";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { ModelUploader } from "@/components/ModelUploader";
+import Testing from "@/pages/Testing";
 import { apiFetch } from "@/lib/api";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -709,6 +710,9 @@ The process:
                   <BookOpen className="w-4 h-4" />
                   Episode Viewer
                 </TabsTrigger>
+                <TabsTrigger value="testing" className="gap-2">
+                  Testing
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
@@ -756,6 +760,10 @@ The process:
                   onLoadStory={handleLoadStory}
                   isGenerating={isGenerating}
                 />
+              </TabsContent>
+              
+              <TabsContent value="testing" className="flex-1 m-0 overflow-auto">
+                <Testing />
               </TabsContent>
             </Tabs>
           </div>
