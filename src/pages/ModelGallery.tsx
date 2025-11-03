@@ -3,11 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { RefreshCw, Download, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import ModelViewer from "@/components/ModelViewer";
 
 const BASE_URL = "http://localhost:8000";
 
@@ -30,7 +27,6 @@ interface ModelStats {
 }
 
 type FilterStatus = "all" | "COMPLETED" | "PENDING" | "QUEUED";
-type GenerationType = "TEXT_TO_3D" | "IMAGE_TO_3D" | "POST_PROCESS";
 
 export default function ModelGallery() {
   const [models, setModels] = useState<ModelItem[]>([]);
@@ -38,13 +34,6 @@ export default function ModelGallery() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [token, setToken] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<GenerationType>("TEXT_TO_3D");
-  const [selectedModel, setSelectedModel] = useState<{
-    modelUrl: string;
-    thumbnailUrl: string;
-    workflow: string;
-  } | null>(null);
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -101,31 +90,9 @@ export default function ModelGallery() {
     }
   }, [token]);
 
-  const filteredByTab = models.filter((model) => model.generationType === activeTab);
-  const filteredModels = filteredByTab.filter((model) =>
+  const filteredModels = models.filter((model) =>
     filter === "all" ? true : model.status === filter
   );
-
-  const getTabStats = (genType: GenerationType) => {
-    const tabModels = models.filter(m => m.generationType === genType);
-    return {
-      total: tabModels.length,
-      completed: tabModels.filter(m => m.status === "COMPLETED").length,
-      pending: tabModels.filter(m => m.status === "PENDING").length,
-      queued: tabModels.filter(m => m.status === "QUEUED").length,
-    };
-  };
-
-  const handleModelClick = (model: ModelItem) => {
-    if (model.status === "COMPLETED" && model.modelUrl) {
-      setSelectedModel({
-        modelUrl: model.modelUrl,
-        thumbnailUrl: model.thumbnailUrl || "",
-        workflow: model.generationType.toLowerCase(),
-      });
-      setIsViewerOpen(true);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -140,8 +107,6 @@ export default function ModelGallery() {
     }
   };
 
-  const currentTabStats = getTabStats(activeTab);
-
   return (
     <div className="h-full overflow-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -152,23 +117,23 @@ export default function ModelGallery() {
         </Button>
       </div>
 
-      {/* Stats Cards - Show stats for current tab */}
+      {/* Stats Cards */}
       {loading && !stats ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
         </div>
-      ) : (
+      ) : stats ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total in Category
+                Total Generations
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{currentTabStats.total}</p>
+              <p className="text-3xl font-bold">{stats.totalGenerations}</p>
             </CardContent>
           </Card>
           <Card>
@@ -179,7 +144,7 @@ export default function ModelGallery() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {currentTabStats.completed}
+                {stats.completed}
               </p>
             </CardContent>
           </Card>
@@ -191,7 +156,7 @@ export default function ModelGallery() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                {currentTabStats.pending}
+                {stats.pending}
               </p>
             </CardContent>
           </Card>
@@ -203,149 +168,127 @@ export default function ModelGallery() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {currentTabStats.queued}
+                {stats.queued}
               </p>
             </CardContent>
           </Card>
         </div>
-      )}
+      ) : null}
 
-      {/* Category Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as GenerationType)}>
-        <TabsList>
-          <TabsTrigger value="TEXT_TO_3D">📝 Text to 3D</TabsTrigger>
-          <TabsTrigger value="IMAGE_TO_3D">🖼️ Image to 3D</TabsTrigger>
-          <TabsTrigger value="POST_PROCESS">🧰 Post Processing</TabsTrigger>
-        </TabsList>
+      {/* Filter Buttons */}
+      <div className="flex gap-2 flex-wrap">
+        <Button
+          variant={filter === "all" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("all")}
+        >
+          All
+        </Button>
+        <Button
+          variant={filter === "COMPLETED" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("COMPLETED")}
+        >
+          Completed
+        </Button>
+        <Button
+          variant={filter === "PENDING" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("PENDING")}
+        >
+          Pending
+        </Button>
+        <Button
+          variant={filter === "QUEUED" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setFilter("QUEUED")}
+        >
+          Queued
+        </Button>
+      </div>
 
-        <TabsContent value={activeTab} className="space-y-4 mt-4">
-          {/* Filter Buttons */}
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant={filter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilter("all")}
-            >
-              All
-            </Button>
-            <Button
-              variant={filter === "COMPLETED" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilter("COMPLETED")}
-            >
-              Completed
-            </Button>
-            <Button
-              variant={filter === "PENDING" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilter("PENDING")}
-            >
-              Pending
-            </Button>
-            <Button
-              variant={filter === "QUEUED" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilter("QUEUED")}
-            >
-              Queued
-            </Button>
-          </div>
-
-          {/* Model Grid */}
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <Skeleton key={i} className="h-80 rounded-lg" />
-              ))}
-            </div>
-          ) : filteredModels.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center text-muted-foreground">
-                No models found in this category
+      {/* Model Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <Skeleton key={i} className="h-80 rounded-lg" />
+          ))}
+        </div>
+      ) : filteredModels.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            No models found
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredModels.map((model) => (
+            <Card key={model.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div
+                className="relative aspect-square bg-muted cursor-pointer"
+                onClick={() => {
+                  if (model.modelUrl) {
+                    window.open(model.modelUrl, "_blank");
+                  }
+                }}
+              >
+                {model.thumbnailUrl ? (
+                  <img
+                    src={model.thumbnailUrl}
+                    alt={model.prompt}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/placeholder.svg";
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    No thumbnail
+                  </div>
+                )}
+                <div className="absolute top-2 right-2">
+                  <Badge className={getStatusColor(model.status)}>
+                    {model.status}
+                  </Badge>
+                </div>
+              </div>
+              <CardContent className="p-4 space-y-3">
+                <p className="text-sm line-clamp-2 min-h-[2.5rem]">{model.prompt}</p>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{model.generationType}</span>
+                  <span>{model.creditsUsed} credits</span>
+                </div>
+                {model.status === "COMPLETED" && model.modelUrl && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => window.open(model.modelUrl, "_blank")}
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        if (model.modelUrl) {
+                          window.open(model.modelUrl, "_blank");
+                        }
+                      }}
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Download
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredModels.map((model) => (
-                <Card 
-                  key={model.id} 
-                  className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => handleModelClick(model)}
-                >
-                  <div className="relative aspect-square bg-muted">
-                    {model.thumbnailUrl ? (
-                      <img
-                        src={model.thumbnailUrl}
-                        alt={model.prompt}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/placeholder.svg";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        No thumbnail
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <Badge className={getStatusColor(model.status)}>
-                        {model.status}
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardContent className="p-4 space-y-3">
-                    <p className="text-sm line-clamp-2 min-h-[2.5rem]">{model.prompt}</p>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{model.generationType}</span>
-                      <span>{model.creditsUsed} credits</span>
-                    </div>
-                    {model.status === "COMPLETED" && model.modelUrl && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleModelClick(model);
-                          }}
-                        >
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          View 3D
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (model.modelUrl) {
-                              window.open(model.modelUrl, "_blank");
-                            }
-                          }}
-                        >
-                          <Download className="w-3 h-3 mr-1" />
-                          Download
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* 3D Model Viewer Dialog */}
-      <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="max-w-6xl h-[90vh] p-0">
-          <ModelViewer 
-            apiUrl={BASE_URL}
-            selectedModel={selectedModel}
-          />
-        </DialogContent>
-      </Dialog>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
