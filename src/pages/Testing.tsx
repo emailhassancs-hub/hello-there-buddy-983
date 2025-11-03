@@ -11,6 +11,15 @@ function Testing() {
   const [token, setToken] = useState("");
   const BASE_URL = "http://localhost"; // Change to your EC2/Flask server URL
 
+  // Extract token from URL on mount
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+    if (urlToken) {
+      setToken(urlToken);
+    }
+  }, []);
+
   const fetchData = async () => {
     if (!token) {
       alert("Please enter your access token.");
