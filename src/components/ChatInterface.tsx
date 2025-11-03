@@ -582,16 +582,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                         }
                         
                         return (
-                          <div className="space-y-2">
-                            <img 
-                              src={message.text.trim()}
-                              alt="Tool response thumbnail"
-                              className="rounded-xl max-w-[200px] h-auto cursor-pointer hover:opacity-90 transition-opacity"
-                              style={{ marginTop: '8px' }}
-                              onError={() => setHasError(true)}
-                              onClick={() => setZoomedImage(message.text.trim())}
-                            />
-                          </div>
+                          <img 
+                            src={message.text.trim()}
+                            alt="Tool response thumbnail"
+                            className="cursor-pointer hover:opacity-90 transition-opacity"
+                            style={{ 
+                              width: '200px',
+                              borderRadius: '8px',
+                              objectFit: 'cover',
+                              marginTop: '8px'
+                            }}
+                            onError={() => setHasError(true)}
+                            onClick={() => setZoomedImage(message.text.trim())}
+                          />
                         );
                       };
                       
@@ -624,19 +627,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                           }
                           
                           return (
-                            <div className="space-y-2">
-                              <img 
-                                src={parsed.thumbnail_url}
-                                alt={parsed.prompt || 'Generated thumbnail'}
-                                className="rounded-xl max-w-[200px] h-auto cursor-pointer hover:opacity-90 transition-opacity"
-                                style={{ marginTop: '8px' }}
-                                onError={() => setHasError(true)}
-                                onClick={() => setZoomedImage(parsed.thumbnail_url)}
-                              />
-                              {parsed.prompt && (
-                                <p className="text-xs text-muted-foreground italic whitespace-pre-wrap break-words">{parsed.prompt}</p>
-                              )}
-                            </div>
+                            <img 
+                              src={parsed.thumbnail_url}
+                              alt={parsed.prompt || 'Generated thumbnail'}
+                              className="cursor-pointer hover:opacity-90 transition-opacity"
+                              style={{ 
+                                width: '200px',
+                                borderRadius: '8px',
+                                objectFit: 'cover',
+                                marginTop: '8px'
+                              }}
+                              onError={() => setHasError(true)}
+                              onClick={() => setZoomedImage(parsed.thumbnail_url)}
+                            />
                           );
                         };
                         
