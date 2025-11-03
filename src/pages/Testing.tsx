@@ -9,7 +9,7 @@ function Testing() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState("");
-  const BASE_URL = "http://localhost"; // Change to your EC2/Flask server URL
+  const BASE_URL = "http://localhost:8000";
 
   // Extract token from URL on mount
   React.useEffect(() => {
