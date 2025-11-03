@@ -62,7 +62,8 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const { toast } = useToast();
 
-  const apiUrl = "http://localhost:8000";
+  // const apiUrl = "http://localhost:8000";
+  const apiUrl = "http://35.209.183.202:8000";
   const API = apiUrl;
  
   // Token capture from URL
