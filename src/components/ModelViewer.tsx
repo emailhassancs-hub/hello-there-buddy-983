@@ -114,7 +114,14 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [lightIntensity, setLightIntensity] = useState([2.5]);
   const [cameraHeight, setCameraHeight] = useState([3]);
   const [bgColor, setBgColor] = useState("#e5e5e5");
+  const [token, setToken] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get("token");
+    setToken(accessToken);
+  }, []);
 
   // Use external selected model if provided, otherwise use internal
   const selectedModel = externalSelectedModel ? {
@@ -127,17 +134,22 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   } : internalSelectedModel;
 
   const loadModels = async () => {
-    try {
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      };
-      const authToken = (window as any).authToken;
-      
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
-      }
+    if (!token) {
+      toast({
+        title: "No token found",
+        description: "Please provide a token in the URL query parameter",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      const response = await fetch(`${apiUrl}/models`, { headers });
+    try {
+      const response = await fetch(`${apiUrl}/models`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
       if (!response.ok) throw new Error("Failed to load models");
       
       const data = await response.json();
@@ -153,8 +165,10 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   };
 
   useEffect(() => {
-    loadModels();
-  }, [apiUrl]);
+    if (token) {
+      loadModels();
+    }
+  }, [apiUrl, token]);
 
   useEffect(() => {
     setLoadError(null);
