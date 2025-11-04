@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } fr
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box } from "lucide-react";
+import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box, User } from "lucide-react";
 import toolsIcon from "@/assets/tools-icon.png";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -61,6 +61,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [uploadedImages, setUploadedImages] = useState<{ file: File; preview: string }[]>([]);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [text3dPopup, setText3dPopup] = useState<string | null>(null);
+  const [autoConfirm, setAutoConfirm] = useState(false);
   const { toast } = useToast();
 
   const welcomeMessages = [
@@ -111,8 +112,13 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         initialArgs[tc.name] = { ...tc.args };
       });
       setEditedArgs(initialArgs);
+      
+      // Auto-confirm if toggle is on
+      if (autoConfirm) {
+        handleConfirm(lastMessage.toolCalls);
+      }
     }
-  }, [messages]);
+  }, [messages, autoConfirm]);
 
   useEffect(() => {
     if (messages.length > 0) return;
@@ -877,40 +883,42 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             )}
 
             {/* Inline confirmation UI - only show for the last message with awaiting_confirmation */}
-            {message.status === "awaiting_confirmation" && message.toolCalls && index === messages.length - 1 && (
+            {message.status === "awaiting_confirmation" && message.toolCalls && index === messages.length - 1 && !autoConfirm && (
               <div className="flex justify-start mt-4">
-                <div className="max-w-[85%] mr-4">
-                  <div className="bg-accent/10 border-2 border-accent rounded-2xl p-5 shadow-soft space-y-4">
+                <div className="max-w-[70%] mr-4">
+                  <div className="bg-accent/10 border-2 border-accent rounded-xl p-3 shadow-soft space-y-3">
                     {/* Header */}
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-accent" />
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-accent" />
                         Tool execution needs your approval
                       </h3>
                       {message.interruptMessage && (
-                        <p className="text-sm text-muted-foreground">{message.interruptMessage}</p>
+                        <p className="text-xs text-muted-foreground">{message.interruptMessage}</p>
                       )}
                     </div>
 
                     {/* Tool calls */}
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       {message.toolCalls.map((toolCall, idx) => {
                         const args = editedArgs[toolCall.name] || toolCall.args || {};
+                        const hiddenParams = ["output_path", "input_path", "random_seed", "filename"];
+                        const visibleArgs = Object.entries(args).filter(([key]) => !hiddenParams.includes(key));
                         
                         return (
-                          <div key={`${toolCall.id}-${idx}`} className="bg-background border border-border rounded-lg p-4 space-y-3">
+                          <div key={`${toolCall.id}-${idx}`} className="bg-background border border-border rounded-lg p-2 space-y-2">
 
                             {/* Editable parameters */}
-                            <div className="space-y-3">
-                              {Object.entries(args).map(([key, value]) => {
+                            <div className="space-y-2">
+                              {visibleArgs.map(([key, value]) => {
                                 const errorKey = `${toolCall.name}.${key}`;
                                 const hasError = !!validationErrors[errorKey];
                                 const isNumeric = key.includes("num_") || key.includes("count") || key.includes("number");
                                 const isLongText = typeof value === "string" && value.length > 100;
 
                                 return (
-                                  <div key={key} className="space-y-1">
-                                    <Label htmlFor={`${toolCall.id}-${key}`} className="text-sm font-medium">
+                                  <div key={key} className="space-y-0.5">
+                                    <Label htmlFor={`${toolCall.id}-${key}`} className="text-xs font-medium">
                                       {key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
                                     </Label>
                                     {isLongText ? (
@@ -919,11 +927,11 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                                           id={`${toolCall.id}-${key}`}
                                           value={String(value)}
                                           onChange={(e) => handleArgChange(toolCall.name, key, e.target.value)}
-                                          className={hasError ? "border-destructive" : ""}
-                                          rows={4}
+                                          className={cn("text-xs", hasError ? "border-destructive" : "")}
+                                          rows={3}
                                         />
-                                        <p className="text-xs text-muted-foreground">
-                                          Preview: {String(value).slice(0, 200)}...
+                                        <p className="text-[10px] text-muted-foreground">
+                                          Preview: {String(value).slice(0, 150)}...
                                         </p>
                                       </>
                                     ) : (
@@ -936,11 +944,11 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                                           key,
                                           isNumeric ? Number(e.target.value) : e.target.value
                                         )}
-                                        className={hasError ? "border-destructive" : ""}
+                                        className={cn("text-xs h-7", hasError ? "border-destructive" : "")}
                                       />
                                     )}
                                     {hasError && (
-                                      <p className="text-xs text-destructive">{validationErrors[errorKey]}</p>
+                                      <p className="text-[10px] text-destructive">{validationErrors[errorKey]}</p>
                                     )}
                                   </div>
                                 );
@@ -952,17 +960,18 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     </div>
 
                     {/* Action button */}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-2 pt-1">
                       <Button 
                         onClick={() => handleConfirm(message.toolCalls!)}
-                        className="w-full"
+                        className="w-full h-8 text-xs"
+                        size="sm"
                       >
                         Confirm
                       </Button>
                     </div>
 
                     {/* Help text */}
-                    <p className="text-xs text-muted-foreground border-t border-border pt-3">
+                    <p className="text-[10px] text-muted-foreground border-t border-border pt-2">
                       <strong>Why am I asked?</strong> The AI needs to call a backend tool. Edit any parameters if needed, then confirm to execute or cancel to stop.
                     </p>
                   </div>
@@ -1093,6 +1102,17 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             disabled={isGenerating}
             rows={1}
           />
+
+          {/* Auto-confirm toggle button */}
+          <Button
+            variant={autoConfirm ? "default" : "ghost"}
+            size="icon"
+            onClick={() => setAutoConfirm(!autoConfirm)}
+            className="flex-shrink-0 h-9 w-9 rounded-lg"
+            title={autoConfirm ? "Auto-confirm enabled" : "Auto-confirm disabled"}
+          >
+            <User className="w-4 h-4" />
+          </Button>
 
           {/* Send button (right inside) */}
           <Button
