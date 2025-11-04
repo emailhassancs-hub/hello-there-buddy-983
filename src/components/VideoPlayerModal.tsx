@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const BASE_URL = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+const BASE_URL = "http://35.209.183.202:8000";
 
 interface VideoPlayerModalProps {
   video: {
