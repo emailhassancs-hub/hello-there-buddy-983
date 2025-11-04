@@ -134,6 +134,13 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       
       const data = await response.json();
       
+      // Debug: Show raw response
+      console.log("Image Editing API Response:", data);
+      toast({
+        title: "Image Editing API Response",
+        description: `Fetched ${data.data?.length || 0} edited images. Check console for full response.`,
+      });
+      
       // Extract images from the nested data property
       const imageList = data.data || [];
       
