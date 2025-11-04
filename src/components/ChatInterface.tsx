@@ -58,6 +58,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [uploadedImages, setUploadedImages] = useState<{ file: File; preview: string }[]>([]);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [text3dPopup, setText3dPopup] = useState<string | null>(null);
   const { toast } = useToast();
 
   const welcomeMessages = [
@@ -87,6 +88,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           const parsed = JSON.parse(lastMessage.text);
           if (parsed?.img_url) {
             onImageGenerated?.();
+          }
+          // Detect text-to-3D thumbnail and show popup
+          if (parsed?.thumbnail_url && lastMessage.toolName?.includes('text_to_3d')) {
+            setText3dPopup(parsed.thumbnail_url);
           }
         } catch (e) {
           // Not JSON, ignore
@@ -1064,6 +1069,48 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
               />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Text-to-3D Result Popup Dialog */}
+      <Dialog open={!!text3dPopup} onOpenChange={() => setText3dPopup(null)}>
+        <DialogContent className="max-w-[500px]">
+          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+            <Box className="w-5 h-5 text-accent" />
+            3D Model Generated!
+          </DialogTitle>
+          <DialogDescription>
+            Your text-to-3D model has been generated successfully.
+          </DialogDescription>
+          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+          <div className="flex items-center justify-center w-full py-4">
+            {text3dPopup && (
+              <img 
+                src={text3dPopup}
+                alt="3D Model Preview"
+                className="max-w-full rounded-lg shadow-lg"
+                style={{ maxHeight: '400px', objectFit: 'contain' }}
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setText3dPopup(null)}
+            >
+              Close
+            </Button>
+            {text3dPopup && (
+              <Button 
+                onClick={() => window.open(text3dPopup, '_blank')}
+              >
+                Open Full Size
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
