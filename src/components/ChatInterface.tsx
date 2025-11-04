@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box } from "lucide-react";
 import toolsIcon from "@/assets/tools-icon.png";
 import { useToast } from "@/hooks/use-toast";
@@ -733,6 +734,32 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     
                     return <TypewriterText text={message.text} speed={3} />;
                   })()}
+
+                  {/* Show raw tool response in collapsible */}
+                  {message.toolName && message.text && (
+                    <Collapsible className="mt-3">
+                      <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        <ChevronDown className="w-3 h-3" />
+                        <span>View raw response</span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2">
+                        <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                          <div className="text-xs font-mono text-muted-foreground mb-2">
+                            Tool: <span className="text-foreground font-semibold">{message.toolName}</span>
+                          </div>
+                          <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words">
+                            {(() => {
+                              try {
+                                return JSON.stringify(JSON.parse(message.text), null, 2);
+                              } catch {
+                                return message.text;
+                              }
+                            })()}
+                          </pre>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
 
                   {/* Render interactive optimization forms */}
                   {message.formType === "model-selection" && message.formData && (
