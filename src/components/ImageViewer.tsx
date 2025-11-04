@@ -333,36 +333,55 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                       image.inputImage4Path,
                     ].filter(Boolean);
 
+                    // If 2+ input images, use smaller thumbnails. Otherwise equal size.
+                    const hasMultipleInputs = inputImages.length >= 2;
+
                     return (
                       <div
                         key={index}
                         className="rounded-lg border border-border/50 bg-card hover:shadow-lg transition-shadow p-6"
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className={`grid grid-cols-1 ${hasMultipleInputs ? 'md:grid-cols-2' : 'md:grid-cols-2'} gap-6`}>
                           {/* Input Images */}
                           {inputImages.length > 0 && (
                             <div className="space-y-3">
                               <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                                 Original Image{inputImages.length > 1 ? 's' : ''}
                               </h4>
-                              <div className="grid grid-cols-2 gap-3">
-                                {inputImages.map((inputUrl, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted/20 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
-                                    onClick={() => setSelectedImage({ name: 'Input Image', url: inputUrl!, timestamp: image.timestamp })}
-                                  >
-                                    <img
-                                      src={inputUrl!}
-                                      alt={`Input ${idx + 1}`}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        e.currentTarget.src = "/placeholder.svg";
-                                      }}
-                                    />
-                                  </div>
-                                ))}
-                              </div>
+                              {hasMultipleInputs ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                  {inputImages.map((inputUrl, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted/20 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                                      onClick={() => setSelectedImage({ name: 'Input Image', url: inputUrl!, timestamp: image.timestamp })}
+                                    >
+                                      <img
+                                        src={inputUrl!}
+                                        alt={`Input ${idx + 1}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.src = "/placeholder.svg";
+                                        }}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div
+                                  className="aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted/20 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                                  onClick={() => setSelectedImage({ name: 'Input Image', url: inputImages[0]!, timestamp: image.timestamp })}
+                                >
+                                  <img
+                                    src={inputImages[0]!}
+                                    alt="Input image"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.src = "/placeholder.svg";
+                                    }}
+                                  />
+                                </div>
+                              )}
                             </div>
                           )}
 
