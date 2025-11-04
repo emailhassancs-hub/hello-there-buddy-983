@@ -737,8 +737,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
                   {/* Show raw tool response - render image directly if tool returns image URL */}
                   {message.toolName && message.text && (() => {
-                    const isImageUrl = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(message.text.trim()) || 
-                                     message.text.includes('/model-images/');
+                    const trimmedText = message.text.trim();
+                    const isImageUrl = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(trimmedText) || 
+                                     trimmedText.includes('/model-images/') ||
+                                     /\.(png|webp)$/i.test(trimmedText);
                     
                     // If tool response is an image URL, render it directly in chat
                     if (isImageUrl) {
