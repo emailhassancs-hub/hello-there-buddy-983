@@ -13,7 +13,7 @@ import { apiFetch } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, BookOpen, Box, Settings } from "lucide-react";
+import { Image as ImageIcon, BookOpen, Box, Settings, Video } from "lucide-react";
 
 interface ToolCall {
   id: string;
@@ -715,6 +715,10 @@ The process:
                   <BookOpen className="w-4 h-4" />
                   Model Gallery
                 </TabsTrigger>
+                <TabsTrigger value="videos" className="gap-2">
+                  <Video className="w-4 h-4" />
+                  Video Gallery
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
@@ -766,6 +770,14 @@ The process:
               
               <TabsContent value="gallery" className="flex-1 m-0 overflow-auto">
                 <ModelGallery />
+              </TabsContent>
+              
+              <TabsContent value="videos" className="flex-1 m-0 overflow-auto">
+                <iframe 
+                  src="/videos" 
+                  className="w-full h-full border-0"
+                  title="Video Gallery"
+                />
               </TabsContent>
             </Tabs>
           </div>
