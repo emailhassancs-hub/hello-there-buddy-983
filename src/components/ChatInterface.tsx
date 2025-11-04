@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -427,14 +428,17 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="flex items-center gap-3 p-6 border-b glass shadow-soft">
-        <div className="p-2 rounded-xl bg-primary dark:bg-white">
-          <BookOpen className="w-6 h-6 text-primary-foreground dark:text-black" />
+      <div className="flex items-center justify-between gap-3 p-6 border-b glass shadow-soft">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-primary dark:bg-white">
+            <BookOpen className="w-6 h-6 text-primary-foreground dark:text-black" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground dark:text-white">Game AI Studio</h2>
+            <p className="text-sm text-muted-foreground dark:text-white/70">Create and edit images with AI</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-foreground dark:text-white">Game AI Studio</h2>
-          <p className="text-sm text-muted-foreground dark:text-white/70">Create and edit images with AI</p>
-        </div>
+        <ThemeToggle />
       </div>
 
       {/* Messages Area */}

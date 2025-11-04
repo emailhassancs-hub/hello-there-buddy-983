@@ -640,9 +640,6 @@ The process:
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
-      <div className="absolute top-4 right-4 z-50">
-        <ThemeToggle />
-      </div>
       
       {/* Hidden file input for model uploads */}
       <input
