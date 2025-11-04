@@ -61,7 +61,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [uploadedImages, setUploadedImages] = useState<{ file: File; preview: string }[]>([]);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [text3dPopup, setText3dPopup] = useState<string | null>(null);
-  const [autoConfirm, setAutoConfirm] = useState(false);
+  const [humanInLoop, setHumanInLoop] = useState(false);
   const { toast } = useToast();
 
   const welcomeMessages = [
@@ -113,12 +113,12 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       });
       setEditedArgs(initialArgs);
       
-      // Auto-confirm if toggle is on
-      if (autoConfirm) {
+      // Auto-confirm if human in loop is OFF
+      if (!humanInLoop) {
         handleConfirm(lastMessage.toolCalls);
       }
     }
-  }, [messages, autoConfirm]);
+  }, [messages, humanInLoop]);
 
   useEffect(() => {
     if (messages.length > 0) return;
@@ -882,8 +882,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
               </div>
             )}
 
-            {/* Inline confirmation UI - only show for the last message with awaiting_confirmation */}
-            {message.status === "awaiting_confirmation" && message.toolCalls && index === messages.length - 1 && !autoConfirm && (
+            {/* Inline confirmation UI - only show for the last message with awaiting_confirmation and if human in loop is ON */}
+            {message.status === "awaiting_confirmation" && message.toolCalls && index === messages.length - 1 && humanInLoop && (
               <div className="flex justify-start mt-4">
                 <div className="max-w-[70%] mr-4">
                   <div className="bg-accent/10 border-2 border-accent rounded-xl p-3 shadow-soft space-y-3">
@@ -1103,13 +1103,13 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             rows={1}
           />
 
-          {/* Auto-confirm toggle button */}
+          {/* Human in the loop toggle button */}
           <Button
-            variant={autoConfirm ? "default" : "ghost"}
+            variant={humanInLoop ? "default" : "ghost"}
             size="icon"
-            onClick={() => setAutoConfirm(!autoConfirm)}
+            onClick={() => setHumanInLoop(!humanInLoop)}
             className="flex-shrink-0 h-9 w-9 rounded-lg"
-            title={autoConfirm ? "Auto-confirm enabled" : "Auto-confirm disabled"}
+            title={humanInLoop ? "Human in the loop: ON" : "Human in the loop: OFF"}
           >
             <User className="w-4 h-4" />
           </Button>
