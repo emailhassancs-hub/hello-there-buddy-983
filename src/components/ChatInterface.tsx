@@ -747,15 +747,40 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                           <div className="text-xs font-mono text-muted-foreground mb-2">
                             Tool: <span className="text-foreground font-semibold">{message.toolName}</span>
                           </div>
-                          <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words">
-                            {(() => {
-                              try {
-                                return JSON.stringify(JSON.parse(message.text), null, 2);
-                              } catch {
-                                return message.text;
-                              }
-                            })()}
-                          </pre>
+                          {(() => {
+                            const isImageUrl = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(message.text.trim()) || 
+                                             message.text.includes('/model-images/');
+                            
+                            if (isImageUrl) {
+                              return (
+                                <div className="space-y-2">
+                                  <img 
+                                    src={message.text.trim()} 
+                                    alt="Tool response" 
+                                    className="max-w-xs rounded-lg border border-border"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                  <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words">
+                                    {message.text}
+                                  </pre>
+                                </div>
+                              );
+                            }
+                            
+                            return (
+                              <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words">
+                                {(() => {
+                                  try {
+                                    return JSON.stringify(JSON.parse(message.text), null, 2);
+                                  } catch {
+                                    return message.text;
+                                  }
+                                })()}
+                              </pre>
+                            );
+                          })()}
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
