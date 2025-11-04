@@ -694,7 +694,7 @@ The process:
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
           <div className="flex flex-col h-full overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-              <TabsList className="w-full justify-start rounded-none border-b bg-background h-14 px-6">
+              <TabsList className="w-full justify-start rounded-none border-b bg-background h-14 px-6 overflow-x-auto flex-nowrap scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                 <TabsTrigger value="images" className="gap-2">
                   <ImageIcon className="w-4 h-4 dark:text-white" />
                   Image Viewer
