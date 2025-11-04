@@ -715,27 +715,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       // Not JSON, check if it's a plain image path
                     }
                     
-                    // Check if it's a full URL to an image
-                    const isImageUrl = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(message.text.trim()) || 
-                                     message.text.includes('/model-images/');
-                    
-                    if (isImageUrl) {
-                      return (
-                        <div className="space-y-2">
-                          <img 
-                            src={message.text.trim()} 
-                            alt="Generated content" 
-                            className="rounded-lg max-w-md h-auto cursor-pointer hover:opacity-90 transition-opacity border border-border shadow-sm"
-                            onClick={() => setZoomedImage(message.text.trim())}
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                          <p className="text-xs text-muted-foreground italic">Generated content</p>
-                        </div>
-                      );
-                    }
-                    
                     // Check if message is a plain image path (e.g., "images\filename.png")
                     const imagePathPattern = /^images[\\/][\w\-_.]+\.(png|jpg|jpeg|gif|webp)$/i;
                     if (imagePathPattern.test(message.text.trim())) {
@@ -756,56 +735,55 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     return <TypewriterText text={message.text} speed={3} />;
                   })()}
 
-                  {/* Show raw tool response in collapsible */}
-                  {message.toolName && message.text && (
-                    <Collapsible className="mt-3">
-                      <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                        <ChevronDown className="w-3 h-3" />
-                        <span>View raw response</span>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-2">
-                        <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
-                          <div className="text-xs font-mono text-muted-foreground mb-2">
-                            Tool: <span className="text-foreground font-semibold">{message.toolName}</span>
-                          </div>
-                          {(() => {
-                            const isImageUrl = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(message.text.trim()) || 
-                                             message.text.includes('/model-images/');
-                            
-                            if (isImageUrl) {
-                              return (
-                                <div className="space-y-2">
-                                  <img 
-                                    src={message.text.trim()} 
-                                    alt="Tool response" 
-                                    className="max-w-xs rounded-lg border border-border"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                  <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words">
-                                    {message.text}
-                                  </pre>
-                                </div>
-                              );
-                            }
-                            
-                            return (
-                              <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words">
-                                {(() => {
-                                  try {
-                                    return JSON.stringify(JSON.parse(message.text), null, 2);
-                                  } catch {
-                                    return message.text;
-                                  }
-                                })()}
-                              </pre>
-                            );
-                          })()}
+                  {/* Show raw tool response - render image directly if tool returns image URL */}
+                  {message.toolName && message.text && (() => {
+                    const isImageUrl = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(message.text.trim()) || 
+                                     message.text.includes('/model-images/');
+                    
+                    // If tool response is an image URL, render it directly in chat
+                    if (isImageUrl) {
+                      return (
+                        <div className="space-y-2 mt-3">
+                          <img 
+                            src={message.text.trim()} 
+                            alt="Generated content" 
+                            className="rounded-lg max-w-md h-auto cursor-pointer hover:opacity-90 transition-opacity border border-border shadow-sm"
+                            onClick={() => setZoomedImage(message.text.trim())}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground italic">Click to zoom</p>
                         </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
+                      );
+                    }
+                    
+                    // Otherwise show collapsible for non-image tool responses
+                    return (
+                      <Collapsible className="mt-3">
+                        <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                          <ChevronDown className="w-3 h-3" />
+                          <span>View raw response</span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                            <div className="text-xs font-mono text-muted-foreground mb-2">
+                              Tool: <span className="text-foreground font-semibold">{message.toolName}</span>
+                            </div>
+                            <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-words">
+                              {(() => {
+                                try {
+                                  return JSON.stringify(JSON.parse(message.text), null, 2);
+                                } catch {
+                                  return message.text;
+                                }
+                              })()}
+                            </pre>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })()}
 
                   {/* Render interactive optimization forms */}
                   {message.formType === "model-selection" && message.formData && (
