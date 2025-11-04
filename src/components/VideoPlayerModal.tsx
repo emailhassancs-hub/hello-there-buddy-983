@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const BASE_URL = "http://35.209.183.202:8000";
+const VIDEO_BASE_URL = "http://35.209.183.202:8000";
 
 interface VideoPlayerModalProps {
   video: {
@@ -14,7 +14,7 @@ interface VideoPlayerModalProps {
 export const VideoPlayerModal = ({ video, open, onOpenChange }: VideoPlayerModalProps) => {
   if (!video) return null;
 
-  const videoUrl = `${BASE_URL}/videos/${video.filename}`;
+  const videoUrl = `${VIDEO_BASE_URL}/videos/${video.filename}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api";
 import { VideoCard } from "@/components/VideoCard";
 import { VideoPlayerModal } from "@/components/VideoPlayerModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Video, AlertCircle } from "lucide-react";
+
+const VIDEO_BASE_URL = "http://35.209.183.202:8000";
 
 interface Video {
   filename: string;
@@ -38,7 +39,11 @@ export default function VideoGallery() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiFetch<VideosResponse>("/videos");
+      const response = await fetch(`${VIDEO_BASE_URL}/videos`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch videos: ${response.status}`);
+      }
+      const data = await response.json();
       setVideos(data.videos);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load videos");
