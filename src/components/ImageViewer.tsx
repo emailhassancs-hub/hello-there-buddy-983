@@ -178,6 +178,37 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       });
 
       setEditedImages(sorted);
+
+      // Also add edited images and input images to the generation tab
+      const additionalImages: ImageItem[] = [];
+      sorted.forEach((item) => {
+        // Add output image
+        additionalImages.push({
+          name: `Edited: ${item.prompt}`,
+          url: item.outputImagePath,
+          timestamp: item.timestamp,
+        });
+        
+        // Add input images
+        [item.inputImage1Path, item.inputImage2Path, item.inputImage3Path, item.inputImage4Path]
+          .filter(Boolean)
+          .forEach((inputUrl, idx) => {
+            additionalImages.push({
+              name: `Input for: ${item.prompt}`,
+              url: inputUrl!,
+              timestamp: item.timestamp,
+            });
+          });
+      });
+
+      // Merge with existing images and remove duplicates by URL
+      setImages(prev => {
+        const combined = [...prev, ...additionalImages];
+        const uniqueMap = new Map<string, ImageItem>();
+        combined.forEach(img => uniqueMap.set(img.url, img));
+        const unique = Array.from(uniqueMap.values());
+        return unique.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      });
     } catch (error) {
       toast({
         title: "Failed to load edited images",
