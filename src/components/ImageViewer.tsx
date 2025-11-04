@@ -12,6 +12,20 @@ interface ImageItem {
   timestamp?: number;
 }
 
+interface EditedImageItem {
+  id: string;
+  outputImagePath: string;
+  inputImage1Path?: string;
+  inputImage2Path?: string;
+  inputImage3Path?: string;
+  inputImage4Path?: string;
+  prompt: string;
+  technique?: string;
+  modelName?: string;
+  status: string;
+  timestamp?: number;
+}
+
 interface ImageViewerProps {
   apiUrl: string;
   refreshTrigger?: number;
@@ -19,10 +33,11 @@ interface ImageViewerProps {
 
 const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
   const [images, setImages] = useState<ImageItem[]>([]);
-  const [editedImages, setEditedImages] = useState<ImageItem[]>([]);
+  const [editedImages, setEditedImages] = useState<EditedImageItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingEdited, setIsLoadingEdited] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImageItem | null>(null);
+  const [selectedEditedImage, setSelectedEditedImage] = useState<EditedImageItem | null>(null);
   const [activeTab, setActiveTab] = useState("generation");
   const { toast } = useToast();
 
@@ -134,22 +149,26 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       
       const data = await response.json();
       
-      // Debug: Show raw response
-      console.log("Image Editing API Response:", data);
-      toast({
-        title: "Image Editing API Response",
-        description: `Fetched ${data.data?.length || 0} edited images. Check console for full response.`,
-      });
-      
       // Extract images from the nested data property
       const imageList = data.data || [];
       
-      // Map the response to ImageItem format
-      const mapped: ImageItem[] = imageList.map((item: any) => ({
-        name: item.prompt || item.id || 'edited-image.png',
-        url: item.imagePath || item.img_url || '',
-        timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
-      })).filter((item: ImageItem) => item.url);
+      // Map the response to EditedImageItem format - only COMPLETED items
+      const mapped: EditedImageItem[] = imageList
+        .filter((item: any) => item.status === "COMPLETED")
+        .map((item: any) => ({
+          id: item.id,
+          outputImagePath: item.outputImagePath,
+          inputImage1Path: item.inputImage1Path,
+          inputImage2Path: item.inputImage2Path,
+          inputImage3Path: item.inputImage3Path,
+          inputImage4Path: item.inputImage4Path,
+          prompt: item.prompt || 'No description',
+          technique: item.technique,
+          modelName: item.modelName,
+          status: item.status,
+          timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
+        }))
+        .filter((item: EditedImageItem) => item.outputImagePath);
 
       // Sort by timestamp (newest first)
       const sorted = mapped.sort((a, b) => {
@@ -305,30 +324,92 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {editedImages.map((image, index) => (
-                    <div
-                      key={index}
-                      className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => setSelectedImage(image)}
-                    >
-                      <div className="aspect-square overflow-hidden bg-muted/20">
-                        <img
-                          src={image.url}
-                          alt={image.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.currentTarget.src = "/placeholder.svg";
-                          }}
-                        />
+                <div className="space-y-6">
+                  {editedImages.map((image, index) => {
+                    const inputImages = [
+                      image.inputImage1Path,
+                      image.inputImage2Path,
+                      image.inputImage3Path,
+                      image.inputImage4Path,
+                    ].filter(Boolean);
+
+                    return (
+                      <div
+                        key={index}
+                        className="rounded-lg border border-border/50 bg-card hover:shadow-lg transition-shadow p-6"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Input Images */}
+                          {inputImages.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                                Original Image{inputImages.length > 1 ? 's' : ''}
+                              </h4>
+                              <div className="grid grid-cols-2 gap-3">
+                                {inputImages.map((inputUrl, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted/20 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                                    onClick={() => setSelectedImage({ name: 'Input Image', url: inputUrl!, timestamp: image.timestamp })}
+                                  >
+                                    <img
+                                      src={inputUrl!}
+                                      alt={`Input ${idx + 1}`}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.src = "/placeholder.svg";
+                                      }}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Output Image */}
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                              Edited Result
+                            </h4>
+                            <div
+                              className="aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted/20 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                              onClick={() => setSelectedEditedImage(image)}
+                            >
+                              <img
+                                src={image.outputImagePath}
+                                alt="Edited output"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = "/placeholder.svg";
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Metadata */}
+                        <div className="mt-4 pt-4 border-t border-border/50 space-y-2">
+                          <p className="text-sm text-foreground font-medium">
+                            {image.prompt}
+                          </p>
+                          {(image.technique || image.modelName) && (
+                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                              {image.technique && (
+                                <span className="px-2 py-1 rounded bg-muted/50">
+                                  {image.technique}
+                                </span>
+                              )}
+                              {image.modelName && (
+                                <span className="px-2 py-1 rounded bg-muted/50">
+                                  {image.modelName}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="p-3 border-t border-border/50">
-                        <p className="text-sm font-medium text-foreground line-clamp-2" title={image.name}>
-                          {image.name}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -336,7 +417,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
         </TabsContent>
       </Tabs>
 
-      {/* Zoom Dialog */}
+      {/* Zoom Dialog for Generated Images */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-5xl w-full p-0 overflow-hidden">
           <DialogTitle className="sr-only">Full Size Image Preview</DialogTitle>
@@ -361,6 +442,63 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
               </div>
               <div className="p-4 border-t border-border/50 bg-card">
                 <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words">{selectedImage.name}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Zoom Dialog for Edited Images */}
+      <Dialog open={!!selectedEditedImage} onOpenChange={() => setSelectedEditedImage(null)}>
+        <DialogContent className="max-w-6xl w-full p-0 overflow-hidden">
+          <DialogTitle className="sr-only">Edited Image Details</DialogTitle>
+          <DialogDescription className="sr-only">
+            View the edited image with input and output comparison
+          </DialogDescription>
+          <DialogClose className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+          {selectedEditedImage && (
+            <div className="flex flex-col">
+              <div className="relative bg-muted/20 p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Input Images */}
+                  {selectedEditedImage.inputImage1Path && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-muted-foreground">Original</h4>
+                      <img
+                        src={selectedEditedImage.inputImage1Path}
+                        alt="Original input"
+                        className="w-full h-auto object-contain rounded-lg"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg";
+                        }}
+                      />
+                    </div>
+                  )}
+                  {/* Output Image */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Edited</h4>
+                    <img
+                      src={selectedEditedImage.outputImagePath}
+                      alt="Edited output"
+                      className="w-full h-auto object-contain rounded-lg"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.svg";
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 border-t border-border/50 bg-card space-y-2">
+                <p className="text-sm font-medium text-foreground">{selectedEditedImage.prompt}</p>
+                {(selectedEditedImage.technique || selectedEditedImage.modelName) && (
+                  <div className="flex gap-2 text-xs text-muted-foreground">
+                    {selectedEditedImage.technique && <span>Technique: {selectedEditedImage.technique}</span>}
+                    {selectedEditedImage.modelName && <span>Model: {selectedEditedImage.modelName}</span>}
+                  </div>
+                )}
               </div>
             </div>
           )}
