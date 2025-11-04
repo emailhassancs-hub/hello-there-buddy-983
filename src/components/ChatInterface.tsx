@@ -715,6 +715,27 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       // Not JSON, check if it's a plain image path
                     }
                     
+                    // Check if it's a full URL to an image
+                    const isImageUrl = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(message.text.trim()) || 
+                                     message.text.includes('/model-images/');
+                    
+                    if (isImageUrl) {
+                      return (
+                        <div className="space-y-2">
+                          <img 
+                            src={message.text.trim()} 
+                            alt="Generated content" 
+                            className="rounded-lg max-w-md h-auto cursor-pointer hover:opacity-90 transition-opacity border border-border shadow-sm"
+                            onClick={() => setZoomedImage(message.text.trim())}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground italic">Generated content</p>
+                        </div>
+                      );
+                    }
+                    
                     // Check if message is a plain image path (e.g., "images\filename.png")
                     const imagePathPattern = /^images[\\/][\w\-_.]+\.(png|jpg|jpeg|gif|webp)$/i;
                     if (imagePathPattern.test(message.text.trim())) {
