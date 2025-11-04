@@ -13,7 +13,7 @@ import { apiFetch } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, BookOpen, Box, Settings, Video } from "lucide-react";
+import { Image as ImageIcon, BookOpen, Box, Settings, Video, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ToolCall {
   id: string;
@@ -694,32 +694,54 @@ The process:
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
           <div className="flex flex-col h-full overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-              <TabsList className="w-full justify-start rounded-none border-b bg-background h-14 px-6 overflow-x-auto flex-nowrap scrollbar-hide">
-                <TabsTrigger value="images" className="gap-2">
-                  <ImageIcon className="w-4 h-4 dark:text-white" />
-                  Image Viewer
-                </TabsTrigger>
-                <TabsTrigger value="models" className="gap-2">
-                  <Box className="w-4 h-4" />
-                  3D Model Viewer
-                </TabsTrigger>
-                <TabsTrigger value="optimization" className="gap-2">
-                  <Settings className="w-4 h-4" />
-                  Model Optimization
-                </TabsTrigger>
-                <TabsTrigger value="episodes" className="gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  Episode Viewer
-                </TabsTrigger>
-                <TabsTrigger value="gallery" className="gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  Model Gallery
-                </TabsTrigger>
-                <TabsTrigger value="videos" className="gap-2">
-                  <Video className="w-4 h-4" />
-                  Video Gallery
-                </TabsTrigger>
-              </TabsList>
+              <div className="relative flex items-center border-b bg-background">
+                <button
+                  onClick={() => {
+                    const container = document.querySelector('.tabs-scroll-container');
+                    if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                  }}
+                  className="absolute left-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                
+                <TabsList className="tabs-scroll-container w-full justify-start rounded-none border-0 bg-background h-14 px-12 overflow-x-auto flex-nowrap scrollbar-hide">
+                  <TabsTrigger value="images" className="gap-2">
+                    <ImageIcon className="w-4 h-4 dark:text-white" />
+                    Image Viewer
+                  </TabsTrigger>
+                  <TabsTrigger value="models" className="gap-2">
+                    <Box className="w-4 h-4" />
+                    3D Model Viewer
+                  </TabsTrigger>
+                  <TabsTrigger value="optimization" className="gap-2">
+                    <Settings className="w-4 h-4" />
+                    Model Optimization
+                  </TabsTrigger>
+                  <TabsTrigger value="episodes" className="gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    Episode Viewer
+                  </TabsTrigger>
+                  <TabsTrigger value="gallery" className="gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    Model Gallery
+                  </TabsTrigger>
+                  <TabsTrigger value="videos" className="gap-2">
+                    <Video className="w-4 h-4" />
+                    Video Gallery
+                  </TabsTrigger>
+                </TabsList>
+                
+                <button
+                  onClick={() => {
+                    const container = document.querySelector('.tabs-scroll-container');
+                    if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                  }}
+                  className="absolute right-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
                 <ImageViewer apiUrl={apiUrl} refreshTrigger={imageRefreshTrigger} />
