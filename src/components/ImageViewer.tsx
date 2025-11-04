@@ -118,7 +118,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       (window as any).authToken = authToken;
 
       const response = await fetch(
-        "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/history?limit=50&offset=0",
+        "https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-editing/history?limit=50&offset=0",
         {
           method: "GET",
           headers: {
