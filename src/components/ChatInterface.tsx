@@ -113,9 +113,14 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       });
       setEditedArgs(initialArgs);
       
-      // Auto-confirm if human in loop is OFF
+      // Auto-confirm if human in loop is OFF - don't send confirmation message
       if (!humanInLoop) {
-        handleConfirm(lastMessage.toolCalls);
+        // Directly call the confirmation handler without showing UI
+        const payloadArgs: Record<string, Record<string, any>> = {};
+        lastMessage.toolCalls.forEach(tc => {
+          payloadArgs[tc.name] = { ...tc.args };
+        });
+        onToolConfirmation?.("confirm", payloadArgs);
       }
     }
   }, [messages, humanInLoop]);
@@ -1104,15 +1109,21 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           />
 
           {/* Human in the loop toggle button */}
-          <Button
-            variant={humanInLoop ? "default" : "ghost"}
-            size="icon"
-            onClick={() => setHumanInLoop(!humanInLoop)}
-            className="flex-shrink-0 h-9 w-9 rounded-lg"
-            title={humanInLoop ? "Human in the loop: ON" : "Human in the loop: OFF"}
-          >
-            <User className="w-4 h-4" />
-          </Button>
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-[10px] font-medium text-muted-foreground">HITL</span>
+            <Button
+              variant={humanInLoop ? "default" : "outline"}
+              size="icon"
+              onClick={() => setHumanInLoop(!humanInLoop)}
+              className={cn(
+                "flex-shrink-0 h-9 w-9 rounded-lg transition-all",
+                humanInLoop ? "bg-primary text-primary-foreground" : "bg-muted/50"
+              )}
+              title={humanInLoop ? "Human in the loop: ON" : "Human in the loop: OFF"}
+            >
+              <User className="w-4 h-4" />
+            </Button>
+          </div>
 
           {/* Send button (right inside) */}
           <Button
