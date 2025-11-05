@@ -651,27 +651,6 @@ The process:
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
-      {/* Header with Logo and Game Design Pro Button */}
-      <div className="absolute top-4 right-0 z-50 flex items-center gap-1.5 pr-2">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-tight">
-          Game AI studio
-        </h1>
-        <Button
-          onClick={() => navigate("/game-design-pro")}
-          className="relative group overflow-hidden bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-4 py-1.5 rounded-lg border border-primary/20"
-        >
-          <span className="relative z-10 flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            <span className="font-semibold">Game Design</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded backdrop-blur-sm">
-              Pro
-            </span>
-          </span>
-          {/* Shine effect */}
-          <span className="absolute inset-0 w-full h-full before:absolute before:inset-0 before:w-1/4 before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:skew-x-[-20deg] before:-translate-x-full before:animate-[shine_10s_ease-in-out_infinite]" />
-        </Button>
-      </div>
-      
       {/* Hidden file input for model uploads */}
       <input
         id="model-file-input"
