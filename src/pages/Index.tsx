@@ -702,19 +702,18 @@ The process:
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
           <div className="flex flex-col h-full overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-              <div className="relative flex items-center border-b bg-background justify-between pr-4">
-                <div className="flex items-center flex-1">
-                  <button
-                    onClick={() => {
-                      const container = document.querySelector('.tabs-scroll-container');
-                      if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
-                    }}
-                    className="absolute left-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  
-                  <TabsList className="tabs-scroll-container w-full justify-start rounded-none border-0 bg-background h-14 px-12 overflow-x-auto flex-nowrap scrollbar-hide">
+              <div className="relative flex items-center border-b bg-background">
+                <button
+                  onClick={() => {
+                    const container = document.querySelector('.tabs-scroll-container');
+                    if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                  }}
+                  className="absolute left-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                
+                <TabsList className="tabs-scroll-container w-full justify-start rounded-none border-0 bg-background h-14 px-12 overflow-x-auto flex-nowrap scrollbar-hide">
                   <TabsTrigger value="images" className="gap-2">
                     <ImageIcon className="w-4 h-4 dark:text-white" />
                     Image Viewer
@@ -739,28 +738,21 @@ The process:
                     <Settings className="w-4 h-4" />
                     Model Optimization
                   </TabsTrigger>
+                  <TabsTrigger value="game-design-pro" className="gap-2" onClick={() => navigate("/game-design-pro")}>
+                    <Sparkles className="w-4 h-4" />
+                    Game Design Pro
+                  </TabsTrigger>
                 </TabsList>
-                  
-                  <button
-                    onClick={() => {
-                      const container = document.querySelector('.tabs-scroll-container');
-                      if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
-                    }}
-                    className="absolute right-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
                 
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => navigate("/game-design-pro")}
-                  className="ml-2 gap-2"
+                <button
+                  onClick={() => {
+                    const container = document.querySelector('.tabs-scroll-container');
+                    if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                  }}
+                  className="absolute right-16 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  Game Design Pro
-                </Button>
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
