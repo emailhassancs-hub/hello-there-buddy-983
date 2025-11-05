@@ -404,33 +404,76 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
           </DialogClose>
           {selectedEditedImage && (
             <div className="flex flex-col">
-              <div className="relative bg-muted/20 p-8">
+               <div className="relative bg-muted/20 p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Input Images */}
-                  {selectedEditedImage.inputImage1Path && (
+                  {/* Input Image(s) Section */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Original</h4>
                     <div className="space-y-3">
-                      <h4 className="text-sm font-semibold text-muted-foreground">Original</h4>
+                      {selectedEditedImage.inputImage1Path && (
+                        <div className="rounded-lg overflow-hidden border border-border/50">
+                          <img
+                            src={selectedEditedImage.inputImage1Path}
+                            alt="Original input 1"
+                            className="w-full h-auto object-contain"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                      )}
+                      {selectedEditedImage.inputImage2Path && (
+                        <div className="rounded-lg overflow-hidden border border-border/50">
+                          <img
+                            src={selectedEditedImage.inputImage2Path}
+                            alt="Original input 2"
+                            className="w-full h-auto object-contain"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                      )}
+                      {selectedEditedImage.inputImage3Path && (
+                        <div className="rounded-lg overflow-hidden border border-border/50">
+                          <img
+                            src={selectedEditedImage.inputImage3Path}
+                            alt="Original input 3"
+                            className="w-full h-auto object-contain"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                      )}
+                      {selectedEditedImage.inputImage4Path && (
+                        <div className="rounded-lg overflow-hidden border border-border/50">
+                          <img
+                            src={selectedEditedImage.inputImage4Path}
+                            alt="Original input 4"
+                            className="w-full h-auto object-contain"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Output Image Section */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Edited Result</h4>
+                    <div className="rounded-lg overflow-hidden border border-border/50">
                       <img
-                        src={selectedEditedImage.inputImage1Path}
-                        alt="Original input"
-                        className="w-full h-auto object-contain rounded-lg"
+                        src={selectedEditedImage.outputImagePath}
+                        alt="Edited output"
+                        className="w-full h-auto object-contain"
                         onError={(e) => {
                           e.currentTarget.src = "/placeholder.svg";
                         }}
                       />
                     </div>
-                  )}
-                  {/* Output Image */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-muted-foreground">Edited</h4>
-                    <img
-                      src={selectedEditedImage.outputImagePath}
-                      alt="Edited output"
-                      className="w-full h-auto object-contain rounded-lg"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg";
-                      }}
-                    />
                   </div>
                 </div>
               </div>
