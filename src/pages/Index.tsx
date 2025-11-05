@@ -711,10 +711,6 @@ The process:
                     <Box className="w-4 h-4" />
                     3D Model Viewer
                   </TabsTrigger>
-                  <TabsTrigger value="optimization" className="gap-2">
-                    <Settings className="w-4 h-4" />
-                    Model Optimization
-                  </TabsTrigger>
                   <TabsTrigger value="episodes" className="gap-2">
                     <BookOpen className="w-4 h-4" />
                     Episode Viewer
@@ -726,6 +722,10 @@ The process:
                   <TabsTrigger value="videos" className="gap-2">
                     <Video className="w-4 h-4" />
                     Video Gallery
+                  </TabsTrigger>
+                  <TabsTrigger value="optimization" className="gap-2">
+                    <Settings className="w-4 h-4" />
+                    Model Optimization
                   </TabsTrigger>
                 </TabsList>
                 
