@@ -651,6 +651,24 @@ The process:
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
+      {/* Header with Logo and Game Design Pro Button */}
+      <div className="absolute top-4 left-4 z-50 flex items-center gap-3">
+        <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          Game AI studio
+        </h1>
+        <Button
+          onClick={() => navigate("/game-design-pro")}
+          className="relative group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-4 py-2 rounded-lg border border-primary/20"
+        >
+          <span className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            <span className="font-semibold">Game Design</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded backdrop-blur-sm">
+              Pro
+            </span>
+          </span>
+        </Button>
+      </div>
       
       {/* Hidden file input for model uploads */}
       <input
