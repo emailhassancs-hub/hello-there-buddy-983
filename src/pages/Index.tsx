@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import ChatInterface from "@/components/ChatInterface";
-import EpisodeViewer from "@/components/EpisodeViewer";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
 import ModelOptimization from "@/components/ModelOptimization";
@@ -37,26 +36,8 @@ interface Message {
   formData?: any;
 }
 
-interface StoryState {
-  current_episode: string;
-  episode_count: number;
-}
-
-interface Episode {
-  episode_number: number;
-  summary: string;
-  characters?: string[];
-  locations?: string[];
-  highlights?: string[];
-  episode_text: string;
-}
-
 const Index = () => {
   const navigate = useNavigate();
-  const [storyState, setStoryState] = useState<StoryState | null>(null);
-  const [episodes, setEpisodes] = useState<string[]>([]);
-  const [stories, setStories] = useState<string[]>([]);
-  const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -119,37 +100,6 @@ const Index = () => {
     localStorage.setItem("mcp_session_id", newSessionId);
   };
 
-  // Load available episodes and stories on component mount
-  useEffect(() => {
-    const loadAvailableContent = async () => {
-      if (!authToken) return;
-      
-      try {
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`
-        };
-
-        // Load episodes
-        const episodesRes = await fetch(`${API}/episodes`, { headers });
-        if (episodesRes.ok) {
-          const episodesData = await episodesRes.json();
-          setEpisodes(episodesData.episodes || []);
-        }
-
-        // Load stories
-        const storiesRes = await fetch(`${API}/stories`, { headers });
-        if (storiesRes.ok) {
-          const storiesData = await storiesRes.json();
-          setStories(storiesData.stories || []);
-        }
-      } catch (error) {
-        console.log("Could not load available content");
-      }
-    };
-
-    loadAvailableContent();
-  }, [authToken]);
 
   const addMessage = (role: "user" | "assistant", text: string, toolName?: string) => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), toolName }]);
@@ -340,96 +290,6 @@ const Index = () => {
     }
   };
 
-  const handleExtendStory = async (abstract?: string) => {
-    const message = abstract ? `Generate the next episode with this direction: ${abstract}` : "Generate the next episode of the story";
-    await handleSendMessage(message);
-  };
-
-  const handleLoadEpisode = async (filename: string) => {
-    try {
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      };
-      
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
-      }
-
-      const res = await fetch(`${API}/episodes/${filename}`, { headers });
-      
-      if (!res.ok) {
-        throw new Error("Failed to load episode");
-      }
-
-      const data = await res.json();
-      
-      // Convert the text content to episode format for display
-      const episode: Episode = {
-        episode_number: 1, // Default value, could be parsed from filename
-        summary: "Episode content loaded from file",
-        characters: [],
-        locations: [],
-        highlights: [],
-        episode_text: data.content
-      };
-      
-      setSelectedEpisode(episode);
-      
-      toast({
-        title: "Episode Loaded",
-        description: `Episode content from ${filename} is now displayed.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Load Failed",
-        description: "Unable to load the selected episode.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleLoadStory = async (filename: string) => {
-    try {
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      };
-      
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
-      }
-
-      const res = await fetch(`${API}/stories/${filename}`, { headers });
-      
-      if (!res.ok) {
-        throw new Error("Failed to load story");
-      }
-
-      const data = await res.json();
-      
-      // Convert the text content to episode format for display
-      const episode: Episode = {
-        episode_number: 1, // Default value, could be parsed from filename
-        summary: "Story content loaded from file",
-        characters: [],
-        locations: [],
-        highlights: [],
-        episode_text: data.content
-      };
-      
-      setSelectedEpisode(episode);
-      
-      toast({
-        title: "Story Loaded",
-        description: `Story content from ${filename} is now displayed.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Load Failed",
-        description: "Unable to load the selected story.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleImageGenerated = () => {
     setImageRefreshTrigger(prev => prev + 1);
@@ -721,10 +581,6 @@ The process:
                     <Box className="w-4 h-4" />
                     3D Model Viewer
                   </TabsTrigger>
-                  <TabsTrigger value="episodes" className="gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    Episode Viewer
-                  </TabsTrigger>
                   <TabsTrigger value="gallery" className="gap-2">
                     <BookOpen className="w-4 h-4" />
                     Model Gallery
@@ -785,19 +641,6 @@ The process:
                   isActive={activeTab === "optimization"}
                   onSendMessage={handleSendMessage}
                   onAddDirectMessage={handleAddDirectMessage}
-                />
-              </TabsContent>
-              
-              <TabsContent value="episodes" className="flex-1 m-0 overflow-hidden">
-                <EpisodeViewer
-                  storyState={storyState}
-                  episodes={episodes}
-                  stories={stories}
-                  selectedEpisode={selectedEpisode}
-                  onExtendStory={handleExtendStory}
-                  onLoadEpisode={handleLoadEpisode}
-                  onLoadStory={handleLoadStory}
-                  isGenerating={isGenerating}
                 />
               </TabsContent>
               
