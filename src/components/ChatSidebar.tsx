@@ -6,6 +6,7 @@ import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu } from "lucide-re
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { UserInfo } from "@/components/UserInfo";
 
 interface Session {
   session_id: string;
@@ -285,7 +286,6 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         )}
       </ScrollArea>
 
-      {/* New Chat Button - Bottom */}
       <div className="p-2 border-t border-border">
         <Button
           onClick={onNewChat}
@@ -296,6 +296,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
           New
         </Button>
       </div>
+      <UserInfo />
     </div>
   );
 };
