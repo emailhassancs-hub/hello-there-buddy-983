@@ -749,7 +749,7 @@ The process:
                     const container = document.querySelector('.tabs-scroll-container');
                     if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
                   }}
-                  className="absolute right-16 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
+                  className="absolute right-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
