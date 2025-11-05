@@ -178,6 +178,37 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       });
 
       setEditedImages(sorted);
+
+      // Also add edited images and input images to the generation tab
+      const additionalImages: ImageItem[] = [];
+      sorted.forEach((item) => {
+        // Add output image
+        additionalImages.push({
+          name: `Edited: ${item.prompt}`,
+          url: item.outputImagePath,
+          timestamp: item.timestamp,
+        });
+        
+        // Add input images
+        [item.inputImage1Path, item.inputImage2Path, item.inputImage3Path, item.inputImage4Path]
+          .filter(Boolean)
+          .forEach((inputUrl, idx) => {
+            additionalImages.push({
+              name: `Input for: ${item.prompt}`,
+              url: inputUrl!,
+              timestamp: item.timestamp,
+            });
+          });
+      });
+
+      // Merge with existing images and remove duplicates by URL
+      setImages(prev => {
+        const combined = [...prev, ...additionalImages];
+        const uniqueMap = new Map<string, ImageItem>();
+        combined.forEach(img => uniqueMap.set(img.url, img));
+        const unique = Array.from(uniqueMap.values());
+        return unique.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      });
     } catch (error) {
       toast({
         title: "Failed to load edited images",
@@ -324,44 +355,111 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {editedImages.map((image, index) => (
-                    <div
-                      key={index}
-                      className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => setSelectedEditedImage(image)}
-                    >
-                      <div className="aspect-square overflow-hidden bg-muted/20">
-                        <img
-                          src={image.outputImagePath}
-                          alt={image.prompt}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.currentTarget.src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
-                      <div className="p-3 border-t border-border/50">
-                        <p className="text-sm font-medium text-foreground line-clamp-2" title={image.prompt}>
-                          {image.prompt}
-                        </p>
-                        {(image.technique || image.modelName) && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {image.technique && (
-                              <span className="px-2 py-0.5 text-xs rounded bg-muted/50 text-muted-foreground">
-                                {image.technique}
-                              </span>
-                            )}
-                            {image.modelName && (
-                              <span className="px-2 py-0.5 text-xs rounded bg-muted/50 text-muted-foreground">
-                                {image.modelName}
-                              </span>
-                            )}
+                <div className="space-y-6">
+                  {editedImages.map((image, index) => {
+                    const inputImages = [
+                      image.inputImage1Path,
+                      image.inputImage2Path,
+                      image.inputImage3Path,
+                      image.inputImage4Path,
+                    ].filter(Boolean);
+
+                    // If 2+ input images, use smaller thumbnails. Otherwise equal size.
+                    const hasMultipleInputs = inputImages.length >= 2;
+
+                    return (
+                      <div
+                        key={index}
+                        className="rounded-lg border border-border/50 bg-card hover:shadow-lg transition-shadow p-6"
+                      >
+                        <div className={`grid grid-cols-1 ${hasMultipleInputs ? 'md:grid-cols-2' : 'md:grid-cols-2'} gap-6`}>
+                          {/* Input Images */}
+                          {inputImages.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                                Original Image{inputImages.length > 1 ? 's' : ''}
+                              </h4>
+                              {hasMultipleInputs ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                  {inputImages.map((inputUrl, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted/20 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                                      onClick={() => setSelectedImage({ name: 'Input Image', url: inputUrl!, timestamp: image.timestamp })}
+                                    >
+                                      <img
+                                        src={inputUrl!}
+                                        alt={`Input ${idx + 1}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.src = "/placeholder.svg";
+                                        }}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div
+                                  className="aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted/20 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                                  onClick={() => setSelectedImage({ name: 'Input Image', url: inputImages[0]!, timestamp: image.timestamp })}
+                                >
+                                  <img
+                                    src={inputImages[0]!}
+                                    alt="Input image"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.src = "/placeholder.svg";
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Output Image */}
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                              Edited Result
+                            </h4>
+                            <div
+                              className="aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted/20 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                              onClick={() => setSelectedEditedImage(image)}
+                            >
+                              <img
+                                src={image.outputImagePath}
+                                alt="Edited output"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = "/placeholder.svg";
+                                }}
+                              />
+                            </div>
                           </div>
-                        )}
+                        </div>
+
+                        {/* Metadata */}
+                        <div className="mt-4 pt-4 border-t border-border/50 space-y-2">
+                          <p className="text-sm text-foreground font-medium">
+                            {image.prompt}
+                          </p>
+                          {(image.technique || image.modelName) && (
+                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                              {image.technique && (
+                                <span className="px-2 py-1 rounded bg-muted/50">
+                                  {image.technique}
+                                </span>
+                              )}
+                              {image.modelName && (
+                                <span className="px-2 py-1 rounded bg-muted/50">
+                                  {image.modelName}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
