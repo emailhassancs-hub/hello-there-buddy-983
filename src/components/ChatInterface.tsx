@@ -486,8 +486,16 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
         {messages.map((message, index) => (
           <div key={index}>
-            {/* User message with bubble, assistant without bubble */}
-            {message.role === "user" ? (
+            {/* System message with special styling */}
+            {message.role === "system" ? (
+              <div className="flex justify-center animate-in fade-in-0 duration-1000">
+                <div className="max-w-[80%] p-6 rounded-2xl glass border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown>{message.text}</ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+            ) : message.role === "user" ? (
               <div className="flex justify-end">
                 <div className="max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter bg-chat-user-bubble text-chat-user-foreground ml-4">
                   {(() => {
