@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
 import { Image as ImageIcon, BookOpen, Box, Settings, Video, ChevronLeft, ChevronRight } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ToolCall {
   id: string;
@@ -61,6 +62,7 @@ const Index = () => {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // const apiUrl = "http://localhost:8000";
   const apiUrl = "http://35.209.183.202:8000";
@@ -216,6 +218,8 @@ const Index = () => {
         };
         setMessages((prev) => [...prev, assistantMessage]);
       } else if (data.status === "complete") {
+        // Invalidate user profile query to refresh credits after operation completes
+        queryClient.invalidateQueries({ queryKey: ['user-profile'] });
         // Already handled by messages array above
         if (!data.messages || data.messages.length === 0) {
           const assistantMessage: Message = {
@@ -304,6 +308,8 @@ const Index = () => {
         };
         setMessages((prev) => [...prev, assistantMessage]);
       } else if (data.status === "complete") {
+        // Invalidate user profile query to refresh credits after tool execution
+        queryClient.invalidateQueries({ queryKey: ['user-profile'] });
         // Already handled by messages array above
         if (!data.messages || data.messages.length === 0) {
           const assistantMessage: Message = {
@@ -424,6 +430,8 @@ const Index = () => {
 
   const handleImageGenerated = () => {
     setImageRefreshTrigger(prev => prev + 1);
+    // Invalidate user profile query to refresh credits
+    queryClient.invalidateQueries({ queryKey: ['user-profile'] });
   };
 
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
