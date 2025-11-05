@@ -652,7 +652,7 @@ The process:
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
       {/* Header with Logo and Game Design Pro Button */}
-      <div className="absolute top-4 left-4 z-50 flex items-center gap-1.5">
+      <div className="absolute top-4 left-0 z-50 flex items-center gap-1.5 pl-2">
         <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent leading-tight">
           Game AI studio
         </h1>
