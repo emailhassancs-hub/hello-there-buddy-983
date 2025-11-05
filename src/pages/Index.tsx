@@ -13,8 +13,10 @@ import { apiFetch } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, BookOpen, Box, Settings, Video, ChevronLeft, ChevronRight } from "lucide-react";
+import { Image as ImageIcon, BookOpen, Box, Settings, Video, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 interface ToolCall {
   id: string;
@@ -50,6 +52,7 @@ interface Episode {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [storyState, setStoryState] = useState<StoryState | null>(null);
   const [episodes, setEpisodes] = useState<string[]>([]);
   const [stories, setStories] = useState<string[]>([]);
@@ -699,18 +702,19 @@ The process:
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
           <div className="flex flex-col h-full overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-              <div className="relative flex items-center border-b bg-background">
-                <button
-                  onClick={() => {
-                    const container = document.querySelector('.tabs-scroll-container');
-                    if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
-                  }}
-                  className="absolute left-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                
-                <TabsList className="tabs-scroll-container w-full justify-start rounded-none border-0 bg-background h-14 px-12 overflow-x-auto flex-nowrap scrollbar-hide">
+              <div className="relative flex items-center border-b bg-background justify-between pr-4">
+                <div className="flex items-center flex-1">
+                  <button
+                    onClick={() => {
+                      const container = document.querySelector('.tabs-scroll-container');
+                      if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                    }}
+                    className="absolute left-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  
+                  <TabsList className="tabs-scroll-container w-full justify-start rounded-none border-0 bg-background h-14 px-12 overflow-x-auto flex-nowrap scrollbar-hide">
                   <TabsTrigger value="images" className="gap-2">
                     <ImageIcon className="w-4 h-4 dark:text-white" />
                     Image Viewer
@@ -736,16 +740,27 @@ The process:
                     Model Optimization
                   </TabsTrigger>
                 </TabsList>
+                  
+                  <button
+                    onClick={() => {
+                      const container = document.querySelector('.tabs-scroll-container');
+                      if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                    }}
+                    className="absolute right-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
                 
-                <button
-                  onClick={() => {
-                    const container = document.querySelector('.tabs-scroll-container');
-                    if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
-                  }}
-                  className="absolute right-0 z-10 h-14 px-2 bg-background/95 hover:bg-muted transition-colors"
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => navigate("/game-design-pro")}
+                  className="ml-2 gap-2"
                 >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+                  <Sparkles className="h-4 w-4" />
+                  Game Design Pro
+                </Button>
               </div>
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
