@@ -502,13 +502,7 @@ The process:
   const handleNewChat = () => {
     setSessionId(null);
     localStorage.removeItem("mcp_session_id");
-    setMessages([
-      {
-        role: "system",
-        text: "# New Chat\n\nPlease name this chat by clicking the edit button in the sidebar. This will help you organize your conversations better.",
-        timestamp: new Date(),
-      }
-    ]);
+    setMessages([]);
     toast({
       title: "New Chat Started",
       description: "You can now start a fresh conversation.",
