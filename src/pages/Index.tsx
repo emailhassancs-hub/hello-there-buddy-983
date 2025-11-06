@@ -585,13 +585,13 @@ The process:
                     <BookOpen className="w-4 h-4" />
                     Model Gallery
                   </TabsTrigger>
-                  <TabsTrigger value="videos" className="gap-2">
-                    <Video className="w-4 h-4" />
-                    Video Gallery
-                  </TabsTrigger>
                   <TabsTrigger value="optimization" className="gap-2">
                     <Settings className="w-4 h-4" />
                     Model Optimization
+                  </TabsTrigger>
+                  <TabsTrigger value="videos" className="gap-2">
+                    <Video className="w-4 h-4" />
+                    Video Gallery
                   </TabsTrigger>
                   <TabsTrigger value="game-design-pro" className="gap-2" onClick={() => navigate("/game-design-pro")}>
                     <Sparkles className="w-4 h-4" />
