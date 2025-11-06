@@ -405,8 +405,8 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="flex-1 mt-2">
-            <ScrollArea className="h-full">
+          <TabsContent value={activeTab} className="flex-1 mt-2 overflow-hidden">
+            <ScrollArea className="h-full w-full">
               <div className="px-3 pb-3">
                 {filteredModels.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground text-sm">
