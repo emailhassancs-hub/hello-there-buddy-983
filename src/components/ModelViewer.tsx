@@ -4,7 +4,7 @@ import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as THREE from "three";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Box, ZoomIn, Palette, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 interface ModelData {
   id: string;
@@ -220,224 +221,233 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* 3D Viewer - Collapsible Section */}
-      <Collapsible open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <div className="border-b border-border/50 p-3 flex items-center justify-between bg-background">
-          <div className="flex items-center gap-2">
-            <Box className="w-4 h-4 text-primary" />
-            <h2 className="text-base font-semibold">3D Viewer</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            {selectedModel && selectedModel.modelUrl && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDownload(selectedModel.modelUrl!)}
-                className="h-8 gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Download
-              </Button>
-            )}
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                {isViewerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-        </div>
-        
-        <CollapsibleContent>
-          <div className="flex flex-col" style={{ height: '500px' }}>
-            {selectedModel && selectedModel.modelUrl ? (
-              <div className="flex-1 relative bg-background">
-                {loadError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-                    <div className="text-center p-6 rounded-lg bg-destructive/10 border border-destructive">
-                      <p className="text-destructive">{loadError}</p>
+      <ResizablePanelGroup direction="vertical" className="h-full">
+        {/* 3D Viewer Panel */}
+        <ResizablePanel defaultSize={60} minSize={30}>
+          <Collapsible open={isViewerOpen} onOpenChange={setIsViewerOpen} className="h-full flex flex-col">
+            <div className="border-b border-border/50 p-3 flex items-center justify-between bg-background shrink-0">
+              <div className="flex items-center gap-2">
+                <Box className="w-4 h-4 text-primary" />
+                <h2 className="text-base font-semibold">3D Viewer</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedModel && selectedModel.modelUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(selectedModel.modelUrl!)}
+                    className="h-8 gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </Button>
+                )}
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    {isViewerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+            </div>
+            
+            <CollapsibleContent className="flex-1 min-h-0">
+              <div className="h-full">
+                {selectedModel && selectedModel.modelUrl ? (
+                  <div className="h-full relative bg-background">
+                    {loadError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+                        <div className="text-center p-6 rounded-lg bg-destructive/10 border border-destructive">
+                          <p className="text-destructive">{loadError}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Zoom indicator */}
+                    <div className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-lg border border-border shadow-sm">
+                      <ZoomIn className="w-4 h-4 text-foreground" />
+                    </div>
+
+                    {/* Light Controls */}
+                    <div className="absolute bottom-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-2 rounded-lg border border-border shadow-lg space-y-2" style={{ width: '160px' }}>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-foreground">Angle X: {lightAngleX[0]}°</label>
+                        <Slider
+                          value={lightAngleX}
+                          onValueChange={setLightAngleX}
+                          min={0}
+                          max={360}
+                          step={5}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-foreground">Angle Y: {lightAngleY[0]}°</label>
+                        <Slider
+                          value={lightAngleY}
+                          onValueChange={setLightAngleY}
+                          min={0}
+                          max={360}
+                          step={5}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-foreground">Brightness: {lightIntensity[0]}</label>
+                        <Slider
+                          value={lightIntensity}
+                          onValueChange={setLightIntensity}
+                          min={0.5}
+                          max={5}
+                          step={0.5}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-foreground">Camera Height: {cameraHeight[0]}</label>
+                        <Slider
+                          value={cameraHeight}
+                          onValueChange={setCameraHeight}
+                          min={1}
+                          max={8}
+                          step={0.5}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-foreground flex items-center gap-1">
+                          <Palette className="w-3 h-3" />
+                          Background
+                        </label>
+                        <Input
+                          type="color"
+                          value={bgColor}
+                          onChange={(e) => setBgColor(e.target.value)}
+                          className="w-full h-6 p-0 border-0 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    <Canvas shadows style={{ background: bgColor }}>
+                      <PerspectiveCamera makeDefault position={[3, cameraHeight[0], 3]} />
+                      <OrbitControls 
+                        enableDamping
+                        dampingFactor={0.05}
+                        minDistance={1}
+                        maxDistance={10}
+                      />
+                      
+                      <ambientLight intensity={0.5} />
+                      <directionalLight 
+                        position={[
+                          10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
+                          10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
+                          10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
+                        ]} 
+                        intensity={lightIntensity[0]} 
+                        castShadow 
+                      />
+                      <directionalLight 
+                        position={[
+                          -10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
+                          -10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
+                          -10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
+                        ]} 
+                        intensity={lightIntensity[0] * 0.4} 
+                      />
+                      
+                      <Suspense fallback={null}>
+                        <Model 
+                          url={selectedModel.modelUrl} 
+                          type={getModelType(selectedModel.modelUrl)} 
+                          onError={setLoadError} 
+                        />
+                      </Suspense>
+                      
+                      <gridHelper args={[10, 10]} position={[0, 0, 0]} />
+                    </Canvas>
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <Box className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg">Select a 3D model to view</p>
                     </div>
                   </div>
                 )}
-                
-                {/* Zoom indicator */}
-                <div className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-lg border border-border shadow-sm">
-                  <ZoomIn className="w-4 h-4 text-foreground" />
-                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </ResizablePanel>
 
-            {/* Light Controls */}
-            <div className="absolute bottom-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-2 rounded-lg border border-border shadow-lg space-y-2" style={{ width: '160px' }}>
-              <div className="space-y-1">
-                <label className="text-[10px] font-medium text-foreground">Angle X: {lightAngleX[0]}°</label>
-                <Slider
-                  value={lightAngleX}
-                  onValueChange={setLightAngleX}
-                  min={0}
-                  max={360}
-                  step={5}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-medium text-foreground">Angle Y: {lightAngleY[0]}°</label>
-                <Slider
-                  value={lightAngleY}
-                  onValueChange={setLightAngleY}
-                  min={0}
-                  max={360}
-                  step={5}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-medium text-foreground">Brightness: {lightIntensity[0]}</label>
-                <Slider
-                  value={lightIntensity}
-                  onValueChange={setLightIntensity}
-                  min={0.5}
-                  max={5}
-                  step={0.5}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-medium text-foreground">Camera Height: {cameraHeight[0]}</label>
-                <Slider
-                  value={cameraHeight}
-                  onValueChange={setCameraHeight}
-                  min={1}
-                  max={8}
-                  step={0.5}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-medium text-foreground flex items-center gap-1">
-                  <Palette className="w-3 h-3" />
-                  Background
-                </label>
-                <Input
-                  type="color"
-                  value={bgColor}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  className="w-full h-6 p-0 border-0 cursor-pointer"
-                />
-              </div>
-            </div>
+        <ResizableHandle withHandle />
 
-                <Canvas shadows style={{ background: bgColor }}>
-                  <PerspectiveCamera makeDefault position={[3, cameraHeight[0], 3]} />
-                  <OrbitControls 
-                    enableDamping
-                    dampingFactor={0.05}
-                    minDistance={1}
-                    maxDistance={10}
-                  />
-                  
-                  <ambientLight intensity={0.5} />
-                  <directionalLight 
-                    position={[
-                      10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
-                      10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
-                      10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
-                    ]} 
-                    intensity={lightIntensity[0]} 
-                    castShadow 
-                  />
-                  <directionalLight 
-                    position={[
-                      -10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
-                      -10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
-                      -10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
-                    ]} 
-                    intensity={lightIntensity[0] * 0.4} 
-                  />
-                  
-                  <Suspense fallback={null}>
-                    <Model 
-                      url={selectedModel.modelUrl} 
-                      type={getModelType(selectedModel.modelUrl)} 
-                      onError={setLoadError} 
-                    />
-                  </Suspense>
-                  
-                  <gridHelper args={[10, 10]} position={[0, 0, 0]} />
-                </Canvas>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Box className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg">Select a 3D model to view</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+        {/* Category Tabs Panel */}
+        <ResizablePanel defaultSize={40} minSize={20}>
+          <div className="h-full flex flex-col bg-background">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col min-h-0">
+              <TabsList className="mx-3 mt-2 w-auto gap-2 shrink-0">
+                <TabsTrigger value="TEXT_TO_3D" className="text-xs">
+                  📝 Text to 3D
+                </TabsTrigger>
+                <TabsTrigger value="IMAGE_TO_3D" className="text-xs">
+                  🖼️ Image to 3D
+                </TabsTrigger>
+                <TabsTrigger value="POST_PROCESS" className="text-xs">
+                  🧰 Post Processing
+                </TabsTrigger>
+              </TabsList>
 
-      {/* Category Tabs - Bottom Section */}
-      <div className="border-t border-border/50 flex flex-col flex-1">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="mx-3 mt-2 w-auto gap-2 shrink-0">
-            <TabsTrigger value="TEXT_TO_3D" className="text-xs">
-              📝 Text to 3D
-            </TabsTrigger>
-            <TabsTrigger value="IMAGE_TO_3D" className="text-xs">
-              🖼️ Image to 3D
-            </TabsTrigger>
-            <TabsTrigger value="POST_PROCESS" className="text-xs">
-              🧰 Post Processing
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={activeTab} className="flex-1 mt-2 min-h-0">
-            <ScrollArea className="h-full">
-              <div className="px-3 pb-3">
-                {filteredModels.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground text-sm">
-                    No {activeTab === "TEXT_TO_3D" ? "text to 3D" : activeTab === "IMAGE_TO_3D" ? "image to 3D" : "post processing"} models available
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                    {filteredModels.map((model) => (
-                      <div
-                        key={model.id}
-                        className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
-                          selectedModel?.id === model.id
-                            ? 'border-primary shadow-lg'
-                            : 'border-border'
-                        }`}
-                        onClick={() => setInternalSelectedModel(model)}
-                      >
-                        {model.thumbnailUrl ? (
-                          <img 
-                            src={model.thumbnailUrl} 
-                            alt={model.prompt}
-                            className="w-full h-32 object-cover rounded-t-md"
-                            loading="lazy"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/placeholder.svg";
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-32 bg-muted rounded-t-md flex items-center justify-center">
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {getModelType(model.modelUrl).toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                        <div className="p-2">
-                          <p className="text-xs font-medium truncate">{model.prompt}</p>
-                        </div>
+              <TabsContent value={activeTab} className="flex-1 mt-2 min-h-0 m-0">
+                <ScrollArea className="h-full px-3">
+                  <div className="pb-3">
+                    {filteredModels.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        No {activeTab === "TEXT_TO_3D" ? "text to 3D" : activeTab === "IMAGE_TO_3D" ? "image to 3D" : "post processing"} models available
                       </div>
-                    ))}
+                    ) : (
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                        {filteredModels.map((model) => (
+                          <div
+                            key={model.id}
+                            className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
+                              selectedModel?.id === model.id
+                                ? 'border-primary shadow-lg'
+                                : 'border-border'
+                            }`}
+                            onClick={() => setInternalSelectedModel(model)}
+                          >
+                            {model.thumbnailUrl ? (
+                              <img 
+                                src={model.thumbnailUrl} 
+                                alt={model.prompt}
+                                className="w-full h-32 object-cover rounded-t-md"
+                                loading="lazy"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-32 bg-muted rounded-t-md flex items-center justify-center">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {getModelType(model.modelUrl).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="p-2">
+                              <p className="text-xs font-medium truncate">{model.prompt}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
-      </div>
+                  <ScrollBar orientation="vertical" />
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 };
