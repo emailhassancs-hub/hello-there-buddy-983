@@ -581,10 +581,6 @@ The process:
                     <Box className="w-4 h-4" />
                     3D Model Viewer
                   </TabsTrigger>
-                  <TabsTrigger value="gallery" className="gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    Model Gallery
-                  </TabsTrigger>
                   <TabsTrigger value="optimization" className="gap-2">
                     <Settings className="w-4 h-4" />
                     Model Optimization
@@ -642,10 +638,6 @@ The process:
                   onSendMessage={handleSendMessage}
                   onAddDirectMessage={handleAddDirectMessage}
                 />
-              </TabsContent>
-              
-              <TabsContent value="gallery" className="flex-1 m-0 overflow-auto">
-                <ModelGallery />
               </TabsContent>
               
               <TabsContent value="videos" className="flex-1 m-0 overflow-auto">
