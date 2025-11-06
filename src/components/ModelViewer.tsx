@@ -377,21 +377,6 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
 
       {/* Category Tabs - Bottom Section */}
       <div className="border-t border-border/50 flex flex-col flex-1">
-        <div className="p-3 border-b border-border/50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Box className="w-4 h-4 text-primary" />
-            <h2 className="text-base font-semibold">Model Gallery</h2>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={loadModels}
-            className="h-8 w-8"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
-
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col min-h-0">
           <TabsList className="mx-3 mt-2 w-auto gap-2 shrink-0">
             <TabsTrigger value="TEXT_TO_3D" className="text-xs">
