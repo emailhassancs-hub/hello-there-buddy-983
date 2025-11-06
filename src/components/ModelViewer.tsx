@@ -6,11 +6,12 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as THREE from "three";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Box, ZoomIn, Palette } from "lucide-react";
+import { RefreshCw, Box, ZoomIn, Palette, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface ModelData {
   id: string;
@@ -118,7 +119,35 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [bgColor, setBgColor] = useState("#e5e5e5");
   const [token, setToken] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"TEXT_TO_3D" | "IMAGE_TO_3D" | "POST_PROCESS">("TEXT_TO_3D");
+  const [isViewerOpen, setIsViewerOpen] = useState(true);
   const { toast } = useToast();
+
+  const handleDownload = async (modelUrl: string) => {
+    try {
+      const response = await fetch(modelUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = modelUrl.split('/').pop() || 'model.glb';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Download Started",
+        description: "Your model is being downloaded",
+      });
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast({
+        title: "Download Failed",
+        description: "Unable to download the model",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -191,22 +220,49 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* 3D Viewer - Top Section */}
-      <div className="flex-1 flex flex-col" style={{ minHeight: '70%' }}>
-        {selectedModel && selectedModel.modelUrl ? (
-          <div className="flex-1 relative bg-background">
-            {loadError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-                <div className="text-center p-6 rounded-lg bg-destructive/10 border border-destructive">
-                  <p className="text-destructive">{loadError}</p>
-                </div>
-              </div>
+      {/* 3D Viewer - Collapsible Section */}
+      <Collapsible open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+        <div className="border-b border-border/50 p-3 flex items-center justify-between bg-background">
+          <div className="flex items-center gap-2">
+            <Box className="w-4 h-4 text-primary" />
+            <h2 className="text-base font-semibold">3D Viewer</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            {selectedModel && selectedModel.modelUrl && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDownload(selectedModel.modelUrl!)}
+                className="h-8 gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download
+              </Button>
             )}
-            
-            {/* Zoom indicator */}
-            <div className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-lg border border-border shadow-sm">
-              <ZoomIn className="w-4 h-4 text-foreground" />
-            </div>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                {isViewerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+        </div>
+        
+        <CollapsibleContent>
+          <div className="flex flex-col" style={{ height: '500px' }}>
+            {selectedModel && selectedModel.modelUrl ? (
+              <div className="flex-1 relative bg-background">
+                {loadError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+                    <div className="text-center p-6 rounded-lg bg-destructive/10 border border-destructive">
+                      <p className="text-destructive">{loadError}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Zoom indicator */}
+                <div className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-lg border border-border shadow-sm">
+                  <ZoomIn className="w-4 h-4 text-foreground" />
+                </div>
 
             {/* Light Controls */}
             <div className="absolute bottom-4 left-4 z-10 bg-background/90 backdrop-blur-sm p-2 rounded-lg border border-border shadow-lg space-y-2" style={{ width: '160px' }}>
@@ -268,61 +324,63 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
               </div>
             </div>
 
-            <Canvas shadows style={{ background: bgColor }}>
-              <PerspectiveCamera makeDefault position={[3, cameraHeight[0], 3]} />
-              <OrbitControls 
-                enableDamping
-                dampingFactor={0.05}
-                minDistance={1}
-                maxDistance={10}
-              />
-              
-              <ambientLight intensity={0.5} />
-              <directionalLight 
-                position={[
-                  10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
-                  10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
-                  10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
-                ]} 
-                intensity={lightIntensity[0]} 
-                castShadow 
-              />
-              <directionalLight 
-                position={[
-                  -10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
-                  -10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
-                  -10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
-                ]} 
-                intensity={lightIntensity[0] * 0.4} 
-              />
-              
-              <Suspense fallback={null}>
-                <Model 
-                  url={selectedModel.modelUrl} 
-                  type={getModelType(selectedModel.modelUrl)} 
-                  onError={setLoadError} 
-                />
-              </Suspense>
-              
-              <gridHelper args={[10, 10]} position={[0, 0, 0]} />
-            </Canvas>
+                <Canvas shadows style={{ background: bgColor }}>
+                  <PerspectiveCamera makeDefault position={[3, cameraHeight[0], 3]} />
+                  <OrbitControls 
+                    enableDamping
+                    dampingFactor={0.05}
+                    minDistance={1}
+                    maxDistance={10}
+                  />
+                  
+                  <ambientLight intensity={0.5} />
+                  <directionalLight 
+                    position={[
+                      10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
+                      10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
+                      10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
+                    ]} 
+                    intensity={lightIntensity[0]} 
+                    castShadow 
+                  />
+                  <directionalLight 
+                    position={[
+                      -10 * Math.cos((lightAngleX[0] * Math.PI) / 180),
+                      -10 * Math.sin((lightAngleY[0] * Math.PI) / 180),
+                      -10 * Math.sin((lightAngleX[0] * Math.PI) / 180)
+                    ]} 
+                    intensity={lightIntensity[0] * 0.4} 
+                  />
+                  
+                  <Suspense fallback={null}>
+                    <Model 
+                      url={selectedModel.modelUrl} 
+                      type={getModelType(selectedModel.modelUrl)} 
+                      onError={setLoadError} 
+                    />
+                  </Suspense>
+                  
+                  <gridHelper args={[10, 10]} position={[0, 0, 0]} />
+                </Canvas>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <Box className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg">Select a 3D model to view</p>
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <Box className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg">Select a 3D model to view</p>
-            </div>
-          </div>
-        )}
-      </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Category Tabs - Bottom Section */}
-      <div className="border-t border-border/50 flex flex-col" style={{ height: '30%', maxHeight: '350px' }}>
+      <div className="border-t border-border/50 flex flex-col flex-1">
         <div className="p-3 border-b border-border/50 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Box className="w-4 h-4 text-primary" />
-            <h2 className="text-base font-semibold">3D Models</h2>
+            <h2 className="text-base font-semibold">Model Gallery</h2>
           </div>
           <Button
             variant="ghost"
@@ -355,7 +413,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                     No {activeTab === "TEXT_TO_3D" ? "text to 3D" : activeTab === "IMAGE_TO_3D" ? "image to 3D" : "post processing"} models available
                   </div>
                 ) : (
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {filteredModels.map((model) => (
                       <div
                         key={model.id}
@@ -365,26 +423,25 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                             : 'border-border'
                         }`}
                         onClick={() => setInternalSelectedModel(model)}
-                        style={{ width: '80px' }}
                       >
                         {model.thumbnailUrl ? (
                           <img 
                             src={model.thumbnailUrl} 
                             alt={model.prompt}
-                            className="w-full h-20 object-cover rounded-t-md"
+                            className="w-full h-32 object-cover rounded-t-md"
                             loading="lazy"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "/placeholder.svg";
                             }}
                           />
                         ) : (
-                          <div className="w-full h-20 bg-muted rounded-t-md flex items-center justify-center">
+                          <div className="w-full h-32 bg-muted rounded-t-md flex items-center justify-center">
                             <span className="text-xs font-medium text-muted-foreground">
                               {getModelType(model.modelUrl).toUpperCase()}
                             </span>
                           </div>
                         )}
-                        <div className="p-1.5">
+                        <div className="p-2">
                           <p className="text-xs font-medium truncate">{model.prompt}</p>
                         </div>
                       </div>
