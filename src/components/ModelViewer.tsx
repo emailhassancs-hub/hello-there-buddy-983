@@ -392,8 +392,8 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
           </Button>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
-          <TabsList className="mx-3 mt-2 w-auto gap-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="mx-3 mt-2 w-auto gap-2 shrink-0">
             <TabsTrigger value="TEXT_TO_3D" className="text-xs">
               📝 Text to 3D
             </TabsTrigger>
@@ -405,8 +405,8 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="flex-1 mt-2 overflow-hidden">
-            <ScrollArea className="h-full w-full">
+          <TabsContent value={activeTab} className="flex-1 mt-2 min-h-0">
+            <ScrollArea className="h-full">
               <div className="px-3 pb-3">
                 {filteredModels.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground text-sm">
