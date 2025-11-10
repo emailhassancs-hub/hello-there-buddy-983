@@ -302,54 +302,15 @@ Be friendly and instructive. Use short explanations and examples where needed.`
 
       const data = await response.json();
 
-      // Step 3: Filter and display only user-friendly messages
+      // Step 3: Display only the agent's response (not sending it back to backend)
       if (data.messages && Array.isArray(data.messages)) {
         data.messages.forEach((msg: any) => {
-          // Skip tool invocation messages
-          const content = msg.content || "";
-          const isToolInvocation = content.includes("Invoke the tool") || 
-                                   content.includes("optimize_single_model_tool") ||
-                                   content.includes("optimize_multiple_models_tool");
-          
-          if (isToolInvocation) {
-            return; // Skip this message
-          }
-
-          // Handle tool response messages - parse and extract images
-          if (msg.type === "tool") {
-            try {
-              const parsedContent = typeof content === "string" ? JSON.parse(content) : content;
-              
-              // Check for image URLs in various possible fields
-              const imgUrl = parsedContent.img_url || parsedContent.image_url || parsedContent.thumbnail_url;
-              
-              if (imgUrl) {
-                // Display image in chat
-                onAddDirectMessage?.("assistant", `![Optimized Model](${imgUrl})`);
-              } else if (parsedContent.status === "success" || parsedContent.message) {
-                // Display success message if available
-                onAddDirectMessage?.("assistant", parsedContent.message || "Operation completed successfully.");
-              }
-            } catch (e) {
-              // If parsing fails, check if it's a plain text response worth showing
-              if (content && content.trim().length > 0 && !content.startsWith("{")) {
-                onAddDirectMessage?.("assistant", content);
-              }
-            }
-          } else if (msg.type === "ai") {
-            // Display AI responses normally
-            onAddDirectMessage?.("assistant", content);
+          if (msg.type === "ai" || msg.type === "tool") {
+            onAddDirectMessage?.("assistant", msg.content || "");
           }
         });
       } else if (data.response) {
-        // Filter single response messages
-        const isToolInvocation = data.response.includes("Invoke the tool") || 
-                                 data.response.includes("optimize_single_model_tool") ||
-                                 data.response.includes("optimize_multiple_models_tool");
-        
-        if (!isToolInvocation) {
-          onAddDirectMessage?.("assistant", data.response);
-        }
+        onAddDirectMessage?.("assistant", data.response);
       }
       
       // Step 4: Show interactive model selection form in chat
