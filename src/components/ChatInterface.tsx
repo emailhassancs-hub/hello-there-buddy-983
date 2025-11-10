@@ -64,6 +64,23 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [humanInLoop, setHumanInLoop] = useState(false);
   const { toast } = useToast();
 
+  // Helper to detect raw tool invocation messages and skip rendering
+  const isToolInvocation = (content: string): boolean => {
+    if (!content) return false;
+    const lowerContent = content.toLowerCase();
+    return (
+      lowerContent.includes("invoke the tool") ||
+      lowerContent.includes("using the following parameters") ||
+      lowerContent.includes("access_token") ||
+      lowerContent.includes("optimize_single_model_tool") ||
+      lowerContent.includes("optimize_multiple_models_tool") ||
+      lowerContent.includes("modelid") ||
+      lowerContent.includes("presetid") ||
+      (lowerContent.includes("{") && lowerContent.includes("model_id") && lowerContent.includes("preset_id")) ||
+      (lowerContent.includes("'optimize_") && lowerContent.includes("'"))
+    );
+  };
+
   const welcomeMessages = [
     "Chat with me",
     "I will help you generate and edit images of your choice",
@@ -484,9 +501,11 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           </div>
         )}
 
-        {messages.map((message, index) => (
-          <div key={index}>
-            {/* User message with bubble, assistant without bubble */}
+        {messages.map((message, index) => {
+          if (typeof message.text === 'string' && isToolInvocation(message.text)) return null;
+          return (
+            <div key={index}>
+              {/* User message with bubble, assistant without bubble */}
             {message.role === "user" ? (
               <div className="flex justify-end">
                 <div className="max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter bg-chat-user-bubble text-chat-user-foreground ml-4">
@@ -997,7 +1016,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
               </div>
             )}
           </div>
-        ))}
+        );
+        })}
 
         {isGenerating && (
           <div className="flex justify-start">
