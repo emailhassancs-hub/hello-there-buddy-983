@@ -64,7 +64,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [humanInLoop, setHumanInLoop] = useState(false);
   const { toast } = useToast();
 
-  // Helper to detect raw tool invocation messages and skip rendering
+  // Helper to detect raw tool invocation messages and tool responses
   const isToolInvocation = (content: string): boolean => {
     if (!content) return false;
     const lowerContent = content.toLowerCase();
@@ -74,9 +74,15 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       lowerContent.includes("access_token") ||
       lowerContent.includes("optimize_single_model_tool") ||
       lowerContent.includes("optimize_multiple_models_tool") ||
+      lowerContent.includes("tool result:") ||
+      lowerContent.includes("optimize_id") ||
+      lowerContent.includes("asset_id") ||
+      lowerContent.includes("preset_id") ||
       lowerContent.includes("modelid") ||
       lowerContent.includes("presetid") ||
-      (lowerContent.includes("{") && lowerContent.includes("model_id") && lowerContent.includes("preset_id")) ||
+      (lowerContent.includes("{") && lowerContent.includes("model_id")) ||
+      (lowerContent.includes("{") && lowerContent.includes("optimize_id")) ||
+      (lowerContent.includes("{") && lowerContent.includes("optimized_model")) ||
       (lowerContent.includes("'optimize_") && lowerContent.includes("'"))
     );
   };
