@@ -125,10 +125,15 @@ const Index = () => {
       lowerContent.includes("preset_id") ||
       lowerContent.includes("modelid") ||
       lowerContent.includes("presetid") ||
-      (lowerContent.includes("{") && lowerContent.includes("model_id")) ||
-      (lowerContent.includes("{") && lowerContent.includes("optimize_id")) ||
-      (lowerContent.includes("{") && lowerContent.includes("optimized_model")) ||
-      (lowerContent.includes("'optimize_") && lowerContent.includes("'"))
+      // catches tool names in quotes like 'optimize_single_model_tool'
+      (lowerContent.includes("'optimize_") && lowerContent.includes("'")) ||
+      // JSON object patterns that indicate tool responses/args
+      (lowerContent.includes("{") && (
+        lowerContent.includes("model_id") ||
+        lowerContent.includes("optimize_id") ||
+        lowerContent.includes("optimized_model") ||
+        lowerContent.includes("access_token")
+      ))
     );
   }, []);
 
