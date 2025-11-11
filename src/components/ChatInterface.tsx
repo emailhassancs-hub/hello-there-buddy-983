@@ -90,7 +90,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   // Memoize filtered messages to prevent infinite re-renders
   const filteredMessages = useMemo(() => {
     return messages.filter(msg => !isToolInvocation(msg.text));
-  }, [messages, isToolInvocation]);
+  }, [messages]);
 
   const welcomeMessages = [
     "Chat with me",
