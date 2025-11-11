@@ -100,6 +100,30 @@ const Index = () => {
     localStorage.setItem("mcp_session_id", newSessionId);
   };
 
+  const saveSessionToBackend = async (sessionId: string, messages: Message[]) => {
+    const token = authToken || localStorage.getItem("auth_token");
+    if (!token) return;
+
+    try {
+      await fetch(`${apiUrl}/user/sessions`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          session_data: {
+            messages: messages,
+            updated_at: new Date().toISOString()
+          }
+        })
+      });
+    } catch (error) {
+      console.error("Failed to save session:", error);
+    }
+  };
+
 
   const addMessage = (role: "user" | "assistant", text: string, toolName?: string) => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), toolName }]);
@@ -157,7 +181,14 @@ const Index = () => {
           text: msg.content || "",
           toolName: msg.type === "tool" ? msg.name : undefined,
         }));
-        setMessages((prev) => [...prev, ...newMessages]);
+        setMessages((prev) => {
+          const updatedMessages = [...prev, ...newMessages];
+          // Auto-save session to GCS after message exchange
+          if (data.session_id && newMessages.length > 0) {
+            saveSessionToBackend(data.session_id, updatedMessages);
+          }
+          return updatedMessages;
+        });
       }
 
       if (data.status === "awaiting_confirmation") {
@@ -246,7 +277,14 @@ const Index = () => {
           text: msg.content || "",
           toolName: msg.type === "tool" ? msg.name : undefined,
         }));
-        setMessages((prev) => [...prev, ...newMessages]);
+        setMessages((prev) => {
+          const updatedMessages = [...prev, ...newMessages];
+          // Auto-save session to GCS after tool confirmation
+          if (data.session_id && newMessages.length > 0) {
+            saveSessionToBackend(data.session_id, updatedMessages);
+          }
+          return updatedMessages;
+        });
       }
 
       if (data.status === "awaiting_confirmation") {
@@ -464,7 +502,7 @@ The process:
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${API}/session/${sessionId}/export`, { headers });
+      const response = await fetch(`${API}/user/sessions/${sessionId}`, { headers });
       if (!response.ok) {
         throw new Error("Failed to load session");
       }

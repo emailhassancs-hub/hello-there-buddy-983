@@ -50,12 +50,24 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${apiUrl}/sessions`, { headers });
+      const response = await fetch(`${apiUrl}/user/sessions`, { headers });
       if (!response.ok) {
         throw new Error("Failed to fetch sessions");
       }
       const data = await response.json();
-      setSessions(data.sessions || []);
+      
+      // Handle new session_ids format
+      if (data.session_ids) {
+        const sessions = data.session_ids.map((id: string) => ({
+          session_id: id,
+          created_at: null,
+          updated_at: null,
+          message_count: 0
+        }));
+        setSessions(sessions);
+      } else {
+        setSessions([]);
+      }
     } catch (error) {
       console.error("Error fetching sessions:", error);
       toast({
@@ -118,7 +130,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${apiUrl}/session/${sessionId}/delete`, {
+      const response = await fetch(`${apiUrl}/user/sessions/${sessionId}`, {
         method: "DELETE",
         headers,
       });
