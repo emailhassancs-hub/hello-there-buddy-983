@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
@@ -109,8 +109,8 @@ const Index = () => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), formType: formType as any, formData }]);
   };
 
-  // Helper to detect raw tool invocation messages and tool responses
-  const isToolInvocation = (content: string): boolean => {
+  // Helper to detect raw tool invocation messages and tool responses - memoized to prevent infinite loops
+  const isToolInvocation = useCallback((content: string): boolean => {
     if (!content) return false;
     const lowerContent = content.toLowerCase();
     return (
@@ -130,7 +130,7 @@ const Index = () => {
       (lowerContent.includes("{") && lowerContent.includes("optimized_model")) ||
       (lowerContent.includes("'optimize_") && lowerContent.includes("'"))
     );
-  };
+  }, []);
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
