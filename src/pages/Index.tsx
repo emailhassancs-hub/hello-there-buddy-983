@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
@@ -109,34 +109,6 @@ const Index = () => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), formType: formType as any, formData }]);
   };
 
-  // Helper to detect raw tool invocation messages and tool responses - memoized to prevent infinite loops
-  const isToolInvocation = useCallback((content: string): boolean => {
-    if (!content) return false;
-    const lowerContent = content.toLowerCase();
-    return (
-      lowerContent.includes("invoke the tool") ||
-      lowerContent.includes("using the following parameters") ||
-      lowerContent.includes("access_token") ||
-      lowerContent.includes("optimize_single_model_tool") ||
-      lowerContent.includes("optimize_multiple_models_tool") ||
-      lowerContent.includes("tool result:") ||
-      lowerContent.includes("optimize_id") ||
-      lowerContent.includes("asset_id") ||
-      lowerContent.includes("preset_id") ||
-      lowerContent.includes("modelid") ||
-      lowerContent.includes("presetid") ||
-      // catches tool names in quotes like 'optimize_single_model_tool'
-      (lowerContent.includes("'optimize_") && lowerContent.includes("'")) ||
-      // JSON object patterns that indicate tool responses/args
-      (lowerContent.includes("{") && (
-        lowerContent.includes("model_id") ||
-        lowerContent.includes("optimize_id") ||
-        lowerContent.includes("optimized_model") ||
-        lowerContent.includes("access_token")
-      ))
-    );
-  }, []);
-
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
 
@@ -145,10 +117,7 @@ const Index = () => {
       text: text,
     };
 
-    // Do not show raw tool invocation messages in chat
-    if (!isToolInvocation(text)) {
-      setMessages((prev) => [...prev, userMessage]);
-    }
+    setMessages((prev) => [...prev, userMessage]);
     setIsGenerating(true);
 
     try {
@@ -183,13 +152,11 @@ const Index = () => {
 
       // Append any messages from the backend
       if (data.messages && Array.isArray(data.messages)) {
-        const newMessages = data.messages
-          .map((msg: any) => ({
-            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
-            text: msg.content || "",
-            toolName: msg.type === "tool" ? msg.name : undefined,
-          }))
-          .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+        const newMessages = data.messages.map((msg: any) => ({
+          role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
+          text: msg.content || "",
+          toolName: msg.type === "tool" ? msg.name : undefined,
+        }));
         setMessages((prev) => [...prev, ...newMessages]);
       }
 
@@ -274,13 +241,11 @@ const Index = () => {
 
       // Append any messages from the backend
       if (data.messages && Array.isArray(data.messages)) {
-        const newMessages = data.messages
-          .map((msg: any) => ({
-            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
-            text: msg.content || "",
-            toolName: msg.type === "tool" ? msg.name : undefined,
-          }))
-          .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+        const newMessages = data.messages.map((msg: any) => ({
+          role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
+          text: msg.content || "",
+          toolName: msg.type === "tool" ? msg.name : undefined,
+        }));
         setMessages((prev) => [...prev, ...newMessages]);
       }
 
