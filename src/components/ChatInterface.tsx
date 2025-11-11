@@ -101,7 +101,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   ];
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "nearest" });
   };
 
   useEffect(() => {
