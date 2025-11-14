@@ -310,22 +310,8 @@ Be friendly and instructive. Use short explanations and examples where needed.`
 
       const data = await response.json();
 
-      // Helper function to check if message is a tool invocation
-      const isToolInvocation = (content: string): boolean => {
-        if (!content) return false;
-        const lowerContent = content.toLowerCase();
-        return (
-          lowerContent.includes("invoke the tool") ||
-          lowerContent.includes("using the following parameters") ||
-          lowerContent.includes("access_token") ||
-          lowerContent.includes("optimize_single_model_tool") ||
-          lowerContent.includes("optimize_multiple_models_tool") ||
-          lowerContent.includes("modelid") ||
-          lowerContent.includes("presetid") ||
-          (lowerContent.includes("{") && lowerContent.includes("model_id") && lowerContent.includes("preset_id")) ||
-          (lowerContent.includes("'optimize_") && lowerContent.includes("'"))
-        );
-      };
+      // Tool invocation filtering removed by request
+      const isToolInvocation = (_content: string): boolean => false;
 
       // Helper function to extract image URLs from tool response
       const extractImageFromToolResponse = (content: string): { hasImage: boolean; imageUrl?: string; message?: string } => {
