@@ -17,6 +17,7 @@ import { Image as ImageIcon, BookOpen, Box, Settings, Video, ChevronLeft, Chevro
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import ErrorBoundary from "@/components/ui/error-boundary";
 
 interface ToolCall {
   id: string;
@@ -586,16 +587,18 @@ The process:
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
         {/* Chat Interface - Resizable Left Panel */}
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
-          <ChatInterface
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            onToolConfirmation={handleToolConfirmation}
-            isGenerating={isGenerating}
-            apiUrl={apiUrl}
-            onModelSelect={handleModelSelect}
-            onImageGenerated={() => setImageRefreshTrigger(prev => prev + 1)}
-            onOptimizationFormSubmit={handleOptimizationFormSubmit}
-          />
+          <ErrorBoundary>
+            <ChatInterface
+              messages={messages}
+              onSendMessage={handleSendMessage}
+              onToolConfirmation={handleToolConfirmation}
+              isGenerating={isGenerating}
+              apiUrl={apiUrl}
+              onModelSelect={handleModelSelect}
+              onImageGenerated={() => setImageRefreshTrigger(prev => prev + 1)}
+              onOptimizationFormSubmit={handleOptimizationFormSubmit}
+            />
+          </ErrorBoundary>
         </ResizablePanel>
 
         {/* Draggable Resize Handle */}
