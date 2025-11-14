@@ -441,6 +441,7 @@ The process:
       try {
         const payload: any = {
           query: systemPrompt,
+          email: userProfile?.email,
         };
         
         if (sessionId) {
