@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { apiFetch } from "@/lib/api"
+import { useUserProfile } from "@/hooks/use-user-profile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -174,6 +175,7 @@ interface ModelOptimizationProps {
 }
 
 export default function ModelOptimization({ isActive = false, onSendMessage, onAddDirectMessage }: ModelOptimizationProps) {
+  const { data: userProfile } = useUserProfile();
   const [selectedModel, setSelectedModel] = useState<number | null>(null)
   const [optimizationType, setOptimizationType] = useState("")
   const [optimizationStrength, setOptimizationStrength] = useState("")
@@ -291,13 +293,19 @@ Be friendly and instructive. Use short explanations and examples where needed.`
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
+      const payload: any = {
+        query: systemPrompt,
+        session_id: localStorage.getItem("mcp_session_id")
+      };
+
+      if (userProfile?.email) {
+        payload.email = userProfile.email;
+      }
+
       const response = await fetch(`${API_URL}/ask`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ 
-          query: systemPrompt,
-          session_id: localStorage.getItem("mcp_session_id")
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();

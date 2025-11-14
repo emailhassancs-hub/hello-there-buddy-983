@@ -8,6 +8,7 @@ import { ChatSidebar } from "@/components/ChatSidebar";
 import { ModelUploader } from "@/components/ModelUploader";
 import ModelGallery from "@/pages/ModelGallery";
 import { apiFetch } from "@/lib/api";
+import { useUserProfile } from "@/hooks/use-user-profile";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -47,6 +48,7 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: userProfile } = useUserProfile();
 
   // const apiUrl = "http://localhost:8000";
   const apiUrl = "http://35.209.183.202:8000";
@@ -155,6 +157,10 @@ const Index = () => {
         payload.session_id = sessionId;
       }
 
+      if (userProfile?.email) {
+        payload.email = userProfile.email;
+      }
+
       const headers: HeadersInit = {
         "Content-Type": "application/json",
       };
@@ -244,6 +250,10 @@ const Index = () => {
 
       if (action === "modify" && modifiedArgs) {
         payload.confirmation_response.modified_args = modifiedArgs;
+      }
+
+      if (userProfile?.email) {
+        payload.email = userProfile.email;
       }
 
       const headers: HeadersInit = {
@@ -436,6 +446,10 @@ The process:
         
         if (sessionId) {
           payload.session_id = sessionId;
+        }
+
+        if (userProfile?.email) {
+          payload.email = userProfile.email;
         }
 
         const headers: HeadersInit = {
