@@ -64,33 +64,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [humanInLoop, setHumanInLoop] = useState(false);
   const { toast } = useToast();
 
-  // Helper to detect raw tool invocation messages and tool responses - memoized to prevent infinite loops
-  const isToolInvocation = useCallback((content: string): boolean => {
-    if (!content) return false;
-    const lowerContent = content.toLowerCase();
-    return (
-      lowerContent.includes("invoke the tool") ||
-      lowerContent.includes("using the following parameters") ||
-      lowerContent.includes("access_token") ||
-      lowerContent.includes("optimize_single_model_tool") ||
-      lowerContent.includes("optimize_multiple_models_tool") ||
-      lowerContent.includes("tool result:") ||
-      lowerContent.includes("optimize_id") ||
-      lowerContent.includes("asset_id") ||
-      lowerContent.includes("preset_id") ||
-      lowerContent.includes("modelid") ||
-      lowerContent.includes("presetid") ||
-      (lowerContent.includes("{") && lowerContent.includes("model_id")) ||
-      (lowerContent.includes("{") && lowerContent.includes("optimize_id")) ||
-      (lowerContent.includes("{") && lowerContent.includes("optimized_model")) ||
-      (lowerContent.includes("'optimize_") && lowerContent.includes("'"))
-    );
-  }, []);
-
-  // Memoize filtered messages to prevent infinite re-renders
-  const filteredMessages = useMemo(() => {
-    return messages.filter(msg => !isToolInvocation(msg.text));
-  }, [messages]);
+  // Messages to render (no filtering)
+  const filteredMessages = useMemo(() => messages, [messages]);
 
   const welcomeMessages = [
     "Chat with me",
