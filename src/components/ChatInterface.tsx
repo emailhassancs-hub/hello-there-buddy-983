@@ -63,6 +63,9 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [text3dPopup, setText3dPopup] = useState<string | null>(null);
   const [humanInLoop, setHumanInLoop] = useState(false);
   const { toast } = useToast();
+  
+  // Track if we've already auto-confirmed to prevent infinite loops
+  const autoConfirmedRef = useRef<Set<string>>(new Set());
 
   // Helper to detect raw tool invocation messages and tool responses - memoized to prevent infinite loops
   const isToolInvocation = useCallback((content: string): boolean => {
@@ -142,13 +145,23 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       setEditedArgs(initialArgs);
       
       // Auto-confirm if human in loop is OFF - don't send confirmation message
-      if (!humanInLoop) {
+      // Use a unique key to track if we've already processed this confirmation
+      const confirmationKey = `${lastMessage.conversationId}-${lastMessage.toolCalls.map(tc => tc.id).join('-')}`;
+      
+      if (!humanInLoop && !autoConfirmedRef.current.has(confirmationKey)) {
+        // Mark this confirmation as processed
+        autoConfirmedRef.current.add(confirmationKey);
+        
         // Directly call the confirmation handler without showing UI
         const payloadArgs: Record<string, Record<string, any>> = {};
         lastMessage.toolCalls.forEach(tc => {
           payloadArgs[tc.name] = { ...tc.args };
         });
-        onToolConfirmation?.("confirm", payloadArgs);
+        
+        // Use setTimeout to break out of the current render cycle
+        setTimeout(() => {
+          onToolConfirmation?.("confirm", payloadArgs);
+        }, 0);
       }
     }
   }, [messages, humanInLoop, onToolConfirmation]);
