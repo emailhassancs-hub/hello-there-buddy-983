@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { UserInfo } from "@/components/UserInfo";
+import { useUserProfile } from "@/hooks/use-user-profile";
 
 interface Session {
   session_id: string;
@@ -29,6 +30,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const [editingName, setEditingName] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { toast } = useToast();
+  const { data: userProfile } = useUserProfile();
 
   // Load all sessions on mount
   useEffect(() => {
@@ -50,7 +52,12 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${apiUrl}/sessions`, { headers });
+      const email = userProfile?.email;
+      const url = email 
+        ? `${apiUrl}/sessions?email=${encodeURIComponent(email)}`
+        : `${apiUrl}/sessions`;
+      
+      const response = await fetch(url, { headers });
       if (!response.ok) {
         throw new Error("Failed to fetch sessions");
       }
