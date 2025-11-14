@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { UserInfo } from "@/components/UserInfo";
+import { useUserProfile } from "@/hooks/use-user-profile";
 
 interface Session {
   session_id: string;
@@ -29,11 +30,14 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const [editingName, setEditingName] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { toast } = useToast();
+  const { data: userProfile } = useUserProfile();
 
-  // Load all sessions on mount
+  // Load all sessions on mount and when user profile is available
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    if (userProfile?.email) {
+      fetchSessions();
+    }
+  }, [userProfile?.email]);
 
   const fetchSessions = async () => {
     setIsLoading(true);
@@ -50,7 +54,13 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${apiUrl}/user/sessions`, { headers });
+      // Include user email in query parameter
+      const userEmail = userProfile?.email;
+      const url = userEmail 
+        ? `${apiUrl}/user/sessions?email=${encodeURIComponent(userEmail)}`
+        : `${apiUrl}/user/sessions`;
+      
+      const response = await fetch(url, { headers });
       if (!response.ok) {
         throw new Error("Failed to fetch sessions");
       }
