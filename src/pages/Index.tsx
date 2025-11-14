@@ -48,8 +48,8 @@ const Index = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // const apiUrl = "http://localhost:8000";
-  const apiUrl = "http://35.209.183.202:8000";
+  const apiUrl = "http://localhost:8000";
+  //const apiUrl = "http://35.209.183.202:8000";
   const API = apiUrl;
  
   // Token capture from URL
