@@ -139,6 +139,7 @@ const Index = () => {
     try {
       const payload: any = {
         query: text,
+        email: userProfile?.email,
       };
       
       if (sessionId) {
@@ -227,6 +228,7 @@ const Index = () => {
     try {
       const payload: any = {
         session_id: sessionId,
+        email: userProfile?.email,
         confirmation_response: {
           action,
         },
@@ -422,6 +424,7 @@ The process:
       try {
         const payload: any = {
           query: systemPrompt,
+          email: userProfile?.email,
         };
         
         if (sessionId) {
