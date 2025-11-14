@@ -9,8 +9,8 @@ import { RefreshCw, Download, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ModelViewer from "@/components/ModelViewer";
 
-const BASE_URL = "http://localhost:8000";
-//const BASE_URL = "http://35.209.183.202:8000";
+// const BASE_URL = "http://localhost:8000";
+const BASE_URL = "http://35.209.183.202:8000";
 
 interface ModelItem {
   id: string;

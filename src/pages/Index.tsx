@@ -8,7 +8,6 @@ import { ChatSidebar } from "@/components/ChatSidebar";
 import { ModelUploader } from "@/components/ModelUploader";
 import ModelGallery from "@/pages/ModelGallery";
 import { apiFetch } from "@/lib/api";
-import { useUserProfile } from "@/hooks/use-user-profile";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -48,10 +47,9 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: userProfile } = useUserProfile();
 
-  const apiUrl = "http://localhost:8000";
-  //const apiUrl = "http://35.209.183.202:8000";
+  // const apiUrl = "http://localhost:8000";
+  const apiUrl = "http://35.209.183.202:8000";
   const API = apiUrl;
  
   // Token capture from URL
@@ -118,7 +116,19 @@ const Index = () => {
     return (
       lowerContent.includes("invoke the tool") ||
       lowerContent.includes("using the following parameters") ||
-      lowerContent.includes("tool result:")
+      lowerContent.includes("access_token") ||
+      lowerContent.includes("optimize_single_model_tool") ||
+      lowerContent.includes("optimize_multiple_models_tool") ||
+      lowerContent.includes("tool result:") ||
+      lowerContent.includes("optimize_id") ||
+      lowerContent.includes("asset_id") ||
+      lowerContent.includes("preset_id") ||
+      lowerContent.includes("modelid") ||
+      lowerContent.includes("presetid") ||
+      (lowerContent.includes("{") && lowerContent.includes("model_id")) ||
+      (lowerContent.includes("{") && lowerContent.includes("optimize_id")) ||
+      (lowerContent.includes("{") && lowerContent.includes("optimized_model")) ||
+      (lowerContent.includes("'optimize_") && lowerContent.includes("'"))
     );
   }, []);
 
@@ -139,7 +149,6 @@ const Index = () => {
     try {
       const payload: any = {
         query: text,
-        email: userProfile?.email,
       };
       
       if (sessionId) {
@@ -228,7 +237,6 @@ const Index = () => {
     try {
       const payload: any = {
         session_id: sessionId,
-        email: userProfile?.email,
         confirmation_response: {
           action,
         },
@@ -424,7 +432,6 @@ The process:
       try {
         const payload: any = {
           query: systemPrompt,
-          email: userProfile?.email,
         };
         
         if (sessionId) {

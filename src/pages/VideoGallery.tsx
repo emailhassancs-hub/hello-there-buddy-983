@@ -5,8 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Video, AlertCircle } from "lucide-react";
 
-const VIDEO_BASE_URL = "http://localhost:8000";
-//const VIDEO_BASE_URL = "http://35.209.183.202:8000";
+const VIDEO_BASE_URL = "http://35.209.183.202:8000";
 
 interface Video {
   filename: string;

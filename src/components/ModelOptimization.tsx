@@ -21,9 +21,6 @@ import {
   RefreshCw,
 } from "lucide-react"
 
-import { useUserProfile } from "@/hooks/use-user-profile";
-
-
 // API types
 interface ModelInfo {
   assetId: string
@@ -183,9 +180,6 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
   const [optimizationRequests, setOptimizationRequests] = useState<OptimizationRequest[]>([])
   const [isOptimizing, setIsOptimizing] = useState(false)
 
-  const { data: userProfile } = useUserProfile()
-
-
   // API data states
   const [models, setModels] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -302,8 +296,7 @@ Be friendly and instructive. Use short explanations and examples where needed.`
         headers,
         body: JSON.stringify({ 
           query: systemPrompt,
-          session_id: localStorage.getItem("mcp_session_id"),
-          email: userProfile?.email,
+          session_id: localStorage.getItem("mcp_session_id")
         }),
       });
 
