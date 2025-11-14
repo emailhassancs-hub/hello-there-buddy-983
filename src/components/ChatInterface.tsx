@@ -64,6 +64,16 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [humanInLoop, setHumanInLoop] = useState(false);
   const { toast } = useToast();
 
+  // Stable refs for callbacks to avoid effect dependency loops
+  const onImageGeneratedRef = useRef(onImageGenerated);
+  useEffect(() => { onImageGeneratedRef.current = onImageGenerated; }, [onImageGenerated]);
+  const onToolConfirmationRef = useRef(onToolConfirmation);
+  useEffect(() => { onToolConfirmationRef.current = onToolConfirmation; }, [onToolConfirmation]);
+
+  // One-time processing guards
+  const lastProcessedImageKeyRef = useRef<string | null>(null);
+  const lastAutoConfirmedKeyRef = useRef<string | null>(null);
+
   // Messages to render (no filtering)
   const filteredMessages = useMemo(() => messages, [messages]);
 
@@ -85,48 +95,54 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
   }, [filteredMessages]);
 
-  // Detect when an image is generated in messages
+  // Detect when an image is generated in the latest assistant message (run once per message)
   useEffect(() => {
-    if (filteredMessages.length > 0) {
-      const lastMessage = filteredMessages[filteredMessages.length - 1];
-      if (lastMessage.role === "assistant") {
-        try {
-          const parsed = JSON.parse(lastMessage.text);
-          if (parsed?.img_url) {
-            onImageGenerated?.();
-          }
-          // Detect text-to-3D thumbnail and show popup
-          if (parsed?.thumbnail_url && lastMessage.toolName?.includes('text_to_3d')) {
-            setText3dPopup(parsed.thumbnail_url);
-          }
-        } catch (e) {
-          // Not JSON, ignore
-        }
-      }
-    }
-  }, [filteredMessages, onImageGenerated]);
+    if (filteredMessages.length === 0) return;
+    const lastMessage = filteredMessages[filteredMessages.length - 1];
+    if (lastMessage.role !== "assistant") return;
 
-  // Initialize edited args when confirmation is needed
+    const key = `${lastMessage.text}|${lastMessage.toolName || ""}`;
+    if (lastProcessedImageKeyRef.current === key) return;
+
+    try {
+      const parsed = JSON.parse(lastMessage.text);
+      if (parsed?.img_url) {
+        onImageGeneratedRef.current?.();
+      }
+      if (parsed?.thumbnail_url && lastMessage.toolName?.includes('text_to_3d')) {
+        setText3dPopup(parsed.thumbnail_url);
+      }
+    } catch {
+      // Not JSON, ignore
+    }
+
+    lastProcessedImageKeyRef.current = key;
+  }, [filteredMessages]);
+
+  // Initialize edited args when confirmation is needed (run once per tool-calls set)
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.status === "awaiting_confirmation" && lastMessage.toolCalls) {
-      const initialArgs: Record<string, Record<string, any>> = {};
+    if (!(lastMessage && lastMessage.status === "awaiting_confirmation" && lastMessage.toolCalls)) return;
+
+    const key = JSON.stringify(lastMessage.toolCalls);
+    if (lastAutoConfirmedKeyRef.current === key) return;
+
+    const initialArgs: Record<string, Record<string, any>> = {};
+    lastMessage.toolCalls.forEach(tc => {
+      initialArgs[tc.name] = { ...tc.args };
+    });
+    setEditedArgs(initialArgs);
+    
+    if (!humanInLoop) {
+      const payloadArgs: Record<string, Record<string, any>> = {};
       lastMessage.toolCalls.forEach(tc => {
-        initialArgs[tc.name] = { ...tc.args };
+        payloadArgs[tc.name] = { ...tc.args };
       });
-      setEditedArgs(initialArgs);
-      
-      // Auto-confirm if human in loop is OFF - don't send confirmation message
-      if (!humanInLoop) {
-        // Directly call the confirmation handler without showing UI
-        const payloadArgs: Record<string, Record<string, any>> = {};
-        lastMessage.toolCalls.forEach(tc => {
-          payloadArgs[tc.name] = { ...tc.args };
-        });
-        onToolConfirmation?.("confirm", payloadArgs);
-      }
+      onToolConfirmationRef.current?.("confirm", payloadArgs);
     }
-  }, [messages, humanInLoop, onToolConfirmation]);
+
+    lastAutoConfirmedKeyRef.current = key;
+  }, [messages, humanInLoop]);
 
   useEffect(() => {
     if (filteredMessages.length > 0) return;
