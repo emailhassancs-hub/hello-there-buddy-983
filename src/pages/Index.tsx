@@ -8,6 +8,7 @@ import { ChatSidebar } from "@/components/ChatSidebar";
 import { ModelUploader } from "@/components/ModelUploader";
 import ModelGallery from "@/pages/ModelGallery";
 import { apiFetch } from "@/lib/api";
+import { useUserProfile } from "@/hooks/use-user-profile";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -47,6 +48,7 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: userProfile } = useUserProfile();
 
   const apiUrl = "http://localhost:8000";
   //const apiUrl = "http://35.209.183.202:8000";
@@ -154,6 +156,7 @@ const Index = () => {
     try {
       const payload: any = {
         query: text,
+        email: userProfile?.email,
       };
       
       if (sessionId) {
@@ -242,6 +245,7 @@ const Index = () => {
     try {
       const payload: any = {
         session_id: sessionId,
+        email: userProfile?.email,
         confirmation_response: {
           action,
         },
