@@ -118,24 +118,7 @@ const Index = () => {
     return (
       lowerContent.includes("invoke the tool") ||
       lowerContent.includes("using the following parameters") ||
-      lowerContent.includes("access_token") ||
-      lowerContent.includes("optimize_single_model_tool") ||
-      lowerContent.includes("optimize_multiple_models_tool") ||
-      lowerContent.includes("tool result:") ||
-      lowerContent.includes("optimize_id") ||
-      lowerContent.includes("asset_id") ||
-      lowerContent.includes("preset_id") ||
-      lowerContent.includes("modelid") ||
-      lowerContent.includes("presetid") ||
-      // catches tool names in quotes like 'optimize_single_model_tool'
-      (lowerContent.includes("'optimize_") && lowerContent.includes("'")) ||
-      // JSON object patterns that indicate tool responses/args
-      (lowerContent.includes("{") && (
-        lowerContent.includes("model_id") ||
-        lowerContent.includes("optimize_id") ||
-        lowerContent.includes("optimized_model") ||
-        lowerContent.includes("access_token")
-      ))
+      lowerContent.includes("tool result:")
     );
   }, []);
 
@@ -156,7 +139,6 @@ const Index = () => {
     try {
       const payload: any = {
         query: text,
-        email: userProfile?.email,
       };
       
       if (sessionId) {
@@ -245,7 +227,6 @@ const Index = () => {
     try {
       const payload: any = {
         session_id: sessionId,
-        email: userProfile?.email,
         confirmation_response: {
           action,
         },
@@ -441,7 +422,6 @@ The process:
       try {
         const payload: any = {
           query: systemPrompt,
-          email: userProfile?.email,
         };
         
         if (sessionId) {
