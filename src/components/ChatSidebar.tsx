@@ -32,10 +32,12 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const { toast } = useToast();
   const { data: userProfile } = useUserProfile();
 
-  // Load all sessions on mount
+  // Load all sessions on mount and when user profile loads
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    if (userProfile?.email) {
+      fetchSessions();
+    }
+  }, [userProfile?.email]);
 
   const fetchSessions = async () => {
     setIsLoading(true);
