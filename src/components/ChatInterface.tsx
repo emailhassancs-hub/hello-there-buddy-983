@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +64,34 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [humanInLoop, setHumanInLoop] = useState(false);
   const { toast } = useToast();
 
+  // Helper to detect raw tool invocation messages and tool responses - memoized to prevent infinite loops
+  const isToolInvocation = useCallback((content: string): boolean => {
+    if (!content) return false;
+    const lowerContent = content.toLowerCase();
+    return (
+      lowerContent.includes("invoke the tool") ||
+      lowerContent.includes("using the following parameters") ||
+      lowerContent.includes("access_token") ||
+      lowerContent.includes("optimize_single_model_tool") ||
+      lowerContent.includes("optimize_multiple_models_tool") ||
+      lowerContent.includes("tool result:") ||
+      lowerContent.includes("optimize_id") ||
+      lowerContent.includes("asset_id") ||
+      lowerContent.includes("preset_id") ||
+      lowerContent.includes("modelid") ||
+      lowerContent.includes("presetid") ||
+      (lowerContent.includes("{") && lowerContent.includes("model_id")) ||
+      (lowerContent.includes("{") && lowerContent.includes("optimize_id")) ||
+      (lowerContent.includes("{") && lowerContent.includes("optimized_model")) ||
+      (lowerContent.includes("'optimize_") && lowerContent.includes("'"))
+    );
+  }, []);
+
+  // Memoize filtered messages to prevent infinite re-renders
+  const filteredMessages = useMemo(() => {
+    return messages.filter(msg => !isToolInvocation(msg.text));
+  }, [messages]);
+
   const welcomeMessages = [
     "Chat with me",
     "I will help you generate and edit images of your choice",
@@ -73,19 +101,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   ];
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "nearest" });
   };
 
   useEffect(() => {
-    if (messages.length > 0) {
+    if (filteredMessages.length > 0) {
       scrollToBottom();
     }
-  }, [messages]);
+  }, [filteredMessages]);
 
   // Detect when an image is generated in messages
   useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
+    if (filteredMessages.length > 0) {
+      const lastMessage = filteredMessages[filteredMessages.length - 1];
       if (lastMessage.role === "assistant") {
         try {
           const parsed = JSON.parse(lastMessage.text);
@@ -101,7 +129,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         }
       }
     }
-  }, [messages, onImageGenerated]);
+  }, [filteredMessages, onImageGenerated]);
 
   // Initialize edited args when confirmation is needed
   useEffect(() => {
@@ -123,10 +151,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         onToolConfirmation?.("confirm", payloadArgs);
       }
     }
-  }, [messages, humanInLoop]);
+  }, [messages, humanInLoop, onToolConfirmation]);
 
   useEffect(() => {
-    if (messages.length > 0) return;
+    if (filteredMessages.length > 0) return;
 
     const interval = setInterval(() => {
       setIsVisible(false);
@@ -138,7 +166,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }, 3500);
 
     return () => clearInterval(interval);
-  }, [messages.length]);
+  }, [filteredMessages.length, welcomeMessages.length]);
 
   // Auto-resize textarea based on content
   const adjustTextareaHeight = () => {
@@ -467,7 +495,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-8 glass scrollbar-hide">
-        {messages.length === 0 && (
+        {filteredMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
             <div className="p-4 rounded-full bg-primary shadow-soft">
               <Sparkles className="w-8 h-8 text-primary-foreground" />
@@ -484,9 +512,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           </div>
         )}
 
-        {messages.map((message, index) => (
-          <div key={index}>
-            {/* User message with bubble, assistant without bubble */}
+        {filteredMessages.map((message, index) => {
+          return (
+            <div key={index}>
+              {/* User message with bubble, assistant without bubble */}
             {message.role === "user" ? (
               <div className="flex justify-end">
                 <div className="max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter bg-chat-user-bubble text-chat-user-foreground ml-4">
@@ -997,7 +1026,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
               </div>
             )}
           </div>
-        ))}
+        );
+        })}
 
         {isGenerating && (
           <div className="flex justify-start">

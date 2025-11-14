@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
@@ -100,30 +100,6 @@ const Index = () => {
     localStorage.setItem("mcp_session_id", newSessionId);
   };
 
-  const saveSessionToBackend = async (sessionId: string, messages: Message[]) => {
-    const token = authToken || localStorage.getItem("auth_token");
-    if (!token) return;
-
-    try {
-      await fetch(`${apiUrl}/user/sessions`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          session_id: sessionId,
-          session_data: {
-            messages: messages,
-            updated_at: new Date().toISOString()
-          }
-        })
-      });
-    } catch (error) {
-      console.error("Failed to save session:", error);
-    }
-  };
-
 
   const addMessage = (role: "user" | "assistant", text: string, toolName?: string) => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), toolName }]);
@@ -133,6 +109,34 @@ const Index = () => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), formType: formType as any, formData }]);
   };
 
+  // Helper to detect raw tool invocation messages and tool responses - memoized to prevent infinite loops
+  const isToolInvocation = useCallback((content: string): boolean => {
+    if (!content) return false;
+    const lowerContent = content.toLowerCase();
+    return (
+      lowerContent.includes("invoke the tool") ||
+      lowerContent.includes("using the following parameters") ||
+      lowerContent.includes("access_token") ||
+      lowerContent.includes("optimize_single_model_tool") ||
+      lowerContent.includes("optimize_multiple_models_tool") ||
+      lowerContent.includes("tool result:") ||
+      lowerContent.includes("optimize_id") ||
+      lowerContent.includes("asset_id") ||
+      lowerContent.includes("preset_id") ||
+      lowerContent.includes("modelid") ||
+      lowerContent.includes("presetid") ||
+      // catches tool names in quotes like 'optimize_single_model_tool'
+      (lowerContent.includes("'optimize_") && lowerContent.includes("'")) ||
+      // JSON object patterns that indicate tool responses/args
+      (lowerContent.includes("{") && (
+        lowerContent.includes("model_id") ||
+        lowerContent.includes("optimize_id") ||
+        lowerContent.includes("optimized_model") ||
+        lowerContent.includes("access_token")
+      ))
+    );
+  }, []);
+
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
 
@@ -141,7 +145,10 @@ const Index = () => {
       text: text,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Do not show raw tool invocation messages in chat
+    if (!isToolInvocation(text)) {
+      setMessages((prev) => [...prev, userMessage]);
+    }
     setIsGenerating(true);
 
     try {
@@ -176,19 +183,14 @@ const Index = () => {
 
       // Append any messages from the backend
       if (data.messages && Array.isArray(data.messages)) {
-        const newMessages = data.messages.map((msg: any) => ({
-          role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
-          text: msg.content || "",
-          toolName: msg.type === "tool" ? msg.name : undefined,
-        }));
-        setMessages((prev) => {
-          const updatedMessages = [...prev, ...newMessages];
-          // Auto-save session to GCS after message exchange
-          if (data.session_id && newMessages.length > 0) {
-            saveSessionToBackend(data.session_id, updatedMessages);
-          }
-          return updatedMessages;
-        });
+        const newMessages = data.messages
+          .map((msg: any) => ({
+            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
+            text: msg.content || "",
+            toolName: msg.type === "tool" ? msg.name : undefined,
+          }))
+          .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+        setMessages((prev) => [...prev, ...newMessages]);
       }
 
       if (data.status === "awaiting_confirmation") {
@@ -272,19 +274,14 @@ const Index = () => {
 
       // Append any messages from the backend
       if (data.messages && Array.isArray(data.messages)) {
-        const newMessages = data.messages.map((msg: any) => ({
-          role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
-          text: msg.content || "",
-          toolName: msg.type === "tool" ? msg.name : undefined,
-        }));
-        setMessages((prev) => {
-          const updatedMessages = [...prev, ...newMessages];
-          // Auto-save session to GCS after tool confirmation
-          if (data.session_id && newMessages.length > 0) {
-            saveSessionToBackend(data.session_id, updatedMessages);
-          }
-          return updatedMessages;
-        });
+        const newMessages = data.messages
+          .map((msg: any) => ({
+            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
+            text: msg.content || "",
+            toolName: msg.type === "tool" ? msg.name : undefined,
+          }))
+          .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+        setMessages((prev) => [...prev, ...newMessages]);
       }
 
       if (data.status === "awaiting_confirmation") {
@@ -502,7 +499,7 @@ The process:
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${API}/user/sessions/${sessionId}`, { headers });
+      const response = await fetch(`${API}/session/${sessionId}/export`, { headers });
       if (!response.ok) {
         throw new Error("Failed to load session");
       }

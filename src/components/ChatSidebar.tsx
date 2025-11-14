@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { UserInfo } from "@/components/UserInfo";
-import { useUserProfile } from "@/hooks/use-user-profile";
 
 interface Session {
   session_id: string;
@@ -30,14 +29,11 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const [editingName, setEditingName] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { toast } = useToast();
-  const { data: userProfile } = useUserProfile();
 
-  // Load all sessions on mount and when user profile is available
+  // Load all sessions on mount
   useEffect(() => {
-    if (userProfile?.email) {
-      fetchSessions();
-    }
-  }, [userProfile?.email]);
+    fetchSessions();
+  }, []);
 
   const fetchSessions = async () => {
     setIsLoading(true);
@@ -54,30 +50,12 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      // Include user email in query parameter
-      const userEmail = userProfile?.email;
-      const url = userEmail 
-        ? `${apiUrl}/user/sessions?email=${encodeURIComponent(userEmail)}`
-        : `${apiUrl}/user/sessions`;
-      
-      const response = await fetch(url, { headers });
+      const response = await fetch(`${apiUrl}/sessions`, { headers });
       if (!response.ok) {
         throw new Error("Failed to fetch sessions");
       }
       const data = await response.json();
-      
-      // Handle new session_ids format
-      if (data.session_ids) {
-        const sessions = data.session_ids.map((id: string) => ({
-          session_id: id,
-          created_at: null,
-          updated_at: null,
-          message_count: 0
-        }));
-        setSessions(sessions);
-      } else {
-        setSessions([]);
-      }
+      setSessions(data.sessions || []);
     } catch (error) {
       console.error("Error fetching sessions:", error);
       toast({
@@ -140,7 +118,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${apiUrl}/user/sessions/${sessionId}`, {
+      const response = await fetch(`${apiUrl}/session/${sessionId}/delete`, {
         method: "DELETE",
         headers,
       });

@@ -302,15 +302,75 @@ Be friendly and instructive. Use short explanations and examples where needed.`
 
       const data = await response.json();
 
+      // Helper function to check if message is a tool invocation
+      const isToolInvocation = (content: string): boolean => {
+        if (!content) return false;
+        const lowerContent = content.toLowerCase();
+        return (
+          lowerContent.includes("invoke the tool") ||
+          lowerContent.includes("using the following parameters") ||
+          lowerContent.includes("access_token") ||
+          lowerContent.includes("optimize_single_model_tool") ||
+          lowerContent.includes("optimize_multiple_models_tool") ||
+          lowerContent.includes("modelid") ||
+          lowerContent.includes("presetid") ||
+          (lowerContent.includes("{") && lowerContent.includes("model_id") && lowerContent.includes("preset_id")) ||
+          (lowerContent.includes("'optimize_") && lowerContent.includes("'"))
+        );
+      };
+
+      // Helper function to extract image URLs from tool response
+      const extractImageFromToolResponse = (content: string): { hasImage: boolean; imageUrl?: string; message?: string } => {
+        try {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.img_url || parsed.image_url || parsed.thumbnail_url) {
+              return {
+                hasImage: true,
+                imageUrl: parsed.img_url || parsed.image_url || parsed.thumbnail_url,
+                message: parsed.success_message || parsed.message
+              };
+            }
+          }
+        } catch (e) {
+          // Not valid JSON, continue
+        }
+        return { hasImage: false };
+      };
+
       // Step 3: Display only the agent's response (not sending it back to backend)
       if (data.messages && Array.isArray(data.messages)) {
         data.messages.forEach((msg: any) => {
           if (msg.type === "ai" || msg.type === "tool") {
-            onAddDirectMessage?.("assistant", msg.content || "");
+            const content = msg.content || "";
+            
+            // Skip tool invocation messages
+            if (isToolInvocation(content)) {
+              return;
+            }
+
+            // Check if it's a tool response with image
+            const imageData = extractImageFromToolResponse(content);
+            if (imageData.hasImage) {
+              // Display image instead of raw JSON
+              if (imageData.message) {
+                onAddDirectMessage?.("assistant", imageData.message);
+              }
+              // You could also display the image here if needed
+              // onAddDirectMessage?.("assistant", `![Optimized Model](${imageData.imageUrl})`);
+              return;
+            }
+
+            // Display normal messages
+            onAddDirectMessage?.("assistant", content);
           }
         });
       } else if (data.response) {
-        onAddDirectMessage?.("assistant", data.response);
+        // Also filter single response messages
+        if (!isToolInvocation(data.response)) {
+          onAddDirectMessage?.("assistant", data.response);
+        }
       }
       
       // Step 4: Show interactive model selection form in chat
