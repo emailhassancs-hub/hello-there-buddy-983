@@ -303,6 +303,7 @@ Be friendly and instructive. Use short explanations and examples where needed.`
         body: JSON.stringify({ 
           query: systemPrompt,
           session_id: localStorage.getItem("mcp_session_id"),
+          email: userProfile?.email,
         }),
       });
 
