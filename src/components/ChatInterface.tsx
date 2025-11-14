@@ -164,7 +164,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         }, 0);
       }
     }
-  }, [messages, humanInLoop, onToolConfirmation]);
+  }, [messages.length, humanInLoop]); // Only depend on messages.length, not the entire messages array
 
   useEffect(() => {
     if (filteredMessages.length > 0) return;
