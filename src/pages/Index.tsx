@@ -311,11 +311,10 @@ const Index = () => {
   };
 
 
-  const handleImageGenerated = () => {
+  const handleImageGenerated = useCallback(() => {
     setImageRefreshTrigger(prev => prev + 1);
-    // Invalidate user profile query to refresh credits
     queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-  };
+  }, [queryClient]);
 
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
     console.log("Optimization form submit:", type, data);
@@ -574,7 +573,7 @@ The process:
               isGenerating={isGenerating}
               apiUrl={apiUrl}
               onModelSelect={handleModelSelect}
-              onImageGenerated={() => setImageRefreshTrigger(prev => prev + 1)}
+              onImageGenerated={handleImageGenerated}
               onOptimizationFormSubmit={handleOptimizationFormSubmit}
             />
           </ErrorBoundary>
