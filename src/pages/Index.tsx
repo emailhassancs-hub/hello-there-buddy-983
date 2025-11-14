@@ -112,7 +112,15 @@ const Index = () => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), formType: formType as any, formData }]);
   };
 
-  const isToolInvocation = useCallback((_content: string): boolean => false, []);
+  const isToolInvocation = useCallback((content: string): boolean => {
+    if (!content) return false;
+
+    return (
+      content.includes("Invoke the tool") ||
+      content.includes("using the following parameters") ||
+      content.trim().startsWith("{") && content.includes("model_id")
+    );
+  }, []);
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;

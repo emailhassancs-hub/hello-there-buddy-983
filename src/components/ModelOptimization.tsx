@@ -310,8 +310,16 @@ Be friendly and instructive. Use short explanations and examples where needed.`
 
       const data = await response.json();
 
-      // Tool invocation filtering removed by request
-      const isToolInvocation = (_content: string): boolean => false;
+      // Real tool invocation detection
+      const isToolInvocation = (content: string): boolean => {
+        if (!content) return false;
+
+        return (
+          content.includes("Invoke the tool") ||
+          content.includes("using the following parameters") ||
+          content.trim().startsWith("{") && content.includes("model_id")
+        );
+      };
 
       // Helper function to extract image URLs from tool response
       const extractImageFromToolResponse = (content: string): { hasImage: boolean; imageUrl?: string; message?: string } => {
