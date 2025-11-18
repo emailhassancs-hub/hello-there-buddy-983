@@ -193,8 +193,10 @@ const Index = () => {
                 chatNames[data.session_id] = title;
                 localStorage.setItem("chatNames", JSON.stringify(chatNames));
                 
-                // Refresh the chat sidebar to show the new title
-                window.dispatchEvent(new CustomEvent('refreshChatSidebar'));
+                // Wait a brief moment to ensure the title is saved, then refresh
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('refreshChatSidebar'));
+                }, 100);
               }
             }
           } catch (titleError) {

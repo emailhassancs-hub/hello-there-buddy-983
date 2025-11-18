@@ -26,6 +26,7 @@ interface ChatSidebarProps {
 export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiUrl }: ChatSidebarProps) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -41,9 +42,11 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
 
   // Listen for refresh events (e.g., after title generation)
   useEffect(() => {
-    const handleRefresh = () => {
+    const handleRefresh = async () => {
       if (userProfile?.email) {
-        fetchSessions();
+        setIsRefreshing(true);
+        await fetchSessions();
+        setIsRefreshing(false);
       }
     };
 
@@ -52,7 +55,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   }, [userProfile?.email]);
 
   const fetchSessions = async () => {
-    setIsLoading(true);
+    const loadingState = !isRefreshing; // Only set main loading if not refreshing
+    if (loadingState) setIsLoading(true);
     try {
       // Get access token from URL first, then window, then localStorage
       const params = new URLSearchParams(window.location.search);
@@ -85,7 +89,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      if (loadingState) setIsLoading(false);
     }
   };
 
@@ -208,6 +212,9 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         <div className="flex items-center gap-1.5">
           <MessageSquare className="w-3.5 h-3.5 dark:text-white" />
           <h2 className="font-semibold text-xs dark:text-white">Chats</h2>
+          {isRefreshing && (
+            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          )}
         </div>
         <Button
           variant="ghost"
