@@ -47,7 +47,6 @@ const Index = () => {
   const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
-  const [isFirstMessage, setIsFirstMessage] = useState(true);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
@@ -135,38 +134,6 @@ const Index = () => {
     if (!isToolInvocation(text)) {
       setMessages((prev) => [...prev, userMessage]);
     }
-
-    // Generate chat title for first message in new chat
-    if (isFirstMessage && !sessionId) {
-      setIsFirstMessage(false);
-      // Don't await - let it run in background
-      (async () => {
-        try {
-          const titleResponse = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-              },
-              body: JSON.stringify({ message: text }),
-            }
-          );
-          
-          if (titleResponse.ok) {
-            const { title } = await titleResponse.json();
-            // We'll update the title after session is created
-            if (title) {
-              sessionStorage.setItem("pending_chat_title", title);
-            }
-          }
-        } catch (error) {
-          console.error("Failed to generate chat title:", error);
-        }
-      })();
-    }
-
     setIsGenerating(true);
 
     try {
@@ -201,20 +168,6 @@ const Index = () => {
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
-        
-        // Update chat title if we generated one
-        const pendingTitle = sessionStorage.getItem("pending_chat_title");
-        if (pendingTitle) {
-          sessionStorage.removeItem("pending_chat_title");
-          try {
-            await apiFetch(`/chat/${data.session_id}/rename`, {
-              method: "PUT",
-              body: { name: pendingTitle },
-            });
-          } catch (error) {
-            console.error("Failed to update chat title:", error);
-          }
-        }
       }
 
       // Append any messages from the backend
@@ -365,65 +318,6 @@ const Index = () => {
     }
   };
 
-  const handleNewChat = () => {
-    setSessionId(null);
-    setMessages([]);
-    setIsFirstMessage(true);
-    sessionStorage.removeItem("pending_chat_title");
-    localStorage.removeItem("mcp_session_id");
-  };
-
-  const handleSessionSelect = async (newSessionId: string) => {
-    setSessionId(newSessionId);
-    setMessages([]);
-    setIsFirstMessage(false);
-    sessionStorage.removeItem("pending_chat_title");
-    localStorage.setItem("mcp_session_id", newSessionId);
-    
-    // Load session messages...
-    try {
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      };
-      
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
-      }
-
-      const response = await fetch(`${API}/session/${newSessionId}/export`, { headers });
-      if (!response.ok) {
-        throw new Error("Failed to load session");
-      }
-      
-      const data = await response.json();
-      
-      // Update session ID
-      setSessionId(newSessionId);
-      localStorage.setItem("mcp_session_id", newSessionId);
-      
-      // Convert messages to the format expected by ChatInterface
-      const loadedMessages: Message[] = data.messages.map((msg: any) => ({
-        role: msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant",
-        text: msg.content || "",
-        timestamp: new Date(),
-        toolName: msg.type === "tool" ? msg.name : undefined,
-      }));
-      
-      setMessages(loadedMessages);
-      
-      toast({
-        title: "Session loaded",
-        description: `Loaded ${loadedMessages.length} messages`,
-      });
-    } catch (error) {
-      console.error("Error loading session:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load session messages",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleImageGenerated = useCallback(() => {
     setImageRefreshTrigger(prev => prev + 1);
@@ -591,6 +485,61 @@ The process:
     setActiveTab("models");
   };
 
+  const handleLoadSession = async (sessionId: string) => {
+    try {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`${API}/session/${sessionId}/export`, { headers });
+      if (!response.ok) {
+        throw new Error("Failed to load session");
+      }
+      
+      const data = await response.json();
+      
+      // Update session ID
+      setSessionId(sessionId);
+      localStorage.setItem("mcp_session_id", sessionId);
+      
+      // Convert messages to the format expected by ChatInterface
+      const loadedMessages: Message[] = data.messages.map((msg: any) => ({
+        role: msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant",
+        text: msg.content || "",
+        timestamp: new Date(),
+        toolName: msg.type === "tool" ? msg.name : undefined,
+      }));
+      
+      setMessages(loadedMessages);
+      
+      toast({
+        title: "Chat Loaded",
+        description: "Previous conversation has been restored.",
+      });
+    } catch (error) {
+      console.error("Error loading session:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load chat session",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNewChat = () => {
+    setSessionId(null);
+    localStorage.removeItem("mcp_session_id");
+    setMessages([]);
+    toast({
+      title: "New Chat Started",
+      description: "You can now start a fresh conversation.",
+    });
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
       {/* Hidden file input for model uploads */}
@@ -616,7 +565,7 @@ The process:
       {/* Chat Sidebar */}
       <ChatSidebar
         currentSessionId={sessionId}
-        onSelectSession={handleSessionSelect}
+        onSelectSession={handleLoadSession}
         onNewChat={handleNewChat}
         apiUrl={apiUrl}
       />
@@ -634,7 +583,6 @@ The process:
               onModelSelect={handleModelSelect}
               onImageGenerated={handleImageGenerated}
               onOptimizationFormSubmit={handleOptimizationFormSubmit}
-              isLoadingHistory={false}
             />
           </ErrorBoundary>
         </ResizablePanel>
