@@ -192,6 +192,9 @@ const Index = () => {
                 const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
                 chatNames[data.session_id] = title;
                 localStorage.setItem("chatNames", JSON.stringify(chatNames));
+                
+                // Refresh the chat sidebar to show the new title
+                window.dispatchEvent(new CustomEvent('refreshChatSidebar'));
               }
             }
           } catch (titleError) {

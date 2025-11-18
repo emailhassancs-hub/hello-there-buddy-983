@@ -39,6 +39,18 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     }
   }, [userProfile?.email]);
 
+  // Listen for refresh events (e.g., after title generation)
+  useEffect(() => {
+    const handleRefresh = () => {
+      if (userProfile?.email) {
+        fetchSessions();
+      }
+    };
+
+    window.addEventListener('refreshChatSidebar', handleRefresh);
+    return () => window.removeEventListener('refreshChatSidebar', handleRefresh);
+  }, [userProfile?.email]);
+
   const fetchSessions = async () => {
     setIsLoading(true);
     try {
