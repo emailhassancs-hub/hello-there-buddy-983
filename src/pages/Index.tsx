@@ -168,6 +168,37 @@ const Index = () => {
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
+        
+        // Generate chat title for first message in new chat
+        const isFirstMessage = messages.length === 0 || (!sessionId && data.session_id);
+        if (isFirstMessage) {
+          try {
+            const titleResponse = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                },
+                body: JSON.stringify({ message: text }),
+              }
+            );
+
+            if (titleResponse.ok) {
+              const { title } = await titleResponse.json();
+              if (title) {
+                // Save the generated title to localStorage
+                const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
+                chatNames[data.session_id] = title;
+                localStorage.setItem("chatNames", JSON.stringify(chatNames));
+              }
+            }
+          } catch (titleError) {
+            console.error("Failed to generate chat title:", titleError);
+            // Fallback to default title format - already handled by ChatSidebar
+          }
+        }
       }
 
       // Append any messages from the backend
