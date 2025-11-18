@@ -45,9 +45,10 @@ interface ChatInterfaceProps {
   onModelSelect?: (modelUrl: string, thumbnailUrl: string, workflow: string) => void;
   onImageGenerated?: () => void;
   onOptimizationFormSubmit?: (type: string, data: any) => void;
+  isLoadingHistory?: boolean;
 }
 
-const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated, onOptimizationFormSubmit }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated, onOptimizationFormSubmit, isLoadingHistory }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -780,7 +781,12 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       );
                     }
                     
-                    return <TypewriterText text={message.text} speed={3} />;
+                    // Only use typing animation for live assistant messages (not history)
+                    return (
+                      !isLoadingHistory && message.role === "assistant" && index === filteredMessages.length - 1 && isGenerating
+                        ? <TypewriterText text={message.text} speed={3} />
+                        : <div className="whitespace-pre-wrap">{message.text}</div>
+                    );
                   })()}
 
                   {/* Show raw tool response - render image directly if tool returns image URL */}
