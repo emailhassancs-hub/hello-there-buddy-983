@@ -38,16 +38,17 @@ interface Message {
 
 interface ChatInterfaceProps {
   messages: Message[];
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, imageUrls?: string[]) => void;
   onToolConfirmation?: (action: "confirm" | "modify" | "cancel", modifiedArgs?: Record<string, Record<string, any>>) => void;
   isGenerating?: boolean;
   apiUrl: string;
   onModelSelect?: (modelUrl: string, thumbnailUrl: string, workflow: string) => void;
   onImageGenerated?: () => void;
   onOptimizationFormSubmit?: (type: string, data: any) => void;
+  userEmail?: string;
 }
 
-const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated, onOptimizationFormSubmit }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated, onOptimizationFormSubmit, userEmail }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -174,25 +175,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const handleSend = async () => {
     if ((!inputValue.trim() && uploadedImages.length === 0) || isGenerating) return;
     
-    let imagePaths: string[] = [];
+    let imageUrls: string[] = [];
     
     // Upload all images at once if any
     if (uploadedImages.length > 0) {
       const files = uploadedImages.map(img => img.file);
-      imagePaths = await uploadImages(files);
+      imageUrls = await uploadImages(files, userEmail);
     }
     
-    // Send message text and image paths separately
+    // Send message text and image URLs separately to parent
     const messageText = inputValue.trim();
     
-    // Include image paths in the message for backend processing
-    let messageToSend = messageText;
-    if (imagePaths.length > 0) {
-      const imagePathsText = imagePaths.map(path => `[Image: ${path}]`).join('\n');
-      messageToSend = `${messageText}\n${imagePathsText}`.trim();
-    }
-    
-    onSendMessage(messageToSend);
+    // Pass image URLs separately to the parent handler
+    onSendMessage(messageText, imageUrls);
     
     // Clear uploaded images and their previews
     uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
@@ -276,12 +271,17 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
   };
 
-  const uploadImages = async (files: File[]): Promise<string[]> => {
+  const uploadImages = async (files: File[], userEmail?: string): Promise<string[]> => {
     const formData = new FormData();
     
     // Append each file as "files" (plural)
     for (const file of files) {
       formData.append("files", file);
+    }
+
+    // Add email parameter to FormData
+    if (userEmail) {
+      formData.append("email", userEmail);
     }
 
     try {
@@ -304,19 +304,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
       const data = await response.json();
       
-      // Expect { paths: ["images/img1.png", "images/img2.jpg"] } from backend
-      const serverPaths = data.paths;
+      // Expect { urls: ["http://...img1.png", "http://...img2.jpg"] } from backend
+      const imageUrls = data.urls || data.paths;
       
-      if (!serverPaths || !Array.isArray(serverPaths)) {
-        throw new Error("Backend did not return image paths");
+      if (!imageUrls || !Array.isArray(imageUrls)) {
+        throw new Error("Backend did not return image URLs");
       }
       
       toast({
         title: "Success",
-        description: `${serverPaths.length} image(s) uploaded successfully`,
+        description: `${imageUrls.length} image(s) uploaded successfully`,
       });
       
-      return serverPaths;
+      return imageUrls;
     } catch (error) {
       console.error("Upload error:", error);
       toast({

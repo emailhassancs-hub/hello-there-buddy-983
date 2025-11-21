@@ -47,6 +47,7 @@ const Index = () => {
   const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
@@ -122,8 +123,13 @@ const Index = () => {
     );
   }, []);
 
-  const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return;
+  const handleSendMessage = async (text: string, imageUrls?: string[]) => {
+    if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
+
+    // Store uploaded image URLs in session state for agent reuse
+    if (imageUrls && imageUrls.length > 0) {
+      setUploadedImageUrls(imageUrls);
+    }
 
     const userMessage: Message = {
       role: "user",
@@ -147,6 +153,14 @@ const Index = () => {
 
       if (userProfile?.email) {
         payload.email = userProfile.email;
+      }
+
+      // Include uploaded image URLs in the payload for agent processing
+      if (imageUrls && imageUrls.length > 0) {
+        payload.image_urls = imageUrls;
+      } else if (uploadedImageUrls.length > 0) {
+        // Include previously uploaded URLs for agent reuse
+        payload.image_urls = uploadedImageUrls;
       }
 
       const headers: HeadersInit = {
@@ -619,6 +633,7 @@ The process:
               onModelSelect={handleModelSelect}
               onImageGenerated={handleImageGenerated}
               onOptimizationFormSubmit={handleOptimizationFormSubmit}
+              userEmail={userProfile?.email}
             />
           </ErrorBoundary>
         </ResizablePanel>
