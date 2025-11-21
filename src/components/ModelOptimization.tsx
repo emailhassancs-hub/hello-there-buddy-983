@@ -229,11 +229,7 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
   }, [isActive, optimizationPresets, models])
 
   const sendSystemPromptToAgent = async () => {
-    const systemPrompt = `User ka model upload ho gaya!
-
-Hi agent, how are you?
-W salam.
-
+    const systemPrompt = `
 The user has uploaded a model through the Model Optimization tool and is now ready to begin optimization.
 
 Please greet the user and then guide them through the available optimization options listed below. 
@@ -279,7 +275,7 @@ Be friendly and instructive. Use short explanations and examples where needed.`
 
     // Step 2: Send the actual system prompt to backend silently
     try {
-      const API_URL = "http://localhost:8000";
+      const API_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
       //const API_URL = "http://35.209.183.202:8000";
       // Get access token from URL first, then window, then localStorage
       const params = new URLSearchParams(window.location.search);
