@@ -48,6 +48,7 @@ const Index = () => {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
@@ -123,12 +124,46 @@ const Index = () => {
     );
   }, []);
 
-  const handleSendMessage = async (text: string, imageUrls?: string[]) => {
+  const refreshImageUrl = async (blobPath: string): Promise<string | null> => {
+    try {
+      const response = await fetch(`${apiUrl}/images/refresh-url`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": authToken ? `Bearer ${authToken}` : "",
+        },
+        body: JSON.stringify({
+          email: userProfile?.email,
+          blob_path: blobPath
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to refresh URL");
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error("Error refreshing image URL:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh image URL",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[]) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
-    // Store uploaded image URLs in session state for agent reuse
+    // Store uploaded image URLs and blob paths in session state for agent reuse
     if (imageUrls && imageUrls.length > 0) {
       setUploadedImageUrls(imageUrls);
+    }
+    if (blobPaths && blobPaths.length > 0) {
+      setUploadedBlobPaths(blobPaths);
     }
 
     const userMessage: Message = {
