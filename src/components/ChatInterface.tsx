@@ -328,11 +328,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       const imageUrls = uploaded.map((item: any) => item.url);
       const blobPaths = uploaded.map((item: any) => item.blob_path);
       
-      toast({
-        title: "Success",
-        description: `${imageUrls.length} image(s) uploaded successfully`,
-      });
-      
       return { 
         urls: imageUrls, 
         blobPaths,
@@ -341,12 +336,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       };
     } catch (error) {
       console.error("Upload error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload images",
-        variant: "destructive",
-      });
-      return { urls: [], blobPaths: [] };
+      throw error;
     }
   };
 
@@ -364,8 +354,18 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           // Store URLs internally (hidden from user)
           setUploadedImageUrls(prev => [...prev, ...uploadResult.urls]);
           
+          toast({
+            title: "Image uploaded successfully",
+            description: `${uploadResult.urls.length} image(s) ready to send`,
+          });
+          
         } catch (error) {
           console.error("Upload error:", error);
+          toast({
+            title: "Upload failed",
+            description: "Failed to upload images. Please try again.",
+            variant: "destructive",
+          });
         } finally {
           setIsUploading(false);
         }
@@ -1102,19 +1102,29 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           </div>
         )}
         
-        {/* Show uploaded image count (not the URLs themselves) */}
+        {/* Show uploaded image thumbnails */}
         {uploadedImageUrls.length > 0 && !isUploading && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {uploadedImageUrls.map((_, index) => (
-              <div key={index} className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
-                <Upload className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Image {index + 1}</span>
+            {uploadedImageUrls.map((url, index) => (
+              <div key={index} className="relative group">
+                <div className="relative">
+                  <img 
+                    src={url} 
+                    alt={`Upload ${index + 1}`}
+                    className="h-20 w-20 object-cover rounded-lg border-2 border-primary shadow-md"
+                  />
+                  <div className="absolute inset-0 bg-primary/20 rounded-lg flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-primary/80 flex items-center justify-center">
+                      <span className="text-xs text-primary-foreground font-bold">{index + 1}</span>
+                    </div>
+                  </div>
+                </div>
                 <button
                   onClick={() => removeUploadedUrl(index)}
-                  className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:scale-110"
                   aria-label="Remove image"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3 h-3 text-destructive-foreground" />
                 </button>
               </div>
             ))}
