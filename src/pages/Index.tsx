@@ -38,6 +38,17 @@ interface Message {
   formData?: any;
 }
 
+// Helper function to extract email from JWT token
+const extractEmailFromToken = (token: string | null): string | null => {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.email || payload.sub || null;
+  } catch {
+    return null;
+  }
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -47,11 +58,13 @@ const Index = () => {
   const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
 
-  // const apiUrl = "http://localhost:8000";
+  //const apiUrl = "http://localhost:8000";
   const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
   const API = apiUrl;
  
@@ -122,8 +135,66 @@ const Index = () => {
     );
   }, []);
 
-  const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return;
+  const refreshImageUrl = async (blobPath: string): Promise<string | null> => {
+    try {
+      const response = await fetch(`${apiUrl}/images/refresh-url`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": authToken ? `Bearer ${authToken}` : "",
+        },
+        body: JSON.stringify({
+          email: userProfile?.email,
+          blob_path: blobPath
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to refresh URL");
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error("Error refreshing image URL:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh image URL",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
+    if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
+
+    // Store uploaded image URLs and blob paths in session state for agent reuse
+    if (imageUrls && imageUrls.length > 0) {
+      setUploadedImageUrls(imageUrls);
+    }
+    if (blobPaths && blobPaths.length > 0) {
+      setUploadedBlobPaths(blobPaths);
+    }
+
+    // Update session ID if provided from upload
+    if (uploadSessionId) {
+      updateSessionId(uploadSessionId);
+    }
+
+    // If we got an AI response from the upload, add it to messages and return early
+    if (aiResponse?.messages) {
+      const userMessage: Message = {
+        role: "user",
+        text: text,
+      };
+      const assistantMessage: Message = {
+        role: "assistant",
+        text: aiResponse.messages,
+      };
+      setMessages((prev) => [...prev, userMessage, assistantMessage]);
+      return;
+    }
 
     const userMessage: Message = {
       role: "user",
@@ -137,6 +208,9 @@ const Index = () => {
     setIsGenerating(true);
 
     try {
+      // Get user email from profile or extract from auth token
+      const userEmail = userProfile?.email || extractEmailFromToken(authToken);
+      
       const payload: any = {
         query: text,
       };
@@ -145,8 +219,16 @@ const Index = () => {
         payload.session_id = sessionId;
       }
 
-      if (userProfile?.email) {
-        payload.email = userProfile.email;
+      if (userEmail) {
+        payload.email = userEmail;
+      }
+
+      // Include uploaded image URLs in the payload for agent processing
+      if (imageUrls && imageUrls.length > 0) {
+        payload.image_urls = imageUrls;
+      } else if (uploadedImageUrls.length > 0) {
+        // Include previously uploaded URLs for agent reuse
+        payload.image_urls = uploadedImageUrls;
       }
 
       const headers: HeadersInit = {
@@ -619,6 +701,9 @@ The process:
               onModelSelect={handleModelSelect}
               onImageGenerated={handleImageGenerated}
               onOptimizationFormSubmit={handleOptimizationFormSubmit}
+              userEmail={userProfile?.email || extractEmailFromToken(authToken)}
+              sessionId={sessionId || undefined}
+              accessToken={authToken || undefined}
             />
           </ErrorBoundary>
         </ResizablePanel>

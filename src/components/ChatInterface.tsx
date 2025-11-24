@@ -38,16 +38,19 @@ interface Message {
 
 interface ChatInterfaceProps {
   messages: Message[];
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => void;
   onToolConfirmation?: (action: "confirm" | "modify" | "cancel", modifiedArgs?: Record<string, Record<string, any>>) => void;
   isGenerating?: boolean;
   apiUrl: string;
   onModelSelect?: (modelUrl: string, thumbnailUrl: string, workflow: string) => void;
   onImageGenerated?: () => void;
   onOptimizationFormSubmit?: (type: string, data: any) => void;
+  userEmail?: string;
+  sessionId?: string;
+  accessToken?: string;
 }
 
-const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated, onOptimizationFormSubmit }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated, onOptimizationFormSubmit, userEmail, sessionId, accessToken }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -58,7 +61,9 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [editedArgs, setEditedArgs] = useState<Record<string, Record<string, any>>>({});
   const [showRawJson, setShowRawJson] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [uploadedImages, setUploadedImages] = useState<{ file: File; preview: string }[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]); // Hidden URLs from upload
+  const [uploadedImagePreviews, setUploadedImagePreviews] = useState<string[]>([]); // Preview URLs for display
+  const [isUploading, setIsUploading] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [text3dPopup, setText3dPopup] = useState<string | null>(null);
   const [humanInLoop, setHumanInLoop] = useState(false);
@@ -172,31 +177,26 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   }, [inputValue]);
 
   const handleSend = async () => {
-    if ((!inputValue.trim() && uploadedImages.length === 0) || isGenerating) return;
+    if (!inputValue.trim() || isGenerating) return;
     
-    let imagePaths: string[] = [];
+    // Build message text with image markers if we have uploaded URLs
+    let messageText = inputValue.trim();
+    const imageInputs: string[] = [];
     
-    // Upload all images at once if any
-    if (uploadedImages.length > 0) {
-      const files = uploadedImages.map(img => img.file);
-      imagePaths = await uploadImages(files);
+    if (uploadedImageUrls.length > 0) {
+      uploadedImageUrls.forEach((url, index) => {
+        const marker = `[IMAGE_INPUT_${index + 1}]\nURL: ${url}\n[/IMAGE_INPUT_${index + 1}]`;
+        messageText += `\n${marker}`;
+        imageInputs.push(url);
+      });
     }
     
-    // Send message text and image paths separately
-    const messageText = inputValue.trim();
+    // Send message with hidden image URLs attached
+    onSendMessage(messageText, uploadedImageUrls, [], undefined, sessionId);
     
-    // Include image paths in the message for backend processing
-    let messageToSend = messageText;
-    if (imagePaths.length > 0) {
-      const imagePathsText = imagePaths.map(path => `[Image: ${path}]`).join('\n');
-      messageToSend = `${messageText}\n${imagePathsText}`.trim();
-    }
-    
-    onSendMessage(messageToSend);
-    
-    // Clear uploaded images and their previews
-    uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
-    setUploadedImages([]);
+    // Clear state
+    setUploadedImageUrls([]);
+    setUploadedImagePreviews([]);
     setInputValue("");
     
     // Reset textarea height after sending
@@ -276,20 +276,40 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
   };
 
-  const uploadImages = async (files: File[]): Promise<string[]> => {
+  const uploadImages = async (
+    files: File[], 
+    userEmail?: string, 
+    query?: string,
+    sessionId?: string,
+    accessToken?: string
+  ): Promise<{ urls: string[], blobPaths: string[], aiResponse?: any, sessionId?: string }> => {
     const formData = new FormData();
     
-    // Append each file as "files" (plural)
-    for (const file of files) {
-      formData.append("files", file);
+    // Add required email field
+    if (userEmail) {
+      formData.append("email", userEmail);
     }
+
+    // Add optional query field
+    if (query) {
+      formData.append("query", query);
+    }
+
+    // Add optional session_id field
+    if (sessionId) {
+      formData.append("session_id", sessionId);
+    }
+
+    // Add files
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
 
     try {
       const headers: HeadersInit = {};
-      const authToken = (window as any).authToken;
       
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
       }
 
       const response = await fetch(`${apiUrl}/upload`, {
@@ -304,19 +324,22 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
       const data = await response.json();
       
-      // Expect { paths: ["images/img1.png", "images/img2.jpg"] } from backend
-      const serverPaths = data.paths;
-      
-      if (!serverPaths || !Array.isArray(serverPaths)) {
-        throw new Error("Backend did not return image paths");
-      }
+      // Extract uploaded metadata, AI response, and session ID
+      const uploaded = data.uploaded || [];
+      const imageUrls = uploaded.map((item: any) => item.url);
+      const blobPaths = uploaded.map((item: any) => item.blob_path);
       
       toast({
         title: "Success",
-        description: `${serverPaths.length} image(s) uploaded successfully`,
+        description: `${imageUrls.length} image(s) uploaded successfully`,
       });
       
-      return serverPaths;
+      return { 
+        urls: imageUrls, 
+        blobPaths,
+        aiResponse: data.ai_response,
+        sessionId: data.session_id
+      };
     } catch (error) {
       console.error("Upload error:", error);
       toast({
@@ -324,31 +347,55 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         description: "Failed to upload images",
         variant: "destructive",
       });
-      return [];
+      return { urls: [], blobPaths: [] };
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages = Array.from(files)
-        .filter(file => file.type.startsWith('image/'))
-        .map(file => ({
-          file,
-          preview: URL.createObjectURL(file)
-        }));
-      setUploadedImages(prev => [...prev, ...newImages]);
+      const fileArray = Array.from(files).filter(file => file.type.startsWith('image/'));
+      
+      if (fileArray.length > 0) {
+        setIsUploading(true);
+        
+        // Create preview URLs immediately
+        const previews = fileArray.map(file => URL.createObjectURL(file));
+        setUploadedImagePreviews(prev => [...prev, ...previews]);
+        
+        try {
+          const uploadResult = await uploadImages(fileArray, userEmail, "", sessionId, accessToken);
+          
+          // Store URLs internally (hidden from user)
+          setUploadedImageUrls(prev => [...prev, ...uploadResult.urls]);
+          
+        } catch (error) {
+          console.error("Upload error:", error);
+          // Remove previews if upload failed
+          setUploadedImagePreviews(prev => prev.slice(0, -(previews.length)));
+        } finally {
+          setIsUploading(false);
+        }
+      }
     }
     // Reset input so same files can be selected again
     e.target.value = '';
   };
 
-  const removeImage = (index: number) => {
-    setUploadedImages(prev => {
-      const newImages = [...prev];
-      URL.revokeObjectURL(newImages[index].preview);
-      newImages.splice(index, 1);
-      return newImages;
+  const removeUploadedUrl = (index: number) => {
+    setUploadedImageUrls(prev => {
+      const newUrls = [...prev];
+      newUrls.splice(index, 1);
+      return newUrls;
+    });
+    setUploadedImagePreviews(prev => {
+      const newPreviews = [...prev];
+      // Revoke object URL to prevent memory leaks
+      if (newPreviews[index]) {
+        URL.revokeObjectURL(newPreviews[index]);
+      }
+      newPreviews.splice(index, 1);
+      return newPreviews;
     });
   };
 
@@ -512,8 +559,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 <div className="max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter bg-chat-user-bubble text-chat-user-foreground ml-4">
                   {(() => {
                     // Extract text without image markers
-                    const textWithoutImages = message.text.replace(/\[Image:.*?\]/g, '').trim();
-                    // Extract image paths
+                    const textWithoutImages = message.text
+                      .replace(/\[IMAGE_INPUT_\d+\][\s\S]*?\[\/IMAGE_INPUT_\d+\]/g, '')
+                      .replace(/\[Image:.*?\]/g, '')
+                      .trim();
+                    
+                    // Extract IMAGE_INPUT URLs
+                    const imageInputMatches = message.text.match(/\[IMAGE_INPUT_\d+\]\s*URL:\s*(https?:\/\/[^\s\[\]]+)\s*\[\/IMAGE_INPUT_\d+\]/g);
+                    const imageInputUrls = imageInputMatches?.map(match => {
+                      const urlMatch = match.match(/URL:\s*(https?:\/\/[^\s\[\]]+)/);
+                      return urlMatch ? urlMatch[1] : null;
+                    }).filter(Boolean) || [];
+                    
+                    // Extract old-style [Image: path] markers
                     const imageMatches = message.text.match(/\[Image: (.*?)\]/g);
                     const imagePaths = imageMatches?.map(match => match.match(/\[Image: (.*?)\]/)?.[1]).filter(Boolean) || [];
                     
@@ -522,6 +580,22 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                         {textWithoutImages && (
                           <div className="whitespace-pre-wrap mb-2">
                             {textWithoutImages}
+                          </div>
+                        )}
+                        {imageInputUrls.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {imageInputUrls.map((imageUrl, idx) => (
+                              <img
+                                key={idx}
+                                src={imageUrl}
+                                alt="Uploaded"
+                                className="w-16 h-16 object-cover rounded-lg border border-border/50"
+                                onError={(e) => {
+                                  console.error('Image load error for:', imageUrl);
+                                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64"%3E%3Crect fill="%23ddd" width="64" height="64"/%3E%3Ctext x="50%25" y="50%25" font-size="10" text-anchor="middle" dy=".3em"%3EImage%3C/text%3E%3C/svg%3E';
+                                }}
+                              />
+                            ))}
                           </div>
                         )}
                         {imagePaths.length > 0 && (
@@ -1063,19 +1137,27 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           className="hidden"
         />
         
-        {/* Image thumbnails */}
-        {uploadedImages.length > 0 && (
+        {/* Loading indicator during upload with mini spinner */}
+        {isUploading && (
+          <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border border-border mb-3">
+            <div className="animate-spin rounded-full h-3 w-3 border-2 border-primary border-t-transparent"></div>
+            <span className="text-xs text-muted-foreground">Uploading...</span>
+          </div>
+        )}
+        
+        {/* Show uploaded image previews (mini thumbnails) */}
+        {uploadedImagePreviews.length > 0 && !isUploading && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {uploadedImages.map((img, index) => (
+            {uploadedImagePreviews.map((preview, index) => (
               <div key={index} className="relative group">
-                <img 
-                  src={img.preview} 
-                  alt="Upload preview" 
-                  className="w-16 h-16 object-cover rounded-lg border-2 border-border"
+                <img
+                  src={preview}
+                  alt={`Upload ${index + 1}`}
+                  className="w-12 h-12 object-cover rounded-lg border border-border/50"
                 />
                 <button
-                  onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                  onClick={() => removeUploadedUrl(index)}
+                  className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label="Remove image"
                 >
                   <X className="w-3 h-3" />
@@ -1162,7 +1244,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           {/* Send button (right inside) */}
           <Button
             onClick={handleSend}
-            disabled={(!inputValue.trim() && uploadedImages.length === 0) || isGenerating}
+            disabled={!inputValue.trim() || isGenerating || isUploading}
             size="icon"
             className="flex-shrink-0 h-9 w-9 rounded-lg"
           >
