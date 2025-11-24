@@ -62,6 +62,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [showRawJson, setShowRawJson] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [uploadedImages, setUploadedImages] = useState<{ file: File; preview: string }[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]); // Hidden URLs from upload
+  const [isUploading, setIsUploading] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [text3dPopup, setText3dPopup] = useState<string | null>(null);
   const [humanInLoop, setHumanInLoop] = useState(false);
@@ -175,31 +177,25 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   }, [inputValue]);
 
   const handleSend = async () => {
-    if ((!inputValue.trim() && uploadedImages.length === 0) || isGenerating) return;
+    if (!inputValue.trim() || isGenerating) return;
     
-    let imageUrls: string[] = [];
-    let blobPaths: string[] = [];
-    let aiResponse: any = undefined;
-    let uploadSessionId: string | undefined = undefined;
+    // Build message text with image markers if we have uploaded URLs
+    let messageText = inputValue.trim();
+    const imageInputs: string[] = [];
     
-    // Upload all images at once if any
-    if (uploadedImages.length > 0) {
-      const files = uploadedImages.map(img => img.file);
-      const uploadResult = await uploadImages(files, userEmail, inputValue.trim(), sessionId, accessToken);
-      imageUrls = uploadResult.urls;
-      blobPaths = uploadResult.blobPaths;
-      aiResponse = uploadResult.aiResponse;
-      uploadSessionId = uploadResult.sessionId;
+    if (uploadedImageUrls.length > 0) {
+      uploadedImageUrls.forEach((url, index) => {
+        const marker = `[IMAGE_INPUT_${index + 1}]\nURL: ${url}\n[/IMAGE_INPUT_${index + 1}]`;
+        messageText += `\n${marker}`;
+        imageInputs.push(url);
+      });
     }
     
-    // Send message text, image URLs, blob paths, AI response, and session ID to parent
-    const messageText = inputValue.trim();
+    // Send message with hidden image URLs attached
+    onSendMessage(messageText, uploadedImageUrls, [], undefined, sessionId);
     
-    onSendMessage(messageText, imageUrls, blobPaths, aiResponse, uploadSessionId);
-    
-    // Clear uploaded images and their previews
-    uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
-    setUploadedImages([]);
+    // Clear state
+    setUploadedImageUrls([]);
     setInputValue("");
     
     // Reset textarea height after sending
@@ -354,27 +350,36 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages = Array.from(files)
-        .filter(file => file.type.startsWith('image/'))
-        .map(file => ({
-          file,
-          preview: URL.createObjectURL(file)
-        }));
-      setUploadedImages(prev => [...prev, ...newImages]);
+      const fileArray = Array.from(files).filter(file => file.type.startsWith('image/'));
+      
+      if (fileArray.length > 0) {
+        setIsUploading(true);
+        
+        try {
+          const uploadResult = await uploadImages(fileArray, userEmail, "", sessionId, accessToken);
+          
+          // Store URLs internally (hidden from user)
+          setUploadedImageUrls(prev => [...prev, ...uploadResult.urls]);
+          
+        } catch (error) {
+          console.error("Upload error:", error);
+        } finally {
+          setIsUploading(false);
+        }
+      }
     }
     // Reset input so same files can be selected again
     e.target.value = '';
   };
 
-  const removeImage = (index: number) => {
-    setUploadedImages(prev => {
-      const newImages = [...prev];
-      URL.revokeObjectURL(newImages[index].preview);
-      newImages.splice(index, 1);
-      return newImages;
+  const removeUploadedUrl = (index: number) => {
+    setUploadedImageUrls(prev => {
+      const newUrls = [...prev];
+      newUrls.splice(index, 1);
+      return newUrls;
     });
   };
 
@@ -1089,19 +1094,24 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           className="hidden"
         />
         
-        {/* Image thumbnails */}
-        {uploadedImages.length > 0 && (
+        {/* Loading indicator during upload */}
+        {isUploading && (
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border mb-3">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+            <span className="text-sm text-muted-foreground">Uploading images...</span>
+          </div>
+        )}
+        
+        {/* Show uploaded image count (not the URLs themselves) */}
+        {uploadedImageUrls.length > 0 && !isUploading && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {uploadedImages.map((img, index) => (
-              <div key={index} className="relative group">
-                <img 
-                  src={img.preview} 
-                  alt="Upload preview" 
-                  className="w-16 h-16 object-cover rounded-lg border-2 border-border"
-                />
+            {uploadedImageUrls.map((_, index) => (
+              <div key={index} className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
+                <Upload className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Image {index + 1}</span>
                 <button
-                  onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                  onClick={() => removeUploadedUrl(index)}
+                  className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
                   aria-label="Remove image"
                 >
                   <X className="w-3 h-3" />
@@ -1188,7 +1198,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           {/* Send button (right inside) */}
           <Button
             onClick={handleSend}
-            disabled={(!inputValue.trim() && uploadedImages.length === 0) || isGenerating}
+            disabled={!inputValue.trim() || isGenerating || isUploading}
             size="icon"
             className="flex-shrink-0 h-9 w-9 rounded-lg"
           >
