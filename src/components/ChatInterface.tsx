@@ -61,8 +61,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [editedArgs, setEditedArgs] = useState<Record<string, Record<string, any>>>({});
   const [showRawJson, setShowRawJson] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [uploadedImages, setUploadedImages] = useState<{ file: File; preview: string }[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]); // Hidden URLs from upload
+  const [uploadedImagePreviews, setUploadedImagePreviews] = useState<string[]>([]); // Preview URLs for display
   const [isUploading, setIsUploading] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [text3dPopup, setText3dPopup] = useState<string | null>(null);
@@ -196,6 +196,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     
     // Clear state
     setUploadedImageUrls([]);
+    setUploadedImagePreviews([]);
     setInputValue("");
     
     // Reset textarea height after sending
@@ -358,6 +359,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       if (fileArray.length > 0) {
         setIsUploading(true);
         
+        // Create preview URLs immediately
+        const previews = fileArray.map(file => URL.createObjectURL(file));
+        setUploadedImagePreviews(prev => [...prev, ...previews]);
+        
         try {
           const uploadResult = await uploadImages(fileArray, userEmail, "", sessionId, accessToken);
           
@@ -366,6 +371,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           
         } catch (error) {
           console.error("Upload error:", error);
+          // Remove previews if upload failed
+          setUploadedImagePreviews(prev => prev.slice(0, -(previews.length)));
         } finally {
           setIsUploading(false);
         }
@@ -380,6 +387,15 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       const newUrls = [...prev];
       newUrls.splice(index, 1);
       return newUrls;
+    });
+    setUploadedImagePreviews(prev => {
+      const newPreviews = [...prev];
+      // Revoke object URL to prevent memory leaks
+      if (newPreviews[index]) {
+        URL.revokeObjectURL(newPreviews[index]);
+      }
+      newPreviews.splice(index, 1);
+      return newPreviews;
     });
   };
 
@@ -543,8 +559,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 <div className="max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter bg-chat-user-bubble text-chat-user-foreground ml-4">
                   {(() => {
                     // Extract text without image markers
-                    const textWithoutImages = message.text.replace(/\[Image:.*?\]/g, '').trim();
-                    // Extract image paths
+                    const textWithoutImages = message.text
+                      .replace(/\[IMAGE_INPUT_\d+\][\s\S]*?\[\/IMAGE_INPUT_\d+\]/g, '')
+                      .replace(/\[Image:.*?\]/g, '')
+                      .trim();
+                    
+                    // Extract IMAGE_INPUT URLs
+                    const imageInputMatches = message.text.match(/\[IMAGE_INPUT_\d+\]\s*URL:\s*(https?:\/\/[^\s\[\]]+)\s*\[\/IMAGE_INPUT_\d+\]/g);
+                    const imageInputUrls = imageInputMatches?.map(match => {
+                      const urlMatch = match.match(/URL:\s*(https?:\/\/[^\s\[\]]+)/);
+                      return urlMatch ? urlMatch[1] : null;
+                    }).filter(Boolean) || [];
+                    
+                    // Extract old-style [Image: path] markers
                     const imageMatches = message.text.match(/\[Image: (.*?)\]/g);
                     const imagePaths = imageMatches?.map(match => match.match(/\[Image: (.*?)\]/)?.[1]).filter(Boolean) || [];
                     
@@ -553,6 +580,22 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                         {textWithoutImages && (
                           <div className="whitespace-pre-wrap mb-2">
                             {textWithoutImages}
+                          </div>
+                        )}
+                        {imageInputUrls.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {imageInputUrls.map((imageUrl, idx) => (
+                              <img
+                                key={idx}
+                                src={imageUrl}
+                                alt="Uploaded"
+                                className="w-16 h-16 object-cover rounded-lg border border-border/50"
+                                onError={(e) => {
+                                  console.error('Image load error for:', imageUrl);
+                                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64"%3E%3Crect fill="%23ddd" width="64" height="64"/%3E%3Ctext x="50%25" y="50%25" font-size="10" text-anchor="middle" dy=".3em"%3EImage%3C/text%3E%3C/svg%3E';
+                                }}
+                              />
+                            ))}
                           </div>
                         )}
                         {imagePaths.length > 0 && (
@@ -1094,24 +1137,27 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           className="hidden"
         />
         
-        {/* Loading indicator during upload */}
+        {/* Loading indicator during upload with mini spinner */}
         {isUploading && (
-          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border mb-3">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
-            <span className="text-sm text-muted-foreground">Uploading images...</span>
+          <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border border-border mb-3">
+            <div className="animate-spin rounded-full h-3 w-3 border-2 border-primary border-t-transparent"></div>
+            <span className="text-xs text-muted-foreground">Uploading...</span>
           </div>
         )}
         
-        {/* Show uploaded image count (not the URLs themselves) */}
-        {uploadedImageUrls.length > 0 && !isUploading && (
+        {/* Show uploaded image previews (mini thumbnails) */}
+        {uploadedImagePreviews.length > 0 && !isUploading && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {uploadedImageUrls.map((_, index) => (
-              <div key={index} className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
-                <Upload className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Image {index + 1}</span>
+            {uploadedImagePreviews.map((preview, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={preview}
+                  alt={`Upload ${index + 1}`}
+                  className="w-12 h-12 object-cover rounded-lg border border-border/50"
+                />
                 <button
                   onClick={() => removeUploadedUrl(index)}
-                  className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                  className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label="Remove image"
                 >
                   <X className="w-3 h-3" />
