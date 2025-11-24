@@ -38,7 +38,7 @@ interface Message {
 
 interface ChatInterfaceProps {
   messages: Message[];
-  onSendMessage: (message: string, imageUrls?: string[]) => void;
+  onSendMessage: (message: string, imageUrls?: string[], blobPaths?: string[]) => void;
   onToolConfirmation?: (action: "confirm" | "modify" | "cancel", modifiedArgs?: Record<string, Record<string, any>>) => void;
   isGenerating?: boolean;
   apiUrl: string;
@@ -176,18 +176,21 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     if ((!inputValue.trim() && uploadedImages.length === 0) || isGenerating) return;
     
     let imageUrls: string[] = [];
+    let blobPaths: string[] = [];
     
     // Upload all images at once if any
     if (uploadedImages.length > 0) {
       const files = uploadedImages.map(img => img.file);
-      imageUrls = await uploadImages(files, userEmail);
+      const uploadResult = await uploadImages(files, userEmail, inputValue.trim());
+      imageUrls = uploadResult.urls;
+      blobPaths = uploadResult.blobPaths;
     }
     
     // Send message text and image URLs separately to parent
     const messageText = inputValue.trim();
     
-    // Pass image URLs separately to the parent handler
-    onSendMessage(messageText, imageUrls);
+    // Pass image URLs and blob paths separately to the parent handler
+    onSendMessage(messageText, imageUrls, blobPaths);
     
     // Clear uploaded images and their previews
     uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
@@ -271,7 +274,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
   };
 
-  const uploadImages = async (files: File[], userEmail?: string): Promise<string[]> => {
+  const uploadImages = async (files: File[], userEmail?: string, query?: string): Promise<{ urls: string[], blobPaths: string[] }> => {
     const formData = new FormData();
     
     // Append each file as "files" (plural)
@@ -282,6 +285,11 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     // Add email parameter to FormData
     if (userEmail) {
       formData.append("email", userEmail);
+    }
+
+    // Add query parameter to FormData
+    if (query) {
+      formData.append("query", query);
     }
 
     try {
@@ -304,19 +312,22 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
       const data = await response.json();
       
-      // Expect { urls: ["http://...img1.png", "http://...img2.jpg"] } from backend
-      const imageUrls = data.urls || data.paths;
+      // Expect { uploaded: [{ blob_path: "...", url: "..." }] } from backend
+      const uploaded = data.uploaded;
       
-      if (!imageUrls || !Array.isArray(imageUrls)) {
-        throw new Error("Backend did not return image URLs");
+      if (!uploaded || !Array.isArray(uploaded)) {
+        throw new Error("Backend did not return uploaded data");
       }
+      
+      const imageUrls = uploaded.map((item: any) => item.url);
+      const blobPaths = uploaded.map((item: any) => item.blob_path);
       
       toast({
         title: "Success",
         description: `${imageUrls.length} image(s) uploaded successfully`,
       });
       
-      return imageUrls;
+      return { urls: imageUrls, blobPaths };
     } catch (error) {
       console.error("Upload error:", error);
       toast({
@@ -324,7 +335,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         description: "Failed to upload images",
         variant: "destructive",
       });
-      return [];
+      return { urls: [], blobPaths: [] };
     }
   };
 
