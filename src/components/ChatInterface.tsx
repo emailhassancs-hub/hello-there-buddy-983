@@ -38,7 +38,7 @@ interface Message {
 
 interface ChatInterfaceProps {
   messages: Message[];
-  onSendMessage: (message: string, imageUrls?: string[], blobPaths?: string[]) => void;
+  onSendMessage: (message: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => void;
   onToolConfirmation?: (action: "confirm" | "modify" | "cancel", modifiedArgs?: Record<string, Record<string, any>>) => void;
   isGenerating?: boolean;
   apiUrl: string;
@@ -46,9 +46,11 @@ interface ChatInterfaceProps {
   onImageGenerated?: () => void;
   onOptimizationFormSubmit?: (type: string, data: any) => void;
   userEmail?: string;
+  sessionId?: string;
+  accessToken?: string;
 }
 
-const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated, onOptimizationFormSubmit, userEmail }: ChatInterfaceProps) => {
+const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerating, apiUrl, onModelSelect, onImageGenerated, onOptimizationFormSubmit, userEmail, sessionId, accessToken }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -177,20 +179,23 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     
     let imageUrls: string[] = [];
     let blobPaths: string[] = [];
+    let aiResponse: any = undefined;
+    let uploadSessionId: string | undefined = undefined;
     
     // Upload all images at once if any
     if (uploadedImages.length > 0) {
       const files = uploadedImages.map(img => img.file);
-      const uploadResult = await uploadImages(files, userEmail, inputValue.trim());
+      const uploadResult = await uploadImages(files, userEmail, inputValue.trim(), sessionId, accessToken);
       imageUrls = uploadResult.urls;
       blobPaths = uploadResult.blobPaths;
+      aiResponse = uploadResult.aiResponse;
+      uploadSessionId = uploadResult.sessionId;
     }
     
-    // Send message text and image URLs separately to parent
+    // Send message text, image URLs, blob paths, AI response, and session ID to parent
     const messageText = inputValue.trim();
     
-    // Pass image URLs and blob paths separately to the parent handler
-    onSendMessage(messageText, imageUrls, blobPaths);
+    onSendMessage(messageText, imageUrls, blobPaths, aiResponse, uploadSessionId);
     
     // Clear uploaded images and their previews
     uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
@@ -274,30 +279,40 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     }
   };
 
-  const uploadImages = async (files: File[], userEmail?: string, query?: string): Promise<{ urls: string[], blobPaths: string[] }> => {
+  const uploadImages = async (
+    files: File[], 
+    userEmail?: string, 
+    query?: string,
+    sessionId?: string,
+    accessToken?: string
+  ): Promise<{ urls: string[], blobPaths: string[], aiResponse?: any, sessionId?: string }> => {
     const formData = new FormData();
     
-    // Append each file as "files" (plural)
-    for (const file of files) {
-      formData.append("files", file);
-    }
-
-    // Add email parameter to FormData
+    // Add required email field
     if (userEmail) {
       formData.append("email", userEmail);
     }
 
-    // Add query parameter to FormData
+    // Add optional query field
     if (query) {
       formData.append("query", query);
     }
 
+    // Add optional session_id field
+    if (sessionId) {
+      formData.append("session_id", sessionId);
+    }
+
+    // Add files
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
     try {
       const headers: HeadersInit = {};
-      const authToken = (window as any).authToken;
       
-      if (authToken) {
-        headers["Authorization"] = `Bearer ${authToken}`;
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
       }
 
       const response = await fetch(`${apiUrl}/upload`, {
@@ -312,13 +327,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
       const data = await response.json();
       
-      // Expect { uploaded: [{ blob_path: "...", url: "..." }] } from backend
-      const uploaded = data.uploaded;
-      
-      if (!uploaded || !Array.isArray(uploaded)) {
-        throw new Error("Backend did not return uploaded data");
-      }
-      
+      // Extract uploaded metadata, AI response, and session ID
+      const uploaded = data.uploaded || [];
       const imageUrls = uploaded.map((item: any) => item.url);
       const blobPaths = uploaded.map((item: any) => item.blob_path);
       
@@ -327,7 +337,12 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         description: `${imageUrls.length} image(s) uploaded successfully`,
       });
       
-      return { urls: imageUrls, blobPaths };
+      return { 
+        urls: imageUrls, 
+        blobPaths,
+        aiResponse: data.ai_response,
+        sessionId: data.session_id
+      };
     } catch (error) {
       console.error("Upload error:", error);
       toast({

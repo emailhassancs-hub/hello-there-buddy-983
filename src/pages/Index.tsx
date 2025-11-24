@@ -155,7 +155,7 @@ const Index = () => {
     }
   };
 
-  const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[]) => {
+  const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
     // Store uploaded image URLs and blob paths in session state for agent reuse
@@ -164,6 +164,25 @@ const Index = () => {
     }
     if (blobPaths && blobPaths.length > 0) {
       setUploadedBlobPaths(blobPaths);
+    }
+
+    // Update session ID if provided from upload
+    if (uploadSessionId) {
+      updateSessionId(uploadSessionId);
+    }
+
+    // If we got an AI response from the upload, add it to messages and return early
+    if (aiResponse?.messages) {
+      const userMessage: Message = {
+        role: "user",
+        text: text,
+      };
+      const assistantMessage: Message = {
+        role: "assistant",
+        text: aiResponse.messages,
+      };
+      setMessages((prev) => [...prev, userMessage, assistantMessage]);
+      return;
     }
 
     const userMessage: Message = {
@@ -669,6 +688,8 @@ The process:
               onImageGenerated={handleImageGenerated}
               onOptimizationFormSubmit={handleOptimizationFormSubmit}
               userEmail={userProfile?.email}
+              sessionId={sessionId || undefined}
+              accessToken={authToken || undefined}
             />
           </ErrorBoundary>
         </ResizablePanel>
