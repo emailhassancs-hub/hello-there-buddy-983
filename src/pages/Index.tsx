@@ -38,6 +38,17 @@ interface Message {
   formData?: any;
 }
 
+// Helper function to extract email from JWT token
+const extractEmailFromToken = (token: string | null): string | null => {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.email || payload.sub || null;
+  } catch {
+    return null;
+  }
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -197,6 +208,9 @@ const Index = () => {
     setIsGenerating(true);
 
     try {
+      // Get user email from profile or extract from auth token
+      const userEmail = userProfile?.email || extractEmailFromToken(authToken);
+      
       const payload: any = {
         query: text,
       };
@@ -205,8 +219,8 @@ const Index = () => {
         payload.session_id = sessionId;
       }
 
-      if (userProfile?.email) {
-        payload.email = userProfile.email;
+      if (userEmail) {
+        payload.email = userEmail;
       }
 
       // Include uploaded image URLs in the payload for agent processing
@@ -687,7 +701,7 @@ The process:
               onModelSelect={handleModelSelect}
               onImageGenerated={handleImageGenerated}
               onOptimizationFormSubmit={handleOptimizationFormSubmit}
-              userEmail={userProfile?.email}
+              userEmail={userProfile?.email || extractEmailFromToken(authToken)}
               sessionId={sessionId || undefined}
               accessToken={authToken || undefined}
             />
