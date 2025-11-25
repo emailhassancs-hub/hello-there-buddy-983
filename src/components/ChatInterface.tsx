@@ -662,7 +662,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       // Try to parse successful response
                       try {
                         const parsed = JSON.parse(message.text);
-                        if (parsed && parsed.thumbnail_url && parsed.model_url) {
+                        if (parsed && parsed.thumbnail_url) {
                           const workflow = message.toolName.includes('image_to_3d') ? 'image_to_3d' :
                                           message.toolName.includes('text_to_3d') ? 'text_to_3d' : 'post_processing';
                           
@@ -672,9 +672,14 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                                 src={parsed.thumbnail_url}
                                 alt="3D Model Preview"
                                 className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => onModelSelect?.(parsed.model_url, parsed.thumbnail_url, workflow)}
+                                onClick={() => parsed.model_url ? onModelSelect?.(parsed.model_url, parsed.thumbnail_url, workflow) : setZoomedImage(parsed.thumbnail_url)}
                               />
-                              <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>
+                              <p className="text-xs text-muted-foreground italic">
+                                {parsed.model_url ? 'Click thumbnail to view 3D model' : 'Generated image'}
+                              </p>
+                              {parsed.job_id && (
+                                <p className="text-xs text-muted-foreground italic">Job ID: {parsed.job_id}</p>
+                              )}
                             </div>
                           );
                         }
