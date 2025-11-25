@@ -517,15 +517,16 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         </div>
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => window.location.href = "/game-design-pro"}
-            className="relative group overflow-hidden bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-4 py-1.5 rounded-lg border border-primary/20"
+            disabled
+            className="relative group overflow-hidden bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg px-4 py-1.5 rounded-lg border border-primary/20 opacity-60 cursor-not-allowed"
           >
             <span className="relative z-10 flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
               <span className="font-semibold">Game Design</span>
             </span>
-            {/* Shine effect */}
-            <span className="absolute inset-0 w-full h-full before:absolute before:inset-0 before:w-1/4 before:h-full before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:skew-x-[-20deg] before:-translate-x-full before:animate-[shine_10s_ease-in-out_infinite]" />
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded italic font-medium z-20">
+              Coming Soon
+            </span>
           </Button>
           <ThemeToggle />
         </div>
@@ -731,9 +732,16 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
                     // Check if message contains image response (JSON object with img_url or thumbnail_url)
                     try {
-                      const parsed = JSON.parse(message.text);
+                      // Extract JSON from tool response format like "Tool: tool_name { ... }"
+                      let jsonText = message.text;
+                      const toolResponseMatch = message.text.match(/Tool:\s*\w+\s*(\{[\s\S]*\})/);
+                      if (toolResponseMatch) {
+                        jsonText = toolResponseMatch[1];
+                      }
                       
-                      // Check for thumbnail_url in the response (priority)
+                      const parsed = JSON.parse(jsonText);
+                      
+                      // Check for thumbnail_url in the response (priority) - handles job responses with thumbnails
                       if (parsed?.thumbnail_url) {
                         const ImageWithFallback = () => {
                           const [hasError, setHasError] = useState(false);
@@ -755,19 +763,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                           }
                           
                           return (
-                            <img 
-                              src={parsed.thumbnail_url}
-                              alt={parsed.prompt || 'Generated thumbnail'}
-                              className="cursor-pointer hover:opacity-90 transition-opacity"
-                              style={{ 
-                                width: '200px',
-                                borderRadius: '8px',
-                                objectFit: 'cover',
-                                marginTop: '8px'
-                              }}
-                              onError={() => setHasError(true)}
-                              onClick={() => setZoomedImage(parsed.thumbnail_url)}
-                            />
+                            <div className="space-y-2">
+                              <img 
+                                src={parsed.thumbnail_url}
+                                alt={parsed.prompt || parsed.job_id || 'Generated thumbnail'}
+                                className="cursor-pointer hover:opacity-90 transition-opacity rounded-xl max-w-[320px] h-auto"
+                                style={{ marginTop: '8px' }}
+                                onError={() => setHasError(true)}
+                                onClick={() => setZoomedImage(parsed.thumbnail_url)}
+                              />
+                              {parsed.job_id && (
+                                <p className="text-xs text-muted-foreground italic">Job ID: {parsed.job_id}</p>
+                              )}
+                            </div>
                           );
                         };
                         

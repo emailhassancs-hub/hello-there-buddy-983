@@ -64,8 +64,8 @@ const Index = () => {
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
 
-  //const apiUrl = "http://localhost:8000";
-  const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
+  const apiUrl = "http://localhost:8000";
+  //const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
   const API = apiUrl;
  
   // Token capture from URL
@@ -739,13 +739,15 @@ The process:
                     <Settings className="w-4 h-4" />
                     Model Optimization
                   </TabsTrigger>
-                  <TabsTrigger value="videos" className="gap-2">
+                  <TabsTrigger value="videos" className="gap-2 relative" disabled>
                     <Video className="w-4 h-4" />
                     Video Gallery
+                    <span className="text-[10px] italic ml-1 text-muted-foreground">Coming Soon</span>
                   </TabsTrigger>
-                  <TabsTrigger value="game-design-pro" className="gap-2" onClick={() => navigate("/game-design-pro")}>
+                  <TabsTrigger value="game-design-pro" className="gap-2 relative" disabled>
                     <Sparkles className="w-4 h-4" />
                     Game Design Pro
+                    <span className="text-[10px] italic ml-1 text-muted-foreground">Coming Soon</span>
                   </TabsTrigger>
                 </TabsList>
                 
