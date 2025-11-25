@@ -661,11 +661,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
                       // Try to parse successful response
                       try {
-                        // Extract JSON from message text (may contain "Tool: xyz" prefix)
-                        const jsonStart = message.text.indexOf('{');
-                        const jsonText = jsonStart >= 0 ? message.text.substring(jsonStart) : message.text;
-                        const parsed = JSON.parse(jsonText);
-                        if (parsed && parsed.thumbnail_url) {
+                        const parsed = JSON.parse(message.text);
+                        if (parsed && parsed.thumbnail_url && parsed.model_url) {
                           const workflow = message.toolName.includes('image_to_3d') ? 'image_to_3d' :
                                           message.toolName.includes('text_to_3d') ? 'text_to_3d' : 'post_processing';
                           
@@ -675,14 +672,9 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                                 src={parsed.thumbnail_url}
                                 alt="3D Model Preview"
                                 className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => parsed.model_url ? onModelSelect?.(parsed.model_url, parsed.thumbnail_url, workflow) : setZoomedImage(parsed.thumbnail_url)}
+                                onClick={() => onModelSelect?.(parsed.model_url, parsed.thumbnail_url, workflow)}
                               />
-                              <p className="text-xs text-muted-foreground italic">
-                                {parsed.model_url ? 'Click thumbnail to view 3D model' : 'Generated image'}
-                              </p>
-                              {parsed.job_id && (
-                                <p className="text-xs text-muted-foreground italic">Job ID: {parsed.job_id}</p>
-                              )}
+                              <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>
                             </div>
                           );
                         }
