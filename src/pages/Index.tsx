@@ -65,7 +65,7 @@ const Index = () => {
   const { data: userProfile } = useUserProfile();
 
   //const apiUrl = "http://localhost:8000";
-  const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
+  const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app";
   const API = apiUrl;
  
   // Token capture from URL
@@ -242,6 +242,8 @@ const Index = () => {
       const response = await fetch(`${API}/ask`, {
         method: "POST",
         headers,
+        mode: "cors",
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -373,6 +375,8 @@ const Index = () => {
       const response = await fetch(`${API}/ask`, {
         method: "POST",
         headers,
+        mode: "cors",
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
