@@ -661,7 +661,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
                       // Try to parse successful response
                       try {
-                        const parsed = JSON.parse(message.text);
+                        // Extract JSON from message text (may contain "Tool: xyz" prefix)
+                        const jsonStart = message.text.indexOf('{');
+                        const jsonText = jsonStart >= 0 ? message.text.substring(jsonStart) : message.text;
+                        const parsed = JSON.parse(jsonText);
                         if (parsed && parsed.thumbnail_url) {
                           const workflow = message.toolName.includes('image_to_3d') ? 'image_to_3d' :
                                           message.toolName.includes('text_to_3d') ? 'text_to_3d' : 'post_processing';
