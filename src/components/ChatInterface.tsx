@@ -733,7 +733,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     try {
                       const parsed = JSON.parse(message.text);
                       
-                      // Check for thumbnail_url in the response (priority)
+                      // Check for thumbnail_url in the response (priority) - handles job responses with thumbnails
                       if (parsed?.thumbnail_url) {
                         const ImageWithFallback = () => {
                           const [hasError, setHasError] = useState(false);
@@ -755,19 +755,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                           }
                           
                           return (
-                            <img 
-                              src={parsed.thumbnail_url}
-                              alt={parsed.prompt || 'Generated thumbnail'}
-                              className="cursor-pointer hover:opacity-90 transition-opacity"
-                              style={{ 
-                                width: '200px',
-                                borderRadius: '8px',
-                                objectFit: 'cover',
-                                marginTop: '8px'
-                              }}
-                              onError={() => setHasError(true)}
-                              onClick={() => setZoomedImage(parsed.thumbnail_url)}
-                            />
+                            <div className="space-y-2">
+                              <img 
+                                src={parsed.thumbnail_url}
+                                alt={parsed.prompt || parsed.job_id || 'Generated thumbnail'}
+                                className="cursor-pointer hover:opacity-90 transition-opacity rounded-xl max-w-[320px] h-auto"
+                                style={{ marginTop: '8px' }}
+                                onError={() => setHasError(true)}
+                                onClick={() => setZoomedImage(parsed.thumbnail_url)}
+                              />
+                              {parsed.job_id && (
+                                <p className="text-xs text-muted-foreground italic">Job ID: {parsed.job_id}</p>
+                              )}
+                            </div>
                           );
                         };
                         
