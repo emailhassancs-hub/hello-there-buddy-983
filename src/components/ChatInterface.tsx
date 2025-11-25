@@ -731,7 +731,14 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
 
                     // Check if message contains image response (JSON object with img_url or thumbnail_url)
                     try {
-                      const parsed = JSON.parse(message.text);
+                      // Extract JSON from tool response format like "Tool: tool_name { ... }"
+                      let jsonText = message.text;
+                      const toolResponseMatch = message.text.match(/Tool:\s*\w+\s*(\{[\s\S]*\})/);
+                      if (toolResponseMatch) {
+                        jsonText = toolResponseMatch[1];
+                      }
+                      
+                      const parsed = JSON.parse(jsonText);
                       
                       // Check for thumbnail_url in the response (priority) - handles job responses with thumbnails
                       if (parsed?.thumbnail_url) {
