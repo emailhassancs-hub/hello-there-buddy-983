@@ -6,7 +6,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Video, AlertCircle } from "lucide-react";
 
 //const VIDEO_BASE_URL = "http://localhost:8000";
-const VIDEO_BASE_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app";
+//const VIDEO_BASE_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app";
+const apiUrl = "http://35.209.183.202:8000";
+
 
 interface Video {
   filename: string;

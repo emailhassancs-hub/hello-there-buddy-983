@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 const VIDEO_BASE_URL = "http://35.209.183.202:8000";
 
+
 interface VideoPlayerModalProps {
   video: {
     filename: string;
