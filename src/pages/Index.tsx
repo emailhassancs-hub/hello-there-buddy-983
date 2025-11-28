@@ -60,6 +60,7 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
+  const [hasPendingImageRequest, setHasPendingImageRequest] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
@@ -169,9 +170,12 @@ const Index = () => {
   const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
+    const currentHasImages = !!(imageUrls && imageUrls.length > 0);
+
     // Store uploaded image URLs and blob paths in session state for agent reuse
-    if (imageUrls && imageUrls.length > 0) {
-      setUploadedImageUrls(imageUrls);
+    if (currentHasImages) {
+      setUploadedImageUrls(imageUrls!);
+      setHasPendingImageRequest(true);
     }
     if (blobPaths && blobPaths.length > 0) {
       setUploadedBlobPaths(blobPaths);
@@ -239,8 +243,8 @@ const Index = () => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      // Use ngrok URL when images are attached, otherwise use Cloud Run URL
-      const hasImages = (imageUrls && imageUrls.length > 0) || uploadedImageUrls.length > 0;
+      // Use ngrok URL when images are attached to THIS message, otherwise use Cloud Run URL
+      const hasImages = currentHasImages;
       const apiEndpoint = hasImages 
         ? "https://79630777a6b8.ngrok-free.app"
         : "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
@@ -385,8 +389,8 @@ const Index = () => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      // Use ngrok URL when images were uploaded in session, otherwise use Cloud Run URL
-      const hasImages = uploadedImageUrls.length > 0;
+      // Use ngrok URL for the FIRST tool confirmation after an image request
+      const hasImages = hasPendingImageRequest;
       const apiEndpoint = hasImages 
         ? "https://79630777a6b8.ngrok-free.app"
         : "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
@@ -462,6 +466,10 @@ const Index = () => {
         variant: "destructive",
       });
     } finally {
+      // After the first confirmation related to an image request, reset the flag
+      if (hasPendingImageRequest) {
+        setHasPendingImageRequest(false);
+      }
       setIsGenerating(false);
     }
   };
