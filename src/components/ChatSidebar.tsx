@@ -20,10 +20,11 @@ interface ChatSidebarProps {
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
   onNewChat: () => void;
-  apiUrl: string;
 }
 
-export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiUrl }: ChatSidebarProps) => {
+const CHAT_API_URL = "https://79630777a6b8.ngrok-free.app";
+
+export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat }: ChatSidebarProps) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -72,8 +73,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
 
       const email = userProfile?.email;
       const url = email 
-        ? `${apiUrl}/sessions?email=${encodeURIComponent(email)}`
-        : `${apiUrl}/sessions`;
+        ? `${CHAT_API_URL}/sessions?email=${encodeURIComponent(email)}`
+        : `${CHAT_API_URL}/sessions`;
       
       const response = await fetch(url, { headers });
       if (!response.ok) {
@@ -143,7 +144,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${apiUrl}/session/${sessionId}/delete`, {
+      const response = await fetch(`${CHAT_API_URL}/session/${sessionId}/delete`, {
         method: "DELETE",
         headers,
       });
