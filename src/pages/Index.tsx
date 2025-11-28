@@ -383,7 +383,18 @@ const Index = () => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${API}/ask`, {
+      // Use ngrok URL when images were uploaded in session, otherwise use Cloud Run URL
+      const hasImages = uploadedImageUrls.length > 0;
+      const apiEndpoint = hasImages 
+        ? "https://79630777a6b8.ngrok-free.app"
+        : "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
+      
+      // Add ngrok header if using ngrok URL
+      if (hasImages) {
+        headers["ngrok-skip-browser-warning"] = "true";
+      }
+
+      const response = await fetch(`${apiEndpoint}/ask`, {
         method: "POST",
         headers,
         mode: "cors",
