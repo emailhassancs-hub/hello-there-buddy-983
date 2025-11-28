@@ -54,7 +54,6 @@ export const ModelUploader = ({ apiUrl, authToken, onUploadComplete }: ModelUplo
       method: "GET",
       headers: {
         Authorization: `Bearer ${authToken}`,
-        "ngrok-skip-browser-warning": "true",
       },
     });
 
@@ -93,7 +92,6 @@ export const ModelUploader = ({ apiUrl, authToken, onUploadComplete }: ModelUplo
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
-          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           model_name: modelName,
