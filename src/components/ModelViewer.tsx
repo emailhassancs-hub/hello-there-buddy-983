@@ -182,6 +182,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
       const response = await fetch(`${apiUrl}/model-history?limit=100&offset=0`, {
         headers: {
           Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true",
         },
       });
       
