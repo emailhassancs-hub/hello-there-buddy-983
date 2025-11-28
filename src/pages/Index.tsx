@@ -83,6 +83,7 @@ const Index = () => {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({ token }),
@@ -141,6 +142,7 @@ const Index = () => {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
           "Authorization": authToken ? `Bearer ${authToken}` : "",
         },
         body: JSON.stringify({
@@ -233,6 +235,7 @@ const Index = () => {
 
       const headers: HeadersInit = {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
       };
       
       if (authToken) {
@@ -366,6 +369,7 @@ const Index = () => {
 
       const headers: HeadersInit = {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
       };
       
       if (authToken) {
@@ -459,7 +463,8 @@ const Index = () => {
         const response = await fetch(`https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/model-optimization/presets`, {
           headers: {
             "Authorization": currentToken ? `Bearer ${currentToken}` : "",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true"
           }
         });
         
@@ -563,6 +568,7 @@ The process:
 
         const headers: HeadersInit = {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         };
         
         if (authToken) {
@@ -611,6 +617,7 @@ The process:
     try {
       const headers: HeadersInit = {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
       };
       
       if (authToken) {

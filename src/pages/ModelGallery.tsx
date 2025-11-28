@@ -64,10 +64,16 @@ export default function ModelGallery() {
     try {
       const [historyRes, statsRes] = await Promise.all([
         fetch(`${BASE_URL}/model-history?limit=100&offset=0`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "true"
+          },
         }),
         fetch(`${BASE_URL}/model-stats`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "true"
+          },
         }),
       ]);
 

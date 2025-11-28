@@ -287,6 +287,7 @@ Be friendly and instructive. Use short explanations and examples where needed.`
       
       const headers: HeadersInit = {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
       };
       
       if (authToken) {

@@ -306,7 +306,9 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
     });
 
     try {
-      const headers: HeadersInit = {};
+      const headers: HeadersInit = {
+        "ngrok-skip-browser-warning": "true"
+      };
       
       if (accessToken) {
         headers["Authorization"] = `Bearer ${accessToken}`;
@@ -430,7 +432,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`
+          "Authorization": `Bearer ${authToken}`,
+          "ngrok-skip-browser-warning": "true"
         },
         body: JSON.stringify({
           model_name: filename,
@@ -472,6 +475,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         headers: {
           "Authorization": `Bearer ${authToken}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
       });
 

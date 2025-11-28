@@ -70,6 +70,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
           headers: {
             accept: "*/*",
             Authorization: `Bearer ${authToken}`,
+            "ngrok-skip-browser-warning": "true",
           },
         },
       );
@@ -139,6 +140,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
           headers: {
             accept: "*/*",
             Authorization: `Bearer ${authToken}`,
+            "ngrok-skip-browser-warning": "true",
           },
         },
       );
