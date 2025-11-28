@@ -60,13 +60,13 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
+  const [hasPendingImageRequest, setHasPendingImageRequest] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
 
   //const apiUrl = "http://localhost:8000";
   const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
-  //const apiUrl = "https://79630777a6b8.ngrok-free.app";
   const API = apiUrl;
  
   // Token capture from URL
@@ -170,9 +170,12 @@ const Index = () => {
   const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
+    const currentHasImages = !!(imageUrls && imageUrls.length > 0);
+
     // Store uploaded image URLs and blob paths in session state for agent reuse
-    if (imageUrls && imageUrls.length > 0) {
-      setUploadedImageUrls(imageUrls);
+    if (currentHasImages) {
+      setUploadedImageUrls(imageUrls!);
+      setHasPendingImageRequest(true);
     }
     if (blobPaths && blobPaths.length > 0) {
       setUploadedBlobPaths(blobPaths);
@@ -240,9 +243,24 @@ const Index = () => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${API}/ask`, {
+      // Use ngrok URL when images are attached to THIS message, otherwise use Cloud Run URL
+      const hasImages = currentHasImages;
+      const apiEndpoint = hasImages 
+        ? "https://79630777a6b8.ngrok-free.app"
+        : "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
+      
+      console.log("🔗 [CHAT] Using API endpoint:", apiEndpoint, "| Has images:", hasImages);
+      
+      // Add ngrok header if using ngrok URL
+      if (hasImages) {
+        headers["ngrok-skip-browser-warning"] = "true";
+      }
+
+      const response = await fetch(`${apiEndpoint}/ask`, {
         method: "POST",
         headers,
+        mode: "cors",
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -371,9 +389,24 @@ const Index = () => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${API}/ask`, {
+      // Use ngrok URL for the FIRST tool confirmation after an image request
+      const hasImages = hasPendingImageRequest;
+      const apiEndpoint = hasImages 
+        ? "https://79630777a6b8.ngrok-free.app"
+        : "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
+      
+      console.log("🔗 [TOOL CONFIRMATION] Using API endpoint:", apiEndpoint, "| Has images:", hasImages);
+      
+      // Add ngrok header if using ngrok URL
+      if (hasImages) {
+        headers["ngrok-skip-browser-warning"] = "true";
+      }
+
+      const response = await fetch(`${apiEndpoint}/ask`, {
         method: "POST",
         headers,
+        mode: "cors",
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -433,6 +466,10 @@ const Index = () => {
         variant: "destructive",
       });
     } finally {
+      // After the first confirmation related to an image request, reset the flag
+      if (hasPendingImageRequest) {
+        setHasPendingImageRequest(false);
+      }
       setIsGenerating(false);
     }
   };
@@ -686,7 +723,6 @@ The process:
         currentSessionId={sessionId}
         onSelectSession={handleLoadSession}
         onNewChat={handleNewChat}
-        apiUrl={apiUrl}
       />
       
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">

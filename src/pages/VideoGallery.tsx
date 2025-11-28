@@ -7,8 +7,6 @@ import { Video, AlertCircle } from "lucide-react";
 
 //const VIDEO_BASE_URL = "http://localhost:8000";
 const VIDEO_BASE_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app";
-//const apiUrl = "https://79630777a6b8.ngrok-free.app";
-
 
 interface Video {
   filename: string;

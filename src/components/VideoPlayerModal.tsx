@@ -1,7 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const VIDEO_BASE_URL = "https://6ea08f11b1bc.ngrok-free.app";
-
+const VIDEO_BASE_URL = "http://35.209.183.202:8000";
 
 interface VideoPlayerModalProps {
   video: {
