@@ -10,8 +10,8 @@ import { toast } from "@/hooks/use-toast";
 import ModelViewer from "@/components/ModelViewer";
 
 //const BASE_URL = "http://localhost:8000";
-//const BASE_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app";
-const apiUrl = "https://79630777a6b8.ngrok-free.app";
+const BASE_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app";
+//const apiUrl = "https://79630777a6b8.ngrok-free.app";
 
 
 interface ModelItem {
