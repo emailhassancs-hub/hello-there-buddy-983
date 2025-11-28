@@ -22,7 +22,7 @@ interface ChatSidebarProps {
   onNewChat: () => void;
 }
 
-const CHAT_API_URL = "https://79630777a6b8.ngrok-free.app";
+const CHAT_API_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
 
 export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat }: ChatSidebarProps) => {
   const [sessions, setSessions] = useState<Session[]>([]);
