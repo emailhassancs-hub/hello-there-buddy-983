@@ -20,11 +20,10 @@ interface ChatSidebarProps {
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
   onNewChat: () => void;
+  apiUrl: string;
 }
 
-const CHAT_API_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
-
-export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat }: ChatSidebarProps) => {
+export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiUrl }: ChatSidebarProps) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -73,8 +72,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat }: Ch
 
       const email = userProfile?.email;
       const url = email 
-        ? `${CHAT_API_URL}/sessions?email=${encodeURIComponent(email)}`
-        : `${CHAT_API_URL}/sessions`;
+        ? `${apiUrl}/sessions?email=${encodeURIComponent(email)}`
+        : `${apiUrl}/sessions`;
       
       const response = await fetch(url, { headers });
       if (!response.ok) {
@@ -144,7 +143,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat }: Ch
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${CHAT_API_URL}/session/${sessionId}/delete`, {
+      const response = await fetch(`${apiUrl}/session/${sessionId}/delete`, {
         method: "DELETE",
         headers,
       });
