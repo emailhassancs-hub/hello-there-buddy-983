@@ -246,7 +246,7 @@ const Index = () => {
       // Use ngrok URL when images are attached to THIS message, otherwise use Cloud Run URL
       const hasImages = currentHasImages;
       const apiEndpoint = hasImages 
-        ? "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/"//"https://79630777a6b8.ngrok-free.app"
+        ? "https://79630777a6b8.ngrok-free.app"  //"https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/"
         : "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
       
       console.log("🔗 [CHAT] Using API endpoint:", apiEndpoint, "| Has images:", hasImages);
@@ -393,7 +393,7 @@ const Index = () => {
       // Use ngrok URL for the FIRST tool confirmation after an image request
       const hasImages = hasPendingImageRequest;
       const apiEndpoint = hasImages 
-        ? "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/" //https://79630777a6b8.ngrok-free.app"
+        ?  "https://79630777a6b8.ngrok-free.app"   //"https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/"
         : "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
       
       console.log("🔗 [TOOL CONFIRMATION] Using API endpoint:", apiEndpoint, "| Has images:", hasImages);
