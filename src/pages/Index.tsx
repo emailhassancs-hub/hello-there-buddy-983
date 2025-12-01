@@ -388,7 +388,7 @@ const Index = () => {
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
-      //*
+      //test commit
 
       // Use ngrok URL for the FIRST tool confirmation after an image request
       const hasImages = hasPendingImageRequest;
