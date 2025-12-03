@@ -75,7 +75,7 @@ interface ConversationHistoryProps {
   onViewModel?: (modelUrl: string, thumbnailUrl: string, workflow: string) => void;
 }
 
-const API_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app".replace(/\/+$/, "");
+const API_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app";
 
 export function ConversationHistory({
   open,
@@ -100,20 +100,23 @@ export function ConversationHistory({
   // Fetch all sessions on mount/open
   useEffect(() => {
     if (open && userEmail) {
+      console.log("[ConversationHistory] Fetching sessions for:", userEmail);
       fetchSessions();
     }
   }, [open, userEmail]);
 
   // Fetch conversation when session selected
   useEffect(() => {
-    if (selectedSession) {
+    if (selectedSession && userEmail) {
+      console.log("[ConversationHistory] Fetching conversation:", selectedSession);
       fetchConversation(selectedSession);
     }
-  }, [selectedSession]);
+  }, [selectedSession, userEmail]);
 
-  const getAuthHeaders = () => {
+  const getAuthHeaders = (): HeadersInit => {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
     };
     if (accessToken) {
       headers["Authorization"] = `Bearer ${accessToken}`;
@@ -122,23 +125,34 @@ export function ConversationHistory({
   };
 
   const fetchSessions = async () => {
-    if (!userEmail) return;
+    if (!userEmail) {
+      console.warn("[ConversationHistory] No userEmail provided, skipping fetch");
+      return;
+    }
 
     setLoadingSessions(true);
+    const url = `${API_URL}/conversation-sessions/enhanced?email=${encodeURIComponent(userEmail)}`;
+    console.log("[ConversationHistory] Fetching sessions from:", url);
+    
     try {
-      const response = await fetch(
-        `${API_URL}/conversation-sessions/enhanced?email=${encodeURIComponent(userEmail)}`,
-        { headers: getAuthHeaders() }
-      );
+      const response = await fetch(url, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      console.log("[ConversationHistory] Sessions response status:", response.status);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[ConversationHistory] Sessions error response:", errorText);
         throw new Error(`Failed to fetch sessions: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log("[ConversationHistory] Sessions data:", data);
       setSessions(data.sessions || []);
     } catch (error) {
-      console.error("Error fetching sessions:", error);
+      console.error("[ConversationHistory] Error fetching sessions:", error);
       toast({
         title: "Error",
         description: "Failed to load conversation history",
@@ -150,24 +164,35 @@ export function ConversationHistory({
   };
 
   const fetchConversation = async (sessionId: string) => {
-    if (!userEmail) return;
+    if (!userEmail) {
+      console.warn("[ConversationHistory] No userEmail provided, skipping conversation fetch");
+      return;
+    }
 
     setLoadingMessages(true);
+    const url = `${API_URL}/conversation-history/${sessionId}/formatted?email=${encodeURIComponent(userEmail)}`;
+    console.log("[ConversationHistory] Fetching conversation from:", url);
+    
     try {
-      const response = await fetch(
-        `${API_URL}/conversation-history/${sessionId}/formatted?email=${encodeURIComponent(userEmail)}`,
-        { headers: getAuthHeaders() }
-      );
+      const response = await fetch(url, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      console.log("[ConversationHistory] Conversation response status:", response.status);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[ConversationHistory] Conversation error response:", errorText);
         throw new Error(`Failed to fetch conversation: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log("[ConversationHistory] Conversation data:", data);
       setMessages(data.messages || []);
       setStatistics(data.statistics || null);
     } catch (error) {
-      console.error("Error fetching conversation:", error);
+      console.error("[ConversationHistory] Error fetching conversation:", error);
       toast({
         title: "Error",
         description: "Failed to load conversation",
@@ -181,16 +206,20 @@ export function ConversationHistory({
   const handleDeleteConversation = async () => {
     if (!sessionToDelete || !userEmail) return;
 
+    const url = `${API_URL}/conversation-sessions/delete/${sessionToDelete}?email=${encodeURIComponent(userEmail)}`;
+    console.log("[ConversationHistory] Deleting conversation:", url);
+    
     try {
-      const response = await fetch(
-        `${API_URL}/conversation-history/${sessionToDelete}/delete?email=${encodeURIComponent(userEmail)}`,
-        {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-        }
-      );
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      console.log("[ConversationHistory] Delete response status:", response.status);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[ConversationHistory] Delete error response:", errorText);
         throw new Error(`Failed to delete conversation: ${response.status}`);
       }
 
@@ -207,7 +236,7 @@ export function ConversationHistory({
         setStatistics(null);
       }
     } catch (error) {
-      console.error("Error deleting conversation:", error);
+      console.error("[ConversationHistory] Error deleting conversation:", error);
       toast({
         title: "Error",
         description: "Failed to delete conversation",
@@ -222,32 +251,39 @@ export function ConversationHistory({
   const handleExportMarkdown = async () => {
     if (!selectedSession || !userEmail) return;
 
+    const url = `${API_URL}/conversation-history/${selectedSession}/export-markdown?email=${encodeURIComponent(userEmail)}`;
+    console.log("[ConversationHistory] Exporting markdown from:", url);
+    
     try {
-      const response = await fetch(
-        `${API_URL}/conversation-history/${selectedSession}/export-markdown?email=${encodeURIComponent(userEmail)}`,
-        { headers: getAuthHeaders() }
-      );
+      const response = await fetch(url, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      console.log("[ConversationHistory] Export response status:", response.status);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[ConversationHistory] Export error response:", errorText);
         throw new Error(`Failed to export: ${response.status}`);
       }
 
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = blobUrl;
       a.download = `conversation-${selectedSession}.md`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(blobUrl);
 
       toast({
         title: "Success",
         description: "Conversation exported successfully",
       });
     } catch (error) {
-      console.error("Error exporting conversation:", error);
+      console.error("[ConversationHistory] Error exporting conversation:", error);
       toast({
         title: "Error",
         description: "Failed to export conversation",
