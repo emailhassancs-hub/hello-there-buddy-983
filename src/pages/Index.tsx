@@ -617,7 +617,15 @@ The process:
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${API}/session/${sessionId}/export`, { headers });
+      // Get user email from profile or extract from auth token
+      const userEmail = userProfile?.email || extractEmailFromToken(authToken);
+      
+      // Build URL with email parameter
+      const exportUrl = userEmail 
+        ? `${API}/session/${sessionId}/export?email=${encodeURIComponent(userEmail)}`
+        : `${API}/session/${sessionId}/export`;
+
+      const response = await fetch(exportUrl, { headers });
       if (!response.ok) {
         throw new Error("Failed to load session");
       }
