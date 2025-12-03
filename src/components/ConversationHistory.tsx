@@ -26,23 +26,45 @@ import {
   Sparkles,
   Wrench,
   Box,
+  Play,
   Clock,
   ChevronRight,
-  RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import {
-  fetchConversationSessions,
-  fetchConversationMessages,
-  deleteConversationSession,
-  exportConversationMarkdown,
-  type Session,
-  type Message,
-  type SessionStatistics,
-  type GeneratedAsset,
-} from "@/lib/chatHistoryApi";
+
+interface GeneratedAsset {
+  url: string;
+  type: "image" | "model" | "video";
+}
+
+interface Message {
+  id: number;
+  timestamp: string;
+  role: "user" | "assistant" | "tool";
+  content: string;
+  display_name: string;
+  avatar_color: string;
+  generated_assets?: GeneratedAsset[];
+}
+
+interface SessionStatistics {
+  user_messages: number;
+  assistant_messages: number;
+  tool_executions: number;
+  generated_assets: number;
+}
+
+interface Session {
+  session_id: string;
+  created_at: string;
+  last_updated: string;
+  total_messages: number;
+  last_user_message: string;
+  statistics: SessionStatistics;
+  preview_assets?: string[];
+}
 
 interface ConversationHistoryProps {
   open: boolean;
@@ -52,6 +74,8 @@ interface ConversationHistoryProps {
   accessToken?: string;
   onViewModel?: (modelUrl: string, thumbnailUrl: string, workflow: string) => void;
 }
+
+const API_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app";
 
 export function ConversationHistory({
   open,
@@ -76,31 +100,59 @@ export function ConversationHistory({
   // Fetch all sessions on mount/open
   useEffect(() => {
     if (open && userEmail) {
-      console.log("[ConversationHistory] Dialog opened, fetching sessions for:", userEmail);
-      loadSessions();
+      console.log("[ConversationHistory] Fetching sessions for:", userEmail);
+      fetchSessions();
     }
   }, [open, userEmail]);
 
   // Fetch conversation when session selected
   useEffect(() => {
     if (selectedSession && userEmail) {
-      console.log("[ConversationHistory] Session selected:", selectedSession);
-      loadConversation(selectedSession);
+      console.log("[ConversationHistory] Fetching conversation:", selectedSession);
+      fetchConversation(selectedSession);
     }
   }, [selectedSession, userEmail]);
 
-  const loadSessions = async () => {
+  const getAuthHeaders = (): HeadersInit => {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
+    };
+    if (accessToken) {
+      headers["Authorization"] = `Bearer ${accessToken}`;
+    }
+    return headers;
+  };
+
+  const fetchSessions = async () => {
     if (!userEmail) {
-      console.warn("[ConversationHistory] No userEmail, skipping session fetch");
+      console.warn("[ConversationHistory] No userEmail provided, skipping fetch");
       return;
     }
 
     setLoadingSessions(true);
+    const url = `${API_URL}/conversation-sessions/enhanced?email=${encodeURIComponent(userEmail)}`;
+    console.log("[ConversationHistory] Fetching sessions from:", url);
+    
     try {
-      const data = await fetchConversationSessions(userEmail, accessToken);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      console.log("[ConversationHistory] Sessions response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[ConversationHistory] Sessions error response:", errorText);
+        throw new Error(`Failed to fetch sessions: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("[ConversationHistory] Sessions data:", data);
       setSessions(data.sessions || []);
     } catch (error) {
-      console.error("[ConversationHistory] Error loading sessions:", error);
+      console.error("[ConversationHistory] Error fetching sessions:", error);
       toast({
         title: "Error",
         description: "Failed to load conversation history",
@@ -111,19 +163,36 @@ export function ConversationHistory({
     }
   };
 
-  const loadConversation = async (sessionId: string) => {
+  const fetchConversation = async (sessionId: string) => {
     if (!userEmail) {
-      console.warn("[ConversationHistory] No userEmail, skipping conversation fetch");
+      console.warn("[ConversationHistory] No userEmail provided, skipping conversation fetch");
       return;
     }
 
     setLoadingMessages(true);
+    const url = `${API_URL}/conversation-history/${sessionId}/formatted?email=${encodeURIComponent(userEmail)}`;
+    console.log("[ConversationHistory] Fetching conversation from:", url);
+    
     try {
-      const data = await fetchConversationMessages(sessionId, userEmail, accessToken);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      console.log("[ConversationHistory] Conversation response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[ConversationHistory] Conversation error response:", errorText);
+        throw new Error(`Failed to fetch conversation: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("[ConversationHistory] Conversation data:", data);
       setMessages(data.messages || []);
       setStatistics(data.statistics || null);
     } catch (error) {
-      console.error("[ConversationHistory] Error loading conversation:", error);
+      console.error("[ConversationHistory] Error fetching conversation:", error);
       toast({
         title: "Error",
         description: "Failed to load conversation",
@@ -137,8 +206,22 @@ export function ConversationHistory({
   const handleDeleteConversation = async () => {
     if (!sessionToDelete || !userEmail) return;
 
+    const url = `${API_URL}/conversation-sessions/delete/${sessionToDelete}?email=${encodeURIComponent(userEmail)}`;
+    console.log("[ConversationHistory] Deleting conversation:", url);
+    
     try {
-      await deleteConversationSession(sessionToDelete, userEmail, accessToken);
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      console.log("[ConversationHistory] Delete response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[ConversationHistory] Delete error response:", errorText);
+        throw new Error(`Failed to delete conversation: ${response.status}`);
+      }
 
       toast({
         title: "Success",
@@ -168,8 +251,24 @@ export function ConversationHistory({
   const handleExportMarkdown = async () => {
     if (!selectedSession || !userEmail) return;
 
+    const url = `${API_URL}/conversation-history/${selectedSession}/export-markdown?email=${encodeURIComponent(userEmail)}`;
+    console.log("[ConversationHistory] Exporting markdown from:", url);
+    
     try {
-      const blob = await exportConversationMarkdown(selectedSession, userEmail, accessToken);
+      const response = await fetch(url, {
+        method: "GET",
+        headers: getAuthHeaders(),
+      });
+
+      console.log("[ConversationHistory] Export response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[ConversationHistory] Export error response:", errorText);
+        throw new Error(`Failed to export: ${response.status}`);
+      }
+
+      const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = blobUrl;
@@ -260,18 +359,7 @@ export function ConversationHistory({
             {/* Sidebar */}
             <div className="w-80 border-r flex flex-col bg-muted/30">
               <div className="p-4 border-b">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold">Conversation History</h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={loadSessions}
-                    disabled={loadingSessions}
-                    className="h-8 w-8"
-                  >
-                    <RefreshCw className={cn("w-4 h-4", loadingSessions && "animate-spin")} />
-                  </Button>
-                </div>
+                <h2 className="text-lg font-semibold mb-3">Conversation History</h2>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -294,9 +382,7 @@ export function ConversationHistory({
                     ))
                   ) : filteredSessions.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground">
-                      {sessions.length === 0 
-                        ? "No conversations found. Start chatting to see your history here."
-                        : "No conversations match your search"}
+                      No conversations found
                     </div>
                   ) : (
                     filteredSessions.map((session) => (
@@ -318,12 +404,12 @@ export function ConversationHistory({
                         </div>
                         <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                           <Clock className="w-3 h-3" />
-                          <span>{formatTimestamp(session.last_updated || session.updated_at || session.created_at)}</span>
+                          <span>{formatTimestamp(session.last_updated)}</span>
                         </div>
                         <div className="flex items-center gap-2 mt-2">
                           <Badge variant="secondary" className="text-xs">
                             <MessageSquare className="w-3 h-3 mr-1" />
-                            {session.total_messages || session.message_count || 0}
+                            {session.total_messages}
                           </Badge>
                           {session.statistics?.generated_assets > 0 && (
                             <Badge variant="secondary" className="text-xs">
@@ -429,10 +515,10 @@ export function ConversationHistory({
                               className={cn(
                                 "max-w-[70%] p-4 rounded-2xl",
                                 message.role === "user"
-                                  ? "bg-primary text-primary-foreground"
+                                  ? "bg-chat-user-bubble text-chat-user-foreground"
                                   : message.role === "tool"
                                   ? "bg-success/10 border border-success/20"
-                                  : "bg-muted"
+                                  : "bg-chat-assistant-bubble text-chat-assistant-foreground"
                               )}
                             >
                               {message.role === "tool" && (

@@ -8,11 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { UserInfo } from "@/components/UserInfo";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import {
-  fetchConversationSessions,
-  deleteConversationSession,
-  type Session as APISession,
-} from "@/lib/chatHistoryApi";
 
 interface Session {
   session_id: string;
@@ -38,16 +33,9 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const { toast } = useToast();
   const { data: userProfile } = useUserProfile();
 
-  // Get auth token helper
-  const getAuthToken = (): string | undefined => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("token") || (window as any).authToken || localStorage.getItem("auth_token") || undefined;
-  };
-
   // Load all sessions on mount and when user profile loads
   useEffect(() => {
     if (userProfile?.email) {
-      console.log("[ChatSidebar] User profile loaded, fetching sessions for:", userProfile.email);
       fetchSessions();
     }
   }, [userProfile?.email]);
@@ -56,7 +44,6 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   useEffect(() => {
     const handleRefresh = async () => {
       if (userProfile?.email) {
-        console.log("[ChatSidebar] Refresh event received");
         setIsRefreshing(true);
         await fetchSessions();
         setIsRefreshing(false);
@@ -68,31 +55,34 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   }, [userProfile?.email]);
 
   const fetchSessions = async () => {
-    const email = userProfile?.email;
-    if (!email) {
-      console.warn("[ChatSidebar] No email available, skipping fetch");
-      return;
-    }
-
-    const loadingState = !isRefreshing;
+    const loadingState = !isRefreshing; // Only set main loading if not refreshing
     if (loadingState) setIsLoading(true);
-    
     try {
-      console.log("[ChatSidebar] Fetching sessions...");
-      const data = await fetchConversationSessions(email, getAuthToken());
+      // Get access token from URL first, then window, then localStorage
+      const params = new URLSearchParams(window.location.search);
+      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
       
-      // Map API response to local Session type
-      const mappedSessions: Session[] = (data.sessions || []).map((s: APISession) => ({
-        session_id: s.session_id,
-        created_at: s.created_at,
-        updated_at: s.last_updated || s.updated_at || s.created_at,
-        message_count: s.total_messages || s.message_count || 0,
-      }));
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
       
-      console.log("[ChatSidebar] Loaded sessions:", mappedSessions.length);
-      setSessions(mappedSessions);
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const email = userProfile?.email;
+      const url = email 
+        ? `${apiUrl}/sessions?email=${encodeURIComponent(email)}`
+        : `${apiUrl}/sessions`;
+      
+      const response = await fetch(url, { headers });
+      if (!response.ok) {
+        throw new Error("Failed to fetch sessions");
+      }
+      const data = await response.json();
+      setSessions(data.sessions || []);
     } catch (error) {
-      console.error("[ChatSidebar] Error fetching sessions:", error);
+      console.error("Error fetching sessions:", error);
       toast({
         title: "Error",
         description: "Could not load chat history",
@@ -140,15 +130,27 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
       return;
     }
 
-    const email = userProfile?.email;
-    if (!email) {
-      console.warn("[ChatSidebar] No email available for delete");
-      return;
-    }
-
     try {
-      console.log("[ChatSidebar] Deleting session:", sessionId);
-      await deleteConversationSession(sessionId, email, getAuthToken());
+      // Get access token from URL first, then window, then localStorage
+      const params = new URLSearchParams(window.location.search);
+      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`${apiUrl}/session/${sessionId}/delete`, {
+        method: "DELETE",
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete session");
+      }
 
       // Remove from list
       setSessions(sessions.filter((s) => s.session_id !== sessionId));
@@ -163,7 +165,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         description: "Chat deleted successfully",
       });
     } catch (error) {
-      console.error("[ChatSidebar] Error deleting session:", error);
+      console.error("Error deleting session:", error);
       toast({
         title: "Error",
         description: "Failed to delete chat",
