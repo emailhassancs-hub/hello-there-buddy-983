@@ -8,8 +8,7 @@ import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } fr
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box, User, History } from "lucide-react";
-import { ConversationHistory } from "./ConversationHistory";
+import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box, User } from "lucide-react";
 import toolsIcon from "@/assets/tools-icon.png";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -68,7 +67,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [text3dPopup, setText3dPopup] = useState<string | null>(null);
   const [humanInLoop, setHumanInLoop] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const { toast } = useToast();
 
   // Stable refs for callbacks to avoid effect dependency loops
@@ -518,15 +516,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setHistoryOpen(true)}
-            className="gap-2"
-          >
-            <History className="w-4 h-4" />
-            <span className="hidden sm:inline">History</span>
-          </Button>
           <Button
             disabled
             className="relative group overflow-hidden bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg px-4 py-1.5 rounded-lg border border-primary/20 opacity-60 cursor-not-allowed"
@@ -1336,16 +1325,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Conversation History Modal */}
-      <ConversationHistory
-        open={historyOpen}
-        onOpenChange={setHistoryOpen}
-        apiUrl={apiUrl}
-        userEmail={userEmail}
-        accessToken={accessToken}
-        onViewModel={onModelSelect}
-      />
 
     </div>
   );
