@@ -143,7 +143,12 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${apiUrl}/session/${sessionId}/delete`, {
+      const email = userProfile?.email;
+      const deleteUrl = email 
+        ? `${apiUrl}/session/${sessionId}/delete?email=${encodeURIComponent(email)}`
+        : `${apiUrl}/session/${sessionId}/delete`;
+      
+      const response = await fetch(deleteUrl, {
         method: "DELETE",
         headers,
       });
