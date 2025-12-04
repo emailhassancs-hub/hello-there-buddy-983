@@ -1,13 +1,3 @@
-## GAME AI Studio – Chat Based Interface
-
-This folder contains the **React/TypeScript frontend** for Imagination AI.  
-It provides the chat experience, 3D model gallery, video gallery, and game-design tools UI, and talks to the middleware service deployed on Cloud Run.
-
-- **Tech stack**: React, TypeScript, Vite, Tailwind, shadcn/ui
-- **Primary role**: User-facing web application for interacting with Imagination AI tools and workflows.
-
-**Version: 0.1**
-
 # Welcome to your Lovable project
 
 ## Project info

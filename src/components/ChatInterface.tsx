@@ -79,8 +79,36 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const lastProcessedImageKeyRef = useRef<string | null>(null);
   const lastAutoConfirmedKeyRef = useRef<string | null>(null);
 
-  // Messages to render (no filtering)
-  const filteredMessages = useMemo(() => messages, [messages]);
+  // Helper function to clean IMAGE_INPUT blocks from human messages
+  const cleanImageInputBlocks = (text: string): string => {
+    return text
+      // Remove [IMAGE_INPUT]...[/IMAGE_INPUT] blocks
+      .replace(/\[IMAGE_INPUT\][\s\S]*?\[\/IMAGE_INPUT\]/gi, '')
+      // Remove [IMAGE_INPUT_N]...[/IMAGE_INPUT_N] blocks
+      .replace(/\[IMAGE_INPUT_\d+\][\s\S]*?\[\/IMAGE_INPUT_\d+\]/gi, '')
+      .trim();
+  };
+
+  // Filter and clean messages for rendering
+  const filteredMessages = useMemo(() => {
+    return messages
+      // Filter out system messages
+      .filter(msg => msg.role !== "system")
+      // Only include user and assistant messages
+      .filter(msg => msg.role === "user" || msg.role === "assistant")
+      // Clean human messages by removing IMAGE_INPUT blocks
+      .map(msg => {
+        if (msg.role === "user") {
+          return {
+            ...msg,
+            text: cleanImageInputBlocks(msg.text)
+          };
+        }
+        return msg;
+      })
+      // Filter out empty messages after cleaning
+      .filter(msg => msg.text.length > 0 || msg.imagePaths?.length);
+  }, [messages]);
 
   const welcomeMessages = [
     "Chat with me",
@@ -559,63 +587,18 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
               <div className="flex justify-end">
                 <div className="max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter bg-chat-user-bubble text-chat-user-foreground ml-4">
                   {(() => {
-                    // Extract text without image markers
-                    const textWithoutImages = message.text
-                      .replace(/\[IMAGE_INPUT_\d+\][\s\S]*?\[\/IMAGE_INPUT_\d+\]/g, '')
+                    // Clean text - remove all IMAGE_INPUT blocks completely (no tags, no URLs, no thumbnails)
+                    const cleanText = message.text
+                      .replace(/\[IMAGE_INPUT\][\s\S]*?\[\/IMAGE_INPUT\]/gi, '')
+                      .replace(/\[IMAGE_INPUT_\d+\][\s\S]*?\[\/IMAGE_INPUT_\d+\]/gi, '')
                       .replace(/\[Image:.*?\]/g, '')
                       .trim();
                     
-                    // Extract IMAGE_INPUT URLs
-                    const imageInputMatches = message.text.match(/\[IMAGE_INPUT_\d+\]\s*URL:\s*(https?:\/\/[^\s\[\]]+)\s*\[\/IMAGE_INPUT_\d+\]/g);
-                    const imageInputUrls = imageInputMatches?.map(match => {
-                      const urlMatch = match.match(/URL:\s*(https?:\/\/[^\s\[\]]+)/);
-                      return urlMatch ? urlMatch[1] : null;
-                    }).filter(Boolean) || [];
-                    
-                    // Extract old-style [Image: path] markers
-                    const imageMatches = message.text.match(/\[Image: (.*?)\]/g);
-                    const imagePaths = imageMatches?.map(match => match.match(/\[Image: (.*?)\]/)?.[1]).filter(Boolean) || [];
-                    
                     return (
                       <>
-                        {textWithoutImages && (
-                          <div className="whitespace-pre-wrap mb-2">
-                            {textWithoutImages}
-                          </div>
-                        )}
-                        {imageInputUrls.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {imageInputUrls.map((imageUrl, idx) => (
-                              <img
-                                key={idx}
-                                src={imageUrl}
-                                alt="Uploaded"
-                                className="w-16 h-16 object-cover rounded-lg border border-border/50"
-                                onError={(e) => {
-                                  console.error('Image load error for:', imageUrl);
-                                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64"%3E%3Crect fill="%23ddd" width="64" height="64"/%3E%3Ctext x="50%25" y="50%25" font-size="10" text-anchor="middle" dy=".3em"%3EImage%3C/text%3E%3C/svg%3E';
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                        {imagePaths.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {imagePaths.map((imagePath, idx) => {
-                              const imageUrl = `${apiUrl}/${imagePath}`;
-                              return (
-                                <img
-                                  key={idx}
-                                  src={imageUrl}
-                                  alt="Uploaded"
-                                  className="w-16 h-16 object-cover rounded-lg border border-border/50"
-                                  onError={(e) => {
-                                    console.error('Image load error for:', imageUrl);
-                                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64"%3E%3Crect fill="%23ddd" width="64" height="64"/%3E%3Ctext x="50%25" y="50%25" font-size="10" text-anchor="middle" dy=".3em"%3EImage%3C/text%3E%3C/svg%3E';
-                                  }}
-                                />
-                              );
-                            })}
+                        {cleanText && (
+                          <div className="whitespace-pre-wrap">
+                            {cleanText}
                           </div>
                         )}
                       </>
@@ -862,7 +845,13 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       );
                     }
                     
-                    return <TypewriterText text={message.text} speed={3} />;
+                    // Clean AI message text - remove [IMAGE]...[/IMAGE] tags
+                    const cleanedAiText = message.text
+                      .replace(/\[IMAGE\][\s\S]*?\[\/IMAGE\]/gi, '')
+                      .replace(/\[IMAGE_INPUT\][\s\S]*?\[\/IMAGE_INPUT\]/gi, '')
+                      .replace(/\[IMAGE_INPUT_\d+\][\s\S]*?\[\/IMAGE_INPUT_\d+\]/gi, '')
+                      .trim();
+                    return <TypewriterText text={cleanedAiText} speed={3} />;
                   })()}
 
                   {/* Show raw tool response - render image directly if tool returns image URL */}

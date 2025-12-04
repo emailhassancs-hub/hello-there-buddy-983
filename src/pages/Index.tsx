@@ -60,13 +60,12 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
-  const [hasPendingImageRequest, setHasPendingImageRequest] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
 
-  //const apiUrl = "http://localhost:8000";
-  const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
+  const apiUrl = "http://localhost:8000";
+  //const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app".replace(/\/+$/, "");
   const API = apiUrl;
  
   // Token capture from URL
@@ -170,12 +169,9 @@ const Index = () => {
   const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
-    const currentHasImages = !!(imageUrls && imageUrls.length > 0);
-
     // Store uploaded image URLs and blob paths in session state for agent reuse
-    if (currentHasImages) {
-      setUploadedImageUrls(imageUrls!);
-      setHasPendingImageRequest(true);
+    if (imageUrls && imageUrls.length > 0) {
+      setUploadedImageUrls(imageUrls);
     }
     if (blobPaths && blobPaths.length > 0) {
       setUploadedBlobPaths(blobPaths);
@@ -243,12 +239,7 @@ const Index = () => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      // Always use Cloud Run URL
-      const apiEndpoint = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
-      
-      console.log("🔗 [CHAT] Using API endpoint:", apiEndpoint);
-
-      const response = await fetch(`${apiEndpoint}/ask`, {
+      const response = await fetch(`${API}/ask`, {
         method: "POST",
         headers,
         mode: "cors",
@@ -299,9 +290,10 @@ const Index = () => {
         }
       }
 
-      // Append any messages from the backend
+      // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
         const newMessages = data.messages
+          .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => ({
             role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
             text: msg.content || "",
@@ -380,12 +372,8 @@ const Index = () => {
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
-      // Always use Cloud Run URL
-      const apiEndpoint = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app/";
-      
-      console.log("🔗 [TOOL CONFIRMATION] Using API endpoint:", apiEndpoint);
 
-      const response = await fetch(`${apiEndpoint}/ask`, {
+      const response = await fetch(`${API}/ask`, {
         method: "POST",
         headers,
         mode: "cors",
@@ -400,9 +388,10 @@ const Index = () => {
         updateSessionId(data.session_id);
       }
 
-      // Append any messages from the backend
+      // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
         const newMessages = data.messages
+          .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => ({
             role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
             text: msg.content || "",
@@ -449,10 +438,6 @@ const Index = () => {
         variant: "destructive",
       });
     } finally {
-      // After the first confirmation related to an image request, reset the flag
-      if (hasPendingImageRequest) {
-        setHasPendingImageRequest(false);
-      }
       setIsGenerating(false);
     }
   };
@@ -634,7 +619,15 @@ The process:
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const response = await fetch(`${API}/session/${sessionId}/export`, { headers });
+      // Get user email from profile or extract from auth token
+      const userEmail = userProfile?.email || extractEmailFromToken(authToken);
+      
+      // Build URL with email parameter
+      const exportUrl = userEmail 
+        ? `${API}/session/${sessionId}/export?email=${encodeURIComponent(userEmail)}`
+        : `${API}/session/${sessionId}/export`;
+
+      const response = await fetch(exportUrl, { headers });
       if (!response.ok) {
         throw new Error("Failed to load session");
       }
@@ -646,12 +639,15 @@ The process:
       localStorage.setItem("mcp_session_id", sessionId);
       
       // Convert messages to the format expected by ChatInterface
-      const loadedMessages: Message[] = data.messages.map((msg: any) => ({
-        role: msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant",
-        text: msg.content || "",
-        timestamp: new Date(),
-        toolName: msg.type === "tool" ? msg.name : undefined,
-      }));
+      // Filter out system messages only
+      const loadedMessages: Message[] = data.messages
+        .filter((msg: any) => msg.type !== "system")
+        .map((msg: any) => ({
+          role: msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant",
+          text: msg.content || "",
+          timestamp: new Date(),
+          toolName: msg.type === "tool" ? msg.name : undefined,
+        }));
       
       setMessages(loadedMessages);
       
@@ -706,6 +702,7 @@ The process:
         currentSessionId={sessionId}
         onSelectSession={handleLoadSession}
         onNewChat={handleNewChat}
+        apiUrl={apiUrl}
       />
       
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
