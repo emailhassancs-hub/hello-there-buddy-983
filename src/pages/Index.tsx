@@ -290,13 +290,14 @@ const Index = () => {
         }
       }
 
-      // Append any messages from the backend - filter out system and tool messages
+      // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
         const newMessages = data.messages
-          .filter((msg: any) => msg.type === "human" || msg.type === "ai")
+          .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => ({
-            role: msg.type === "ai" ? "assistant" : "user",
+            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
             text: msg.content || "",
+            toolName: msg.type === "tool" ? msg.name : undefined,
           }))
           .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
         setMessages((prev) => [...prev, ...newMessages]);
@@ -387,13 +388,14 @@ const Index = () => {
         updateSessionId(data.session_id);
       }
 
-      // Append any messages from the backend - filter out system and tool messages
+      // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
         const newMessages = data.messages
-          .filter((msg: any) => msg.type === "human" || msg.type === "ai")
+          .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => ({
-            role: msg.type === "ai" ? "assistant" : "user",
+            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
             text: msg.content || "",
+            toolName: msg.type === "tool" ? msg.name : undefined,
           }))
           .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
         setMessages((prev) => [...prev, ...newMessages]);
@@ -637,13 +639,14 @@ The process:
       localStorage.setItem("mcp_session_id", sessionId);
       
       // Convert messages to the format expected by ChatInterface
-      // Filter out system and tool messages - only include human and ai
+      // Filter out system messages only
       const loadedMessages: Message[] = data.messages
-        .filter((msg: any) => msg.type === "human" || msg.type === "ai")
+        .filter((msg: any) => msg.type !== "system")
         .map((msg: any) => ({
-          role: msg.type === "human" ? "user" : "assistant",
+          role: msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant",
           text: msg.content || "",
           timestamp: new Date(),
+          toolName: msg.type === "tool" ? msg.name : undefined,
         }));
       
       setMessages(loadedMessages);
