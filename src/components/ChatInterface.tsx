@@ -845,7 +845,13 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                       );
                     }
                     
-                    return <TypewriterText text={message.text} speed={3} />;
+                    // Clean AI message text - remove [IMAGE]...[/IMAGE] tags
+                    const cleanedAiText = message.text
+                      .replace(/\[IMAGE\][\s\S]*?\[\/IMAGE\]/gi, '')
+                      .replace(/\[IMAGE_INPUT\][\s\S]*?\[\/IMAGE_INPUT\]/gi, '')
+                      .replace(/\[IMAGE_INPUT_\d+\][\s\S]*?\[\/IMAGE_INPUT_\d+\]/gi, '')
+                      .trim();
+                    return <TypewriterText text={cleanedAiText} speed={3} />;
                   })()}
 
                   {/* Show raw tool response - render image directly if tool returns image URL */}
