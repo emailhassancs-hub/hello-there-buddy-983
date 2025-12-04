@@ -49,25 +49,6 @@ const extractEmailFromToken = (token: string | null): string | null => {
   }
 };
 
-// Helper function to get user email from all available sources
-const getUserEmail = (userProfile: any, authToken: string | null): string | null => {
-  // Try profile email first
-  if (userProfile?.email) return userProfile.email;
-  
-  // Try extracting from auth token
-  const tokenEmail = extractEmailFromToken(authToken);
-  if (tokenEmail) return tokenEmail;
-  
-  // Try extracting from stored token
-  const storedToken = localStorage.getItem("auth_token") || (window as any).authToken;
-  if (storedToken) {
-    const storedTokenEmail = extractEmailFromToken(storedToken);
-    if (storedTokenEmail) return storedTokenEmail;
-  }
-  
-  return null;
-};
-
 const Index = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -156,7 +137,6 @@ const Index = () => {
 
   const refreshImageUrl = async (blobPath: string): Promise<string | null> => {
     try {
-      const userEmail = getUserEmail(userProfile, authToken);
       const response = await fetch(`${apiUrl}/images/refresh-url`, {
         method: "POST",
         headers: { 
@@ -164,7 +144,7 @@ const Index = () => {
           "Authorization": authToken ? `Bearer ${authToken}` : "",
         },
         body: JSON.stringify({
-          email: userEmail,
+          email: userProfile?.email,
           blob_path: blobPath
         }),
       });
@@ -228,8 +208,8 @@ const Index = () => {
     setIsGenerating(true);
 
     try {
-      // Get user email from all available sources
-      const userEmail = getUserEmail(userProfile, authToken);
+      // Get user email from profile or extract from auth token
+      const userEmail = userProfile?.email || extractEmailFromToken(authToken);
       
       const payload: any = {
         query: text,
@@ -239,11 +219,8 @@ const Index = () => {
         payload.session_id = sessionId;
       }
 
-      // Always include email - backend requires it
       if (userEmail) {
         payload.email = userEmail;
-      } else {
-        console.warn("⚠️ No user email available for API request");
       }
 
       // Include uploaded image URLs in the payload for agent processing
@@ -383,12 +360,8 @@ const Index = () => {
         payload.confirmation_response.modified_args = modifiedArgs;
       }
 
-      // Always include email - backend requires it
-      const userEmail = getUserEmail(userProfile, authToken);
-      if (userEmail) {
-        payload.email = userEmail;
-      } else {
-        console.warn("⚠️ No user email available for tool confirmation");
+      if (userProfile?.email) {
+        payload.email = userProfile.email;
       }
 
       const headers: HeadersInit = {
@@ -584,12 +557,8 @@ The process:
           payload.session_id = sessionId;
         }
 
-        // Always include email - backend requires it
-        const userEmail = getUserEmail(userProfile, authToken);
-        if (userEmail) {
-          payload.email = userEmail;
-        } else {
-          console.warn("⚠️ No user email available for optimization request");
+        if (userProfile?.email) {
+          payload.email = userProfile.email;
         }
 
         const headers: HeadersInit = {
@@ -648,17 +617,13 @@ The process:
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      // Get user email from all available sources
-      const userEmail = getUserEmail(userProfile, authToken);
+      // Get user email from profile or extract from auth token
+      const userEmail = userProfile?.email || extractEmailFromToken(authToken);
       
-      // Build URL with email parameter - backend requires it
+      // Build URL with email parameter
       const exportUrl = userEmail 
         ? `${API}/session/${sessionId}/export?email=${encodeURIComponent(userEmail)}`
         : `${API}/session/${sessionId}/export`;
-      
-      if (!userEmail) {
-        console.warn("⚠️ No user email available for session export");
-      }
 
       const response = await fetch(exportUrl, { headers });
       if (!response.ok) {

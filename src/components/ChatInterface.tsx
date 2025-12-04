@@ -79,36 +79,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   const lastProcessedImageKeyRef = useRef<string | null>(null);
   const lastAutoConfirmedKeyRef = useRef<string | null>(null);
 
-  // Helper function to clean IMAGE_INPUT blocks from human messages
-  const cleanImageInputBlocks = (text: string): string => {
-    return text
-      // Remove [IMAGE_INPUT]...[/IMAGE_INPUT] blocks
-      .replace(/\[IMAGE_INPUT\][\s\S]*?\[\/IMAGE_INPUT\]/gi, '')
-      // Remove [IMAGE_INPUT_N]...[/IMAGE_INPUT_N] blocks
-      .replace(/\[IMAGE_INPUT_\d+\][\s\S]*?\[\/IMAGE_INPUT_\d+\]/gi, '')
-      .trim();
-  };
-
-  // Filter and clean messages for rendering
-  const filteredMessages = useMemo(() => {
-    return messages
-      // Filter out system messages
-      .filter(msg => msg.role !== "system")
-      // Only include user and assistant messages
-      .filter(msg => msg.role === "user" || msg.role === "assistant")
-      // Clean human messages by removing IMAGE_INPUT blocks
-      .map(msg => {
-        if (msg.role === "user") {
-          return {
-            ...msg,
-            text: cleanImageInputBlocks(msg.text)
-          };
-        }
-        return msg;
-      })
-      // Filter out empty messages after cleaning
-      .filter(msg => msg.text.length > 0 || msg.imagePaths?.length);
-  }, [messages]);
+  // Messages to render (no filtering)
+  const filteredMessages = useMemo(() => messages, [messages]);
 
   const welcomeMessages = [
     "Chat with me",
