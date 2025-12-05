@@ -543,7 +543,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             <p className="text-sm text-muted-foreground dark:text-white/70">Create and edit images with AI</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <Button
             disabled
             className="relative group overflow-hidden bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg px-4 py-1.5 rounded-lg border border-primary/20 opacity-60 cursor-not-allowed"
@@ -557,7 +557,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             </span>
           </Button>
           <ThemeToggle />
-        </div>
+        </div> */}
       </div>
 
       {/* Messages Area */}

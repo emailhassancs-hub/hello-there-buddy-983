@@ -169,6 +169,9 @@ const Index = () => {
   const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
+    const previousMessageCount = messages.length;
+    const currentHasImages = !!(imageUrls && imageUrls.length > 0);
+
     // Store uploaded image URLs and blob paths in session state for agent reuse
     if (imageUrls && imageUrls.length > 0) {
       setUploadedImageUrls(imageUrls);
@@ -252,6 +255,21 @@ const Index = () => {
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
+        const nowIso = new Date().toISOString();
+
+        // Optimistically update sidebar without triggering full reload
+        window.dispatchEvent(
+          new CustomEvent("refreshChatSidebar", {
+            detail: {
+              session: {
+                session_id: data.session_id,
+                created_at: nowIso,
+                updated_at: nowIso,
+                message_count: previousMessageCount + 1, // user message just sent
+              },
+            },
+          })
+        );
         
         // Generate chat title for first message in new chat
         const isFirstMessage = messages.length === 0 || (!sessionId && data.session_id);
@@ -279,7 +297,7 @@ const Index = () => {
                 
                 // Wait a brief moment to ensure the title is saved, then refresh
                 setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('refreshChatSidebar'));
+                  window.dispatchEvent(new CustomEvent('refreshChatSidebar', { detail: { updateNameOnly: true } }));
                 }, 100);
               }
             }
@@ -759,11 +777,6 @@ The process:
                   <TabsTrigger value="videos" className="gap-2 relative" disabled>
                     <Video className="w-4 h-4" />
                     Video Gallery
-                    <span className="text-[10px] italic ml-1 text-muted-foreground">Coming Soon</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="game-design-pro" className="gap-2 relative" disabled>
-                    <Sparkles className="w-4 h-4" />
-                    Game Design Pro
                     <span className="text-[10px] italic ml-1 text-muted-foreground">Coming Soon</span>
                   </TabsTrigger>
                 </TabsList>
