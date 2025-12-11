@@ -9,6 +9,8 @@ import { ModelUploader } from "@/components/ModelUploader";
 import ModelGallery from "@/pages/ModelGallery";
 import { apiFetch } from "@/lib/api";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { useGenerationStatus } from "@/hooks/useGenerationStatus";
+import { GenerationIndicatorFloating } from "@/components/GenerationStatusIndicator";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -60,6 +62,8 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [pendingGenerations, setPendingGenerations] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
@@ -67,6 +71,107 @@ const Index = () => {
   const apiUrl = "http://localhost:8000";
   //const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app".replace(/\/+$/, "");
   const API = apiUrl;
+
+  // SSE hook for real-time generation status updates
+  const userEmail = userProfile?.email || '';
+  const { status: generationStatus, isComplete, error: generationError, completedData } = useGenerationStatus(
+    currentJobId,
+    userEmail,
+    apiUrl
+  );
+
+  // Handle generation status updates
+  useEffect(() => {
+    if (generationStatus) {
+      console.log('Generation status:', generationStatus);
+    }
+  }, [generationStatus]);
+
+  // Handle generation completion
+  useEffect(() => {
+    if (isComplete && completedData && currentJobId) {
+      console.log('Generation complete!', completedData);
+      
+      // Extract URLs from completed data
+      const urls = extractUrlsFromResponse(completedData);
+      
+      // Display generated assets in chat
+      if (urls.length > 0) {
+        urls.forEach(url => {
+          const fileType = getFileType(url);
+          const assistantMessage: Message = {
+            role: "assistant",
+            text: `✅ Generated ${fileType}: ${url}`,
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+        });
+        
+        // Trigger image refresh
+        setImageRefreshTrigger(prev => prev + 1);
+      }
+      
+      // Clear current job
+      setCurrentJobId(null);
+      setPendingGenerations(prev => {
+        const next = new Set(prev);
+        next.delete(currentJobId);
+        return next;
+      });
+      
+      // Refresh credits
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    }
+  }, [isComplete, completedData, currentJobId, queryClient]);
+
+  // Handle generation errors
+  useEffect(() => {
+    if (generationError && currentJobId) {
+      console.error('Generation error:', generationError);
+      toast({
+        title: "Generation Error",
+        description: generationError,
+        variant: "destructive",
+      });
+      setCurrentJobId(null);
+      setPendingGenerations(prev => {
+        const next = new Set(prev);
+        next.delete(currentJobId);
+        return next;
+      });
+    }
+  }, [generationError, currentJobId, toast]);
+
+  // Helper to extract URLs from tool response
+  const extractUrlsFromResponse = (data: any): string[] => {
+    const urls: string[] = [];
+    const urlRegex = /https?:\/\/[^\s"'<>]+/g;
+    
+    if (typeof data === 'string') {
+      const matches = data.match(urlRegex);
+      if (matches) urls.push(...matches);
+    } else if (data && typeof data === 'object') {
+      const jsonStr = JSON.stringify(data);
+      const matches = jsonStr.match(urlRegex);
+      if (matches) urls.push(...matches);
+    }
+    
+    return [...new Set(urls)]; // Remove duplicates
+  };
+
+  // Helper to get file type from URL
+  const getFileType = (url: string): string => {
+    if (url.match(/\.(png|jpg|jpeg|webp|gif)$/i)) return 'image';
+    if (url.match(/\.(glb|gltf|fbx|obj)$/i)) return '3D model';
+    if (url.match(/\.(mp4|avi|mov)$/i)) return 'video';
+    return 'file';
+  };
+
+  // Start monitoring a new job
+  const startMonitoringJob = (jobId: string) => {
+    console.log('🎯 Starting to monitor job:', jobId);
+    setCurrentJobId(jobId);
+    setPendingGenerations(prev => new Set(prev).add(jobId));
+  };
  
   // Token capture from URL
   useEffect(() => {
@@ -292,6 +397,19 @@ const Index = () => {
 
       // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
+        // Check for job_id in tool messages to start SSE monitoring
+        for (const msg of data.messages) {
+          if (msg.type === 'tool' && msg.content) {
+            const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+            const jobIdMatch = content.match(/"job_id":\s*"([^"]+)"/);
+            if (jobIdMatch) {
+              const jobId = jobIdMatch[1];
+              console.log('🎯 Found job_id in response:', jobId);
+              startMonitoringJob(jobId);
+            }
+          }
+        }
+
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => ({
@@ -390,6 +508,19 @@ const Index = () => {
 
       // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
+        // Check for job_id in tool messages to start SSE monitoring
+        for (const msg of data.messages) {
+          if (msg.type === 'tool' && msg.content) {
+            const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+            const jobIdMatch = content.match(/"job_id":\s*"([^"]+)"/);
+            if (jobIdMatch) {
+              const jobId = jobIdMatch[1];
+              console.log('🎯 Found job_id in tool confirmation response:', jobId);
+              startMonitoringJob(jobId);
+            }
+          }
+        }
+
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => ({
@@ -824,6 +955,12 @@ The process:
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      
+      {/* Floating generation status indicator */}
+      <GenerationIndicatorFloating 
+        count={pendingGenerations.size} 
+        status={generationStatus?.status} 
+      />
     </div>
   );
 };
