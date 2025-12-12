@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import TypewriterText from "./TypewriterText";
 import { ModelSelectionForm, OptimizationConfigForm, OptimizationResultForm } from "./OptimizationForms";
 import { OptimizationInlineForm } from "./OptimizationInlineForm";
+import { ProcessingMessage, GeneratedImage, GenerationError } from "./GenerationStatusIndicator";
 
 interface ToolCall {
   id: string;
@@ -34,6 +35,11 @@ interface Message {
   imagePaths?: string[];
   formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: any;
+  // SSE generation tracking
+  messageType?: "processing" | "image" | "error";
+  jobId?: string;
+  imageUrl?: string;
+  errorMessage?: string;
 }
 
 interface ChatInterfaceProps {
@@ -106,8 +112,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         }
         return msg;
       })
-      // Filter out empty messages after cleaning
-      .filter(msg => msg.text.length > 0 || msg.imagePaths?.length);
+      // Filter out empty messages after cleaning (but keep SSE messages with messageType)
+      .filter(msg => msg.text.length > 0 || msg.imagePaths?.length || msg.messageType);
   }, [messages]);
 
   const welcomeMessages = [
@@ -619,6 +625,19 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     <span className="text-xs font-bold text-muted-foreground">Game AI Studio</span>
                   </div>
                   {(() => {
+                    // Handle SSE generation message types first
+                    if (message.messageType === "processing" && message.jobId) {
+                      return <ProcessingMessage jobId={message.jobId} />;
+                    }
+                    
+                    if (message.messageType === "image" && message.imageUrl) {
+                      return <GeneratedImage imageUrl={message.imageUrl} jobId={message.jobId} />;
+                    }
+                    
+                    if (message.messageType === "error" && message.errorMessage) {
+                      return <GenerationError message={message.errorMessage} jobId={message.jobId} />;
+                    }
+
                     // Ensure message.text is a string
                     if (typeof message.text !== 'string') {
                       return null;
