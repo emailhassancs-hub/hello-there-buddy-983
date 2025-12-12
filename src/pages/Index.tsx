@@ -9,8 +9,8 @@ import { ModelUploader } from "@/components/ModelUploader";
 import ModelGallery from "@/pages/ModelGallery";
 import { apiFetch } from "@/lib/api";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { useGenerationStatus } from "@/hooks/useGenerationStatus";
-import { GenerationIndicatorFloating } from "@/components/GenerationStatusIndicator";
+import { useMultiJobSSE } from "@/hooks/useMultiJobSSE";
+import { GenerationIndicatorFloating, ProcessingMessage, GeneratedImage, GenerationError } from "@/components/GenerationStatusIndicator";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -38,6 +38,11 @@ interface Message {
   interruptMessage?: string;
   formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: any;
+  // SSE generation tracking
+  messageType?: "processing" | "image" | "error";
+  jobId?: string;
+  imageUrl?: string;
+  errorMessage?: string;
 }
 
 // Helper function to extract email from JWT token
@@ -62,84 +67,100 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
-  const [pendingGenerations, setPendingGenerations] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
 
   const apiUrl = "http://localhost:8000";
-  //const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app".replace(/\/+$/, "");
   const API = apiUrl;
 
-  // SSE hook for real-time generation status updates
+  // User email for SSE
   const userEmail = userProfile?.email || '';
-  const { status: generationStatus, isComplete, error: generationError, completedData } = useGenerationStatus(
-    currentJobId,
-    userEmail,
-    apiUrl
-  );
 
-  // Handle generation status updates
-  useEffect(() => {
-    if (generationStatus) {
-      console.log('Generation status:', generationStatus);
-    }
-  }, [generationStatus]);
-
-  // Handle generation completion
-  useEffect(() => {
-    if (isComplete && completedData && currentJobId) {
-      console.log('Generation complete!', completedData);
-      
-      // Extract URLs from completed data
-      const urls = extractUrlsFromResponse(completedData);
-      
-      // Display generated assets in chat
-      if (urls.length > 0) {
-        urls.forEach(url => {
-          const fileType = getFileType(url);
-          const assistantMessage: Message = {
-            role: "assistant",
-            text: `✅ Generated ${fileType}: ${url}`,
+  // Handle job completion - update message in chat
+  const handleJobComplete = useCallback((jobId: string, imageUrl: string | null) => {
+    console.log(`✅ Job ${jobId} completed with image:`, imageUrl);
+    
+    setMessages(prev => prev.map(msg => {
+      if (msg.jobId === jobId && msg.messageType === "processing") {
+        if (imageUrl) {
+          return {
+            ...msg,
+            messageType: "image" as const,
+            imageUrl,
+            text: "Image generated successfully!",
           };
-          setMessages((prev) => [...prev, assistantMessage]);
-        });
-        
-        // Trigger image refresh
-        setImageRefreshTrigger(prev => prev + 1);
+        } else {
+          return {
+            ...msg,
+            messageType: "error" as const,
+            errorMessage: "Generation completed but no image URL returned",
+            text: "Generation completed but no image was returned.",
+          };
+        }
       }
-      
-      // Clear current job
-      setCurrentJobId(null);
-      setPendingGenerations(prev => {
-        const next = new Set(prev);
-        next.delete(currentJobId);
-        return next;
-      });
-      
-      // Refresh credits
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-    }
-  }, [isComplete, completedData, currentJobId, queryClient]);
+      return msg;
+    }));
 
-  // Handle generation errors
-  useEffect(() => {
-    if (generationError && currentJobId) {
-      console.error('Generation error:', generationError);
-      toast({
-        title: "Generation Error",
-        description: generationError,
-        variant: "destructive",
-      });
-      setCurrentJobId(null);
-      setPendingGenerations(prev => {
-        const next = new Set(prev);
-        next.delete(currentJobId);
-        return next;
-      });
-    }
-  }, [generationError, currentJobId, toast]);
+    // Trigger image gallery refresh
+    setImageRefreshTrigger(prev => prev + 1);
+    
+    // Refresh user credits
+    queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+  }, [queryClient]);
+
+  // Handle job error - update message in chat
+  const handleJobError = useCallback((jobId: string, error: string) => {
+    console.error(`❌ Job ${jobId} failed:`, error);
+    
+    setMessages(prev => prev.map(msg => {
+      if (msg.jobId === jobId && msg.messageType === "processing") {
+        return {
+          ...msg,
+          messageType: "error" as const,
+          errorMessage: error,
+          text: `Generation failed: ${error}`,
+        };
+      }
+      return msg;
+    }));
+
+    toast({
+      title: "Generation Failed",
+      description: error,
+      variant: "destructive",
+    });
+  }, [toast]);
+
+  // Multi-job SSE hook
+  const { 
+    processingJobs, 
+    startMonitoring,
+    isProcessing 
+  } = useMultiJobSSE({
+    email: userEmail,
+    apiUrl,
+    onJobComplete: handleJobComplete,
+    onJobError: handleJobError,
+  });
+
+  // Start monitoring jobs and add processing messages to chat
+  const startMonitoringJob = useCallback((jobId: string) => {
+    console.log('🎯 Starting to monitor job:', jobId);
+    
+    // Add processing message to chat
+    const processingMessage: Message = {
+      role: "assistant",
+      text: "Generating image...",
+      timestamp: new Date(),
+      messageType: "processing",
+      jobId,
+    };
+    setMessages(prev => [...prev, processingMessage]);
+    
+    // Start SSE monitoring
+    startMonitoring(jobId);
+  }, [startMonitoring]);
 
   // Helper to extract URLs from tool response
   const extractUrlsFromResponse = (data: any): string[] => {
@@ -187,13 +208,6 @@ const Index = () => {
     if (url.match(/\.(glb|gltf|fbx|obj)$/i)) return '3D model';
     if (url.match(/\.(mp4|avi|mov)$/i)) return 'video';
     return 'file';
-  };
-
-  // Start monitoring a new job
-  const startMonitoringJob = (jobId: string) => {
-    console.log('🎯 Starting to monitor job:', jobId);
-    setCurrentJobId(jobId);
-    setPendingGenerations(prev => new Set(prev).add(jobId));
   };
  
   // Token capture from URL
@@ -975,8 +989,8 @@ The process:
       
       {/* Floating generation status indicator */}
       <GenerationIndicatorFloating 
-        count={pendingGenerations.size} 
-        status={generationStatus?.status} 
+        count={processingJobs.length} 
+        status={processingJobs[0]?.status} 
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, ImageIcon } from "lucide-react";
 
 interface GenerationStatusIndicatorProps {
   status: string;
@@ -81,6 +81,96 @@ export function GenerationIndicatorFloating({ count, status }: GenerationIndicat
           {status}
         </span>
       )}
+    </div>
+  );
+}
+
+// Processing message component for chat
+interface ProcessingMessageProps {
+  jobId: string;
+  className?: string;
+}
+
+export function ProcessingMessage({ jobId, className }: ProcessingMessageProps) {
+  return (
+    <div className={cn(
+      "flex items-center gap-3 p-4 rounded-lg",
+      "bg-muted/30 border border-border/40",
+      "animate-pulse",
+      className
+    )}>
+      <div className="relative">
+        <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+        <Loader2 className="h-4 w-4 animate-spin text-primary absolute -bottom-1 -right-1" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <span className="text-sm text-foreground">Generating image...</span>
+        <span className="text-xs text-muted-foreground font-mono">
+          Job: {jobId.substring(0, 8)}...
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// Generated image component for chat
+interface GeneratedImageProps {
+  imageUrl: string;
+  jobId?: string;
+  className?: string;
+}
+
+export function GeneratedImage({ imageUrl, jobId, className }: GeneratedImageProps) {
+  return (
+    <div className={cn(
+      "flex flex-col gap-2",
+      className
+    )}>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <CheckCircle className="h-4 w-4 text-green-500" />
+        <span>Image generated successfully!</span>
+      </div>
+      <div className="relative rounded-lg overflow-hidden border border-border/50 max-w-md">
+        <img 
+          src={imageUrl} 
+          alt="Generated image" 
+          className="w-full h-auto object-contain"
+          loading="lazy"
+        />
+      </div>
+      {jobId && (
+        <span className="text-xs text-muted-foreground/70 font-mono">
+          Job: {jobId.substring(0, 8)}...
+        </span>
+      )}
+    </div>
+  );
+}
+
+// Error message component for failed generations
+interface GenerationErrorProps {
+  message: string;
+  jobId?: string;
+  className?: string;
+}
+
+export function GenerationError({ message, jobId, className }: GenerationErrorProps) {
+  return (
+    <div className={cn(
+      "flex items-center gap-3 p-4 rounded-lg",
+      "bg-destructive/10 border border-destructive/30",
+      className
+    )}>
+      <XCircle className="h-5 w-5 text-destructive" />
+      <div className="flex flex-col gap-1">
+        <span className="text-sm text-foreground">Generation failed</span>
+        <span className="text-xs text-muted-foreground">{message}</span>
+        {jobId && (
+          <span className="text-xs text-muted-foreground/70 font-mono">
+            Job: {jobId.substring(0, 8)}...
+          </span>
+        )}
+      </div>
     </div>
   );
 }
