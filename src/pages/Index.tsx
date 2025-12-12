@@ -158,6 +158,29 @@ const Index = () => {
     return [...new Set(urls)]; // Remove duplicates
   };
 
+  // Helper to extract image URL from Pub/Sub data
+  const extractImageUrl = (data: any): string | null => {
+    // Check common field names for image URLs
+    if (data?.imageUrl) return data.imageUrl;
+    if (data?.image_url) return data.image_url;
+    if (data?.resultUrl) return data.resultUrl;
+    if (data?.result_url) return data.result_url;
+    if (data?.url) return data.url;
+    
+    // Try to extract URL from string content
+    if (typeof data === 'string') {
+      const urlMatch = data.match(/https?:\/\/[^\s]+\.(png|jpg|jpeg|webp)/);
+      if (urlMatch) return urlMatch[0];
+    }
+    
+    // Check if URL is nested in data object
+    if (data?.data && typeof data.data === 'object') {
+      return extractImageUrl(data.data);
+    }
+    
+    return null;
+  };
+
   // Helper to get file type from URL
   const getFileType = (url: string): string => {
     if (url.match(/\.(png|jpg|jpeg|webp|gif)$/i)) return 'image';
@@ -395,21 +418,18 @@ const Index = () => {
         }
       }
 
+      // Check if there are pending jobs to track via SSE
+      if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
+        console.log('🎯 Starting to track jobs:', data.pending_jobs);
+        
+        // Start monitoring each job with SSE
+        data.pending_jobs.forEach((jobId: string) => {
+          startMonitoringJob(jobId);
+        });
+      }
+
       // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
-        // Check for job_id in tool messages to start SSE monitoring
-        for (const msg of data.messages) {
-          if (msg.type === 'tool' && msg.content) {
-            const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-            const jobIdMatch = content.match(/"job_id":\s*"([^"]+)"/);
-            if (jobIdMatch) {
-              const jobId = jobIdMatch[1];
-              console.log('🎯 Found job_id in response:', jobId);
-              startMonitoringJob(jobId);
-            }
-          }
-        }
-
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => ({
@@ -506,21 +526,18 @@ const Index = () => {
         updateSessionId(data.session_id);
       }
 
+      // Check if there are pending jobs to track via SSE
+      if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
+        console.log('🎯 Starting to track jobs from tool confirmation:', data.pending_jobs);
+        
+        // Start monitoring each job with SSE
+        data.pending_jobs.forEach((jobId: string) => {
+          startMonitoringJob(jobId);
+        });
+      }
+
       // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
-        // Check for job_id in tool messages to start SSE monitoring
-        for (const msg of data.messages) {
-          if (msg.type === 'tool' && msg.content) {
-            const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-            const jobIdMatch = content.match(/"job_id":\s*"([^"]+)"/);
-            if (jobIdMatch) {
-              const jobId = jobIdMatch[1];
-              console.log('🎯 Found job_id in tool confirmation response:', jobId);
-              startMonitoringJob(jobId);
-            }
-          }
-        }
-
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => ({
