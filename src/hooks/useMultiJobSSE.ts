@@ -14,6 +14,7 @@ interface UseMultiJobSSEOptions {
   apiUrl?: string;
   onJobComplete?: (jobId: string, imageUrl: string | null) => void;
   onJobError?: (jobId: string, error: string) => void;
+  onRawMessage?: (jobId: string, rawData: string, parsedData: any) => void;
 }
 
 /**
@@ -24,6 +25,7 @@ export function useMultiJobSSE({
   apiUrl = 'http://localhost:8000',
   onJobComplete,
   onJobError,
+  onRawMessage,
 }: UseMultiJobSSEOptions) {
   const [activeJobs, setActiveJobs] = useState<Map<string, JobStatus>>(new Map());
   const eventSourcesRef = useRef<Map<string, EventSource>>(new Map());
@@ -58,8 +60,13 @@ export function useMultiJobSSE({
 
     eventSource.onmessage = (event) => {
       try {
+        console.log(`📨 RAW SSE MESSAGE for ${jobId}:`, event.data);
+        
         const data: SSEStatusData = JSON.parse(event.data);
         console.log(`📨 Job ${jobId} status:`, data.status);
+
+        // Call raw message callback for debugging
+        onRawMessage?.(jobId, event.data, data);
 
         const normalizedStatus = data.status?.toLowerCase();
 
@@ -154,7 +161,7 @@ export function useMultiJobSSE({
         });
       }
     }, 600000);
-  }, [email, apiUrl, onJobComplete, onJobError]);
+  }, [email, apiUrl, onJobComplete, onJobError, onRawMessage]);
 
   // Stop monitoring a job
   const stopMonitoring = useCallback((jobId: string) => {
