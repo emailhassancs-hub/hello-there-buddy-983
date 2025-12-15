@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import TypewriterText from "./TypewriterText";
 import { ModelSelectionForm, OptimizationConfigForm, OptimizationResultForm } from "./OptimizationForms";
 import { OptimizationInlineForm } from "./OptimizationInlineForm";
+import { ProcessingMessage, GeneratedImage, GenerationError } from "./GenerationStatusIndicator";
 
 interface ToolCall {
   id: string;
@@ -34,6 +35,11 @@ interface Message {
   imagePaths?: string[];
   formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: any;
+  // SSE generation tracking
+  messageType?: "processing" | "image" | "error" | "debug";
+  jobId?: string;
+  imageUrl?: string;
+  errorMessage?: string;
 }
 
 interface ChatInterfaceProps {
@@ -92,10 +98,10 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
   // Filter and clean messages for rendering
   const filteredMessages = useMemo(() => {
     return messages
-      // Filter out system messages
-      .filter(msg => msg.role !== "system")
-      // Only include user and assistant messages
-      .filter(msg => msg.role === "user" || msg.role === "assistant")
+      // Filter out system messages EXCEPT debug messages
+      .filter(msg => msg.role !== "system" || msg.messageType === "debug")
+      // Only include user, assistant, and debug messages
+      .filter(msg => msg.role === "user" || msg.role === "assistant" || msg.messageType === "debug")
       // Clean human messages by removing IMAGE_INPUT blocks
       .map(msg => {
         if (msg.role === "user") {
@@ -106,8 +112,8 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
         }
         return msg;
       })
-      // Filter out empty messages after cleaning
-      .filter(msg => msg.text.length > 0 || msg.imagePaths?.length);
+      // Filter out empty messages after cleaning (but keep SSE messages with messageType)
+      .filter(msg => msg.text.length > 0 || msg.imagePaths?.length || msg.messageType);
   }, [messages]);
 
   const welcomeMessages = [
@@ -619,6 +625,31 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     <span className="text-xs font-bold text-muted-foreground">Game AI Studio</span>
                   </div>
                   {(() => {
+                    // Handle SSE generation message types first
+                    if (message.messageType === "processing" && message.jobId) {
+                      return <ProcessingMessage jobId={message.jobId} />;
+                    }
+                    
+                    if (message.messageType === "image" && message.imageUrl) {
+                      return <GeneratedImage imageUrl={message.imageUrl} jobId={message.jobId} />;
+                    }
+                    
+                    if (message.messageType === "error" && message.errorMessage) {
+                      return <GenerationError message={message.errorMessage} jobId={message.jobId} />;
+                    }
+
+                    // Debug message for raw SSE data
+                    if (message.messageType === "debug") {
+                      return (
+                        <div className="bg-zinc-900 text-green-400 p-4 rounded-lg font-mono text-xs border border-green-500/30">
+                          <div className="text-yellow-400 font-bold mb-2">🔍 DEBUG - SSE RAW DATA</div>
+                          <pre className="whitespace-pre-wrap break-all overflow-x-auto">
+                            {message.text}
+                          </pre>
+                        </div>
+                      );
+                    }
+
                     // Ensure message.text is a string
                     if (typeof message.text !== 'string') {
                       return null;
