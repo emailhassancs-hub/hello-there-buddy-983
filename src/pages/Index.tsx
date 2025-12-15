@@ -70,12 +70,18 @@ const Index = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
-
-  const apiUrl = "http://localhost:8000";
-  const API = apiUrl;
-
-  // User email for SSE
-  const userEmail = userProfile?.email || '';
+ 
+   const apiUrl = "http://localhost:8000";
+   const API = apiUrl;
+ 
+   // User email for SSE and /ask payloads (fallback to token if profile is unavailable)
+   const sseEmail = useMemo(() => {
+     const profileEmail = userProfile?.email;
+     const tokenEmail = extractEmailFromToken(authToken);
+     const finalEmail = profileEmail || tokenEmail || "";
+     console.log("📧 Resolved SSE email:", finalEmail, { profileEmail, tokenEmail });
+     return finalEmail;
+   }, [userProfile, authToken]);
 
   // Handle job completion - update message in chat
   const handleJobComplete = useCallback((jobId: string, imageUrl: string | null) => {
@@ -166,7 +172,7 @@ const Index = () => {
     startMonitoring,
     isProcessing 
   } = useMultiJobSSE({
-    email: userEmail,
+    email: sseEmail,
     apiUrl,
     onJobComplete: handleJobComplete,
     onJobError: handleJobError,
