@@ -39,7 +39,7 @@ interface Message {
   formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: any;
   // SSE generation tracking
-  messageType?: "processing" | "image" | "error";
+  messageType?: "processing" | "image" | "error" | "debug";
   jobId?: string;
   imageUrl?: string;
   errorMessage?: string;
@@ -132,6 +132,34 @@ const Index = () => {
     });
   }, [toast]);
 
+  // Handle raw SSE messages for debugging
+  const handleRawMessage = useCallback((jobId: string, rawData: string, parsedData: any) => {
+    console.log(`🔍 RAW SSE DEBUG for ${jobId}:`, rawData);
+    
+    // Add debug message to chat
+    const debugMessage: Message = {
+      role: "system",
+      text: `🔍 RAW SSE MESSAGE (Job: ${jobId.substring(0, 12)}...):\n\`\`\`json\n${rawData}\n\`\`\``,
+      timestamp: new Date(),
+      messageType: "debug",
+      jobId,
+    };
+    setMessages(prev => [...prev, debugMessage]);
+
+    // If completed, add parsed info
+    if (parsedData?.status?.toLowerCase() === 'completed') {
+      const imageUrl = parsedData?.data?.image_path || parsedData?.data?.imageUrl;
+      const parsedDebug: Message = {
+        role: "system",
+        text: `✅ PARSED: Status=${parsedData.status}, Image URL=${imageUrl || 'NOT FOUND'}`,
+        timestamp: new Date(),
+        messageType: "debug",
+        jobId,
+      };
+      setMessages(prev => [...prev, parsedDebug]);
+    }
+  }, []);
+
   // Multi-job SSE hook
   const { 
     processingJobs, 
@@ -142,6 +170,7 @@ const Index = () => {
     apiUrl,
     onJobComplete: handleJobComplete,
     onJobError: handleJobError,
+    onRawMessage: handleRawMessage,
   });
 
   // Start monitoring jobs and add processing messages to chat
