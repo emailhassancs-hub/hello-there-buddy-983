@@ -29,10 +29,30 @@ export function useMultiJobSSE({
 }: UseMultiJobSSEOptions) {
   const [activeJobs, setActiveJobs] = useState<Map<string, JobStatus>>(new Map());
   const eventSourcesRef = useRef<Map<string, EventSource>>(new Map());
+  
+  // Use refs to always have access to latest callbacks
+  const onJobCompleteRef = useRef(onJobComplete);
+  const onJobErrorRef = useRef(onJobError);
+  const onRawMessageRef = useRef(onRawMessage);
+  
+  // Keep refs updated
+  useEffect(() => {
+    onJobCompleteRef.current = onJobComplete;
+    onJobErrorRef.current = onJobError;
+    onRawMessageRef.current = onRawMessage;
+  }, [onJobComplete, onJobError, onRawMessage]);
 
   // Start monitoring a job
   const startMonitoring = useCallback((jobId: string) => {
-    if (!jobId || !email) return;
+    console.log(`🎯 ========== startMonitoring CALLED ==========`);
+    console.log(`🎯 Job ID: ${jobId}`);
+    console.log(`🎯 Email: ${email}`);
+    console.log(`🎯 API URL: ${apiUrl}`);
+    
+    if (!jobId || !email) {
+      console.log(`❌ Cannot start monitoring - jobId: ${jobId}, email: ${email}`);
+      return;
+    }
     
     // Check if already monitoring
     if (eventSourcesRef.current.has(jobId)) {
@@ -55,23 +75,36 @@ export function useMultiJobSSE({
 
     // Create SSE connection
     const url = `${apiUrl.replace(/\/+$/, '')}/generation-status/${jobId}/stream?email=${encodeURIComponent(email)}`;
+    console.log(`🎧 SSE URL: ${url}`);
+    
     const eventSource = new EventSource(url);
     eventSourcesRef.current.set(jobId, eventSource);
+    
+    eventSource.onopen = () => {
+      console.log(`✅ SSE CONNECTION OPENED for job: ${jobId}`);
+    };
 
     eventSource.onmessage = (event) => {
       try {
-        console.log(`📨 RAW SSE MESSAGE for ${jobId}:`, event.data);
+        console.log(`📨 ========== SSE MESSAGE RECEIVED ==========`);
+        console.log(`📨 Job ID: ${jobId}`);
+        console.log(`📨 Raw event.data:`, event.data);
         
         const data: SSEStatusData = JSON.parse(event.data);
-        console.log(`📨 Job ${jobId} status:`, data.status);
+        console.log(`📨 Parsed status:`, data.status);
+        console.log(`📨 Parsed data:`, data.data);
 
         // Call raw message callback for debugging
-        onRawMessage?.(jobId, event.data, data);
+        console.log(`📨 Calling onRawMessage...`);
+        onRawMessageRef.current?.(jobId, event.data, data);
 
         const normalizedStatus = data.status?.toLowerCase();
+        console.log(`📨 Normalized status:`, normalizedStatus);
 
         if (normalizedStatus === 'completed') {
+          console.log(`✅ ========== JOB COMPLETED ==========`);
           const imageUrl = extractImageUrlFromSSE(data.data);
+          console.log(`✅ Extracted image URL:`, imageUrl);
           
           setActiveJobs(prev => {
             const next = new Map(prev);
@@ -84,7 +117,9 @@ export function useMultiJobSSE({
             return next;
           });
 
-          onJobComplete?.(jobId, imageUrl);
+          console.log(`✅ Calling onJobComplete with jobId=${jobId}, imageUrl=${imageUrl}`);
+          onJobCompleteRef.current?.(jobId, imageUrl);
+          console.log(`✅ onJobComplete called!`);
           
           // Clean up
           eventSource.close();
@@ -101,7 +136,7 @@ export function useMultiJobSSE({
             return next;
           });
 
-          onJobError?.(jobId, data.message || 'Generation failed');
+          onJobErrorRef.current?.(jobId, data.message || 'Generation failed');
           
           // Clean up
           eventSource.close();
@@ -137,7 +172,7 @@ export function useMultiJobSSE({
         return next;
       });
       
-      onJobError?.(jobId, 'Connection lost');
+      onJobErrorRef.current?.(jobId, 'Connection lost');
     };
 
     // Auto-timeout after 10 minutes
@@ -161,7 +196,7 @@ export function useMultiJobSSE({
         });
       }
     }, 600000);
-  }, [email, apiUrl, onJobComplete, onJobError, onRawMessage]);
+  }, [email, apiUrl]);
 
   // Stop monitoring a job
   const stopMonitoring = useCallback((jobId: string) => {

@@ -85,28 +85,55 @@ const Index = () => {
 
   // Handle job completion - update message in chat
   const handleJobComplete = useCallback((jobId: string, imageUrl: string | null) => {
-    console.log(`✅ Job ${jobId} completed with image:`, imageUrl);
+    console.log(`✅ ========== handleJobComplete CALLED ==========`);
+    console.log(`✅ Job ID: ${jobId}`);
+    console.log(`✅ Image URL: ${imageUrl}`);
     
-    setMessages(prev => prev.map(msg => {
-      if (msg.jobId === jobId && msg.messageType === "processing") {
+    setMessages(prev => {
+      console.log(`✅ Current messages count: ${prev.length}`);
+      console.log(`✅ Looking for message with jobId=${jobId} and messageType=processing`);
+      
+      const processingMsg = prev.find(msg => msg.jobId === jobId && msg.messageType === "processing");
+      console.log(`✅ Found processing message: ${!!processingMsg}`);
+      
+      if (!processingMsg) {
+        console.log(`⚠️ No processing message found, adding new image message`);
+        // If no processing message found, add new image message
         if (imageUrl) {
-          return {
-            ...msg,
+          return [...prev, {
+            role: "assistant" as const,
+            text: "Image generated successfully!",
+            timestamp: new Date(),
             messageType: "image" as const,
             imageUrl,
-            text: "Image generated successfully!",
-          };
-        } else {
-          return {
-            ...msg,
-            messageType: "error" as const,
-            errorMessage: "Generation completed but no image URL returned",
-            text: "Generation completed but no image was returned.",
-          };
+            jobId,
+          }];
         }
+        return prev;
       }
-      return msg;
-    }));
+      
+      return prev.map(msg => {
+        if (msg.jobId === jobId && msg.messageType === "processing") {
+          console.log(`✅ Updating message from processing to image`);
+          if (imageUrl) {
+            return {
+              ...msg,
+              messageType: "image" as const,
+              imageUrl,
+              text: "Image generated successfully!",
+            };
+          } else {
+            return {
+              ...msg,
+              messageType: "error" as const,
+              errorMessage: "Generation completed but no image URL returned",
+              text: "Generation completed but no image was returned.",
+            };
+          }
+        }
+        return msg;
+      });
+    });
 
     // Trigger image gallery refresh
     setImageRefreshTrigger(prev => prev + 1);
@@ -181,7 +208,9 @@ const Index = () => {
 
   // Start monitoring jobs and add processing messages to chat
   const startMonitoringJob = useCallback((jobId: string) => {
-    console.log('🎯 Starting to monitor job:', jobId);
+    console.log('🎯 ========== startMonitoringJob CALLED ==========');
+    console.log('🎯 Job ID:', jobId);
+    console.log('🎯 SSE Email:', sseEmail);
     
     // Add processing message to chat
     const processingMessage: Message = {
@@ -191,11 +220,13 @@ const Index = () => {
       messageType: "processing",
       jobId,
     };
+    console.log('🎯 Adding processing message:', processingMessage);
     setMessages(prev => [...prev, processingMessage]);
     
     // Start SSE monitoring
+    console.log('🎯 Calling startMonitoring...');
     startMonitoring(jobId);
-  }, [startMonitoring]);
+  }, [startMonitoring, sseEmail]);
 
   // Helper to extract URLs from tool response
   const extractUrlsFromResponse = (data: any): string[] => {
