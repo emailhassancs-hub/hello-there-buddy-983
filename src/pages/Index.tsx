@@ -456,6 +456,10 @@ const Index = () => {
       });
 
       const data = await response.json();
+      console.log('📨 ========== /ask RESPONSE RECEIVED ==========');
+      console.log('📨 Response data:', JSON.stringify(data, null, 2));
+      console.log('📨 pending_jobs:', data.pending_jobs);
+      console.log('📨 sseEmail at response time:', sseEmail);
 
       // Update session ID if provided
       if (data.session_id) {
@@ -499,13 +503,22 @@ const Index = () => {
       }
 
       // Check if there are pending jobs to track via SSE
+      console.log('🎯 ========== CHECKING PENDING JOBS ==========');
+      console.log('🎯 data.pending_jobs:', data.pending_jobs);
+      console.log('🎯 Is array:', Array.isArray(data.pending_jobs));
+      console.log('🎯 Length:', data.pending_jobs?.length);
+      
       if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
-        console.log('🎯 Starting to track jobs:', data.pending_jobs);
+        console.log('🎯 ✅ STARTING TO TRACK JOBS:', data.pending_jobs);
+        console.log('🎯 Current sseEmail:', sseEmail);
         
         // Start monitoring each job with SSE
         data.pending_jobs.forEach((jobId: string) => {
+          console.log(`🎯 Calling startMonitoringJob for: ${jobId}`);
           startMonitoringJob(jobId);
         });
+      } else {
+        console.log('🎯 ❌ NO PENDING JOBS TO TRACK');
       }
 
       // Append any messages from the backend - filter out system messages only
