@@ -44,13 +44,19 @@ export function useMultiJobSSE({
 
   // Start monitoring a job
   const startMonitoring = useCallback((jobId: string) => {
-    console.log(`🎯 ========== startMonitoring CALLED ==========`);
-    console.log(`🎯 Job ID: ${jobId}`);
-    console.log(`🎯 Email: ${email}`);
-    console.log(`🎯 API URL: ${apiUrl}`);
+    console.log('\n' + '='.repeat(80));
+    console.log('🎧 STARTING SSE MONITORING');
+    console.log('='.repeat(80));
+    console.log('Job ID:', jobId);
+    console.log('Email:', email);
+    console.log('API URL:', apiUrl);
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('='.repeat(80));
     
     if (!jobId || !email) {
-      console.log(`❌ Cannot start monitoring - jobId: ${jobId}, email: ${email}`);
+      console.error('❌ CANNOT START MONITORING - MISSING DATA');
+      console.error('   jobId:', jobId);
+      console.error('   email:', email);
       return;
     }
     
@@ -74,37 +80,83 @@ export function useMultiJobSSE({
     });
 
     // Create SSE connection
-    const url = `${apiUrl.replace(/\/+$/, '')}/generation-status/${jobId}/stream?email=${encodeURIComponent(email)}`;
-    console.log(`🎧 SSE URL: ${url}`);
+    const sseUrl = `${apiUrl.replace(/\/+$/, '')}/generation-status/${jobId}/stream?email=${encodeURIComponent(email)}`;
+    console.log('\n📡 SSE CONNECTION DETAILS:');
+    console.log('   Full URL:', sseUrl);
+    console.log('   Encoded email:', encodeURIComponent(email));
     
-    const eventSource = new EventSource(url);
+    const eventSource = new EventSource(sseUrl);
     eventSourcesRef.current.set(jobId, eventSource);
     
+    console.log('✅ EventSource created');
+    console.log('   ReadyState:', eventSource.readyState);
+    console.log('   URL:', eventSource.url);
+    
     eventSource.onopen = () => {
-      console.log(`✅ SSE CONNECTION OPENED for job: ${jobId}`);
+      console.log('\n' + '='.repeat(80));
+      console.log('✅ SSE CONNECTION OPENED');
+      console.log('='.repeat(80));
+      console.log('Job ID:', jobId);
+      console.log('ReadyState:', eventSource.readyState);
+      console.log('Timestamp:', new Date().toISOString());
+      console.log('='.repeat(80));
     };
 
     eventSource.onmessage = (event) => {
+      console.log('\n' + '='.repeat(80));
+      console.log('📨 SSE MESSAGE RECEIVED');
+      console.log('='.repeat(80));
+      console.log('Job ID:', jobId);
+      console.log('Timestamp:', new Date().toISOString());
+      console.log('Raw event.data:', event.data);
+      console.log('Event type:', event.type);
+      console.log('Event lastEventId:', event.lastEventId);
+      
       try {
-        console.log(`📨 ========== SSE MESSAGE RECEIVED ==========`);
-        console.log(`📨 Job ID: ${jobId}`);
-        console.log(`📨 Raw event.data:`, event.data);
-        
         const data: SSEStatusData = JSON.parse(event.data);
-        console.log(`📨 Parsed status:`, data.status);
-        console.log(`📨 Parsed data:`, data.data);
+        console.log('\n✅ PARSED SUCCESSFULLY');
+        console.log('Parsed data:', JSON.stringify(data, null, 2));
+        console.log('\n📊 DATA BREAKDOWN:');
+        console.log('   job_id:', data.job_id);
+        console.log('   status:', data.status);
+        console.log('   timestamp:', data.timestamp);
+        console.log('   data object exists?', !!data.data);
+        
+        if (data.data) {
+          console.log('\n📦 DATA.DATA CONTENTS:');
+          console.log('   Keys:', Object.keys(data.data));
+          console.log('   image_path:', data.data.image_path);
+          console.log('   model_url:', data.data.model_url);
+          console.log('   type:', data.data.type);
+        }
 
         // Call raw message callback for debugging
-        console.log(`📨 Calling onRawMessage...`);
+        console.log('\n📨 Calling onRawMessage callback...');
         onRawMessageRef.current?.(jobId, event.data, data);
+        console.log('✅ onRawMessage called');
 
         const normalizedStatus = data.status?.toLowerCase();
-        console.log(`📨 Normalized status:`, normalizedStatus);
+        console.log('\n📊 Status Analysis:');
+        console.log('   Original status:', data.status);
+        console.log('   Normalized status:', normalizedStatus);
 
-        if (normalizedStatus === 'completed') {
-          console.log(`✅ ========== JOB COMPLETED ==========`);
+        if (normalizedStatus === 'listening') {
+          console.log('\n⏳ Status: LISTENING - waiting for completion...');
+        } else if (normalizedStatus === 'completed') {
+          console.log('\n' + '='.repeat(80));
+          console.log('✅ Status: COMPLETED!');
+          console.log('='.repeat(80));
+          
           const imageUrl = extractImageUrlFromSSE(data.data);
-          console.log(`✅ Extracted image URL:`, imageUrl);
+          console.log('🖼️  Extracted image URL:', imageUrl);
+          
+          if (imageUrl) {
+            console.log('🖼️  IMAGE URL FOUND!');
+            console.log('   URL:', imageUrl);
+          } else {
+            console.error('❌ NO IMAGE PATH IN COMPLETED MESSAGE!');
+            console.error('   data.data:', data.data);
+          }
           
           setActiveJobs(prev => {
             const next = new Map(prev);
@@ -117,14 +169,20 @@ export function useMultiJobSSE({
             return next;
           });
 
-          console.log(`✅ Calling onJobComplete with jobId=${jobId}, imageUrl=${imageUrl}`);
+          console.log('\n📞 CALLING handleJobComplete');
+          console.log('   Args: jobId=', jobId, ', imageUrl=', imageUrl);
           onJobCompleteRef.current?.(jobId, imageUrl);
-          console.log(`✅ onJobComplete called!`);
+          console.log('✅ handleJobComplete called!');
           
           // Clean up
+          console.log('🔌 Closing SSE connection...');
           eventSource.close();
           eventSourcesRef.current.delete(jobId);
+          console.log('✅ SSE connection closed');
         } else if (normalizedStatus === 'error' || normalizedStatus === 'failed') {
+          console.error('\n❌ Status: ERROR/FAILED');
+          console.error('   Message:', data.message);
+          
           setActiveJobs(prev => {
             const next = new Map(prev);
             next.set(jobId, {
@@ -142,6 +200,7 @@ export function useMultiJobSSE({
           eventSource.close();
           eventSourcesRef.current.delete(jobId);
         } else if (normalizedStatus === 'processing') {
+          console.log('\n⏳ Status: PROCESSING - job in progress...');
           setActiveJobs(prev => {
             const next = new Map(prev);
             const existing = next.get(jobId);
@@ -150,14 +209,34 @@ export function useMultiJobSSE({
             }
             return next;
           });
+        } else {
+          console.log(`\n📊 Status: ${data.status} (unhandled)`);
         }
       } catch (err) {
-        console.error(`❌ Failed to parse SSE for job ${jobId}:`, err);
+        console.error('\n❌ PARSE ERROR');
+        console.error('Error:', err);
+        console.error('Stack:', (err as Error).stack);
+        console.error('Raw data that failed to parse:', event.data);
       }
+      
+      console.log('='.repeat(80));
     };
 
-    eventSource.onerror = () => {
-      console.error(`❌ SSE error for job ${jobId}`);
+    eventSource.onerror = (error) => {
+      console.error('\n' + '='.repeat(80));
+      console.error('❌ SSE ERROR');
+      console.error('='.repeat(80));
+      console.error('Job ID:', jobId);
+      console.error('Error object:', error);
+      console.error('ReadyState:', eventSource.readyState);
+      console.error('ReadyState meanings:');
+      console.error('   0 = CONNECTING');
+      console.error('   1 = OPEN');
+      console.error('   2 = CLOSED');
+      console.error('Current state:', ['CONNECTING', 'OPEN', 'CLOSED'][eventSource.readyState]);
+      console.error('Timestamp:', new Date().toISOString());
+      console.error('='.repeat(80));
+      
       eventSource.close();
       eventSourcesRef.current.delete(jobId);
       

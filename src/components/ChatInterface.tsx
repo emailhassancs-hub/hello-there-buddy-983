@@ -625,21 +625,34 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     <span className="text-xs font-bold text-muted-foreground">Game AI Studio</span>
                   </div>
                   {(() => {
+                    // Log every assistant message for debugging
+                    console.log(`🖼️ RENDERING ASSISTANT MESSAGE [${index}]:`, {
+                      role: message.role,
+                      jobId: message.jobId,
+                      imageUrl: message.imageUrl,
+                      messageType: message.messageType,
+                      text: message.text?.substring(0, 50)
+                    });
+                    
                     // Handle SSE generation message types first
                     if (message.messageType === "processing" && message.jobId) {
+                      console.log(`   ⏳ Rendering ProcessingMessage for jobId: ${message.jobId}`);
                       return <ProcessingMessage jobId={message.jobId} />;
                     }
                     
                     if (message.messageType === "image" && message.imageUrl) {
+                      console.log(`   ✅ Rendering GeneratedImage for jobId: ${message.jobId}, URL: ${message.imageUrl}`);
                       return <GeneratedImage imageUrl={message.imageUrl} jobId={message.jobId} />;
                     }
                     
                     if (message.messageType === "error" && message.errorMessage) {
+                      console.log(`   ❌ Rendering GenerationError for jobId: ${message.jobId}`);
                       return <GenerationError message={message.errorMessage} jobId={message.jobId} />;
                     }
 
                     // Debug message for raw SSE data
                     if (message.messageType === "debug") {
+                      console.log(`   🔍 Rendering DEBUG message`);
                       return (
                         <div className="bg-zinc-900 text-green-400 p-4 rounded-lg font-mono text-xs border border-green-500/30">
                           <div className="text-yellow-400 font-bold mb-2">🔍 DEBUG - SSE RAW DATA</div>
