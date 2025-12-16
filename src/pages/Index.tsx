@@ -85,54 +85,88 @@ const Index = () => {
 
   // Handle job completion - update message in chat
   const handleJobComplete = useCallback((jobId: string, imageUrl: string | null) => {
-    console.log(`✅ ========== handleJobComplete CALLED ==========`);
-    console.log(`✅ Job ID: ${jobId}`);
-    console.log(`✅ Image URL: ${imageUrl}`);
+    console.log('\n' + '='.repeat(80));
+    console.log('🎯 handleJobComplete CALLED');
+    console.log('='.repeat(80));
+    console.log('Job ID:', jobId);
+    console.log('Image URL:', imageUrl);
+    console.log('Timestamp:', new Date().toISOString());
     
     setMessages(prev => {
-      console.log(`✅ Current messages count: ${prev.length}`);
-      console.log(`✅ Looking for message with jobId=${jobId} and messageType=processing`);
+      console.log('\n📝 UPDATING MESSAGES');
+      console.log('Current messages count:', prev.length);
       
-      const processingMsg = prev.find(msg => msg.jobId === jobId && msg.messageType === "processing");
-      console.log(`✅ Found processing message: ${!!processingMsg}`);
+      // Log all messages with their job IDs
+      console.log('\n📋 ALL MESSAGES:');
+      prev.forEach((msg, idx) => {
+        console.log(`   [${idx}] Role: ${msg.role}, JobID: ${msg.jobId || 'N/A'}, Type: ${msg.messageType || 'N/A'}, Text: ${msg.text?.substring(0, 50)}`);
+      });
       
-      if (!processingMsg) {
-        console.log(`⚠️ No processing message found, adding new image message`);
-        // If no processing message found, add new image message
+      // Find the generating message
+      const generatingIndex = prev.findIndex(
+        msg => msg.jobId === jobId && (
+          msg.messageType === 'processing' || 
+          msg.text?.includes('Generating')
+        )
+      );
+      
+      console.log('\n🔍 SEARCHING FOR GENERATING MESSAGE');
+      console.log('   Looking for jobId:', jobId);
+      console.log('   Found at index:', generatingIndex);
+      
+      if (generatingIndex !== -1) {
+        console.log('✅ FOUND GENERATING MESSAGE!');
+        console.log('   Index:', generatingIndex);
+        console.log('   Current message:', JSON.stringify(prev[generatingIndex], null, 2));
+        
+        const newMessages = [...prev];
         if (imageUrl) {
-          return [...prev, {
+          newMessages[generatingIndex] = {
             role: "assistant" as const,
-            text: "Image generated successfully!",
+            text: "✅ **Your image is ready!**",
             timestamp: new Date(),
+            imageUrl: imageUrl,
+            jobId: jobId,
             messageType: "image" as const,
-            imageUrl,
-            jobId,
-          }];
+          };
+          
+          console.log('✅ REPLACED MESSAGE WITH IMAGE');
+          console.log('   New message:', JSON.stringify(newMessages[generatingIndex], null, 2));
+        } else {
+          newMessages[generatingIndex] = {
+            ...prev[generatingIndex],
+            messageType: "error" as const,
+            errorMessage: "Generation completed but no image URL returned",
+            text: "Generation completed but no image was returned.",
+          };
+          console.log('⚠️ REPLACED MESSAGE WITH ERROR (no imageUrl)');
         }
+        
+        console.log('='.repeat(80));
+        return newMessages;
+      } else {
+        console.warn('⚠️ GENERATING MESSAGE NOT FOUND!');
+        console.warn('   Adding new message instead...');
+        
+        if (imageUrl) {
+          const newMessage = {
+            role: "assistant" as const,
+            text: "✅ **Your image is ready!**",
+            timestamp: new Date(),
+            imageUrl: imageUrl,
+            jobId: jobId,
+            messageType: "image" as const,
+          };
+          
+          console.log('➕ ADDING NEW MESSAGE:', JSON.stringify(newMessage, null, 2));
+          console.log('='.repeat(80));
+          
+          return [...prev, newMessage];
+        }
+        
+        console.log('='.repeat(80));
         return prev;
       }
-      
-      return prev.map(msg => {
-        if (msg.jobId === jobId && msg.messageType === "processing") {
-          console.log(`✅ Updating message from processing to image`);
-          if (imageUrl) {
-            return {
-              ...msg,
-              messageType: "image" as const,
-              imageUrl,
-              text: "Image generated successfully!",
-            };
-          } else {
-            return {
-              ...msg,
-              messageType: "error" as const,
-              errorMessage: "Generation completed but no image URL returned",
-              text: "Generation completed but no image was returned.",
-            };
-          }
-        }
-        return msg;
-      });
     });
 
     // Trigger image gallery refresh
@@ -208,9 +242,13 @@ const Index = () => {
 
   // Start monitoring jobs and add processing messages to chat
   const startMonitoringJob = useCallback((jobId: string) => {
-    console.log('🎯 ========== startMonitoringJob CALLED ==========');
-    console.log('🎯 Job ID:', jobId);
-    console.log('🎯 SSE Email:', sseEmail);
+    console.log('\n' + '='.repeat(80));
+    console.log('🎯 startMonitoringJob CALLED');
+    console.log('='.repeat(80));
+    console.log('Job ID:', jobId);
+    console.log('SSE Email:', sseEmail);
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('='.repeat(80));
     
     // Add processing message to chat
     const processingMessage: Message = {
@@ -220,12 +258,16 @@ const Index = () => {
       messageType: "processing",
       jobId,
     };
-    console.log('🎯 Adding processing message:', processingMessage);
-    setMessages(prev => [...prev, processingMessage]);
+    console.log('📝 Adding processing message to chat:', JSON.stringify(processingMessage, null, 2));
+    setMessages(prev => {
+      console.log('📝 Current messages before adding:', prev.length);
+      return [...prev, processingMessage];
+    });
     
     // Start SSE monitoring
-    console.log('🎯 Calling startMonitoring...');
+    console.log('🎧 Calling startMonitoring from useMultiJobSSE...');
     startMonitoring(jobId);
+    console.log('✅ startMonitoring called');
   }, [startMonitoring, sseEmail]);
 
   // Helper to extract URLs from tool response
@@ -419,6 +461,17 @@ const Index = () => {
       // Get user email from profile or extract from auth token
       const userEmail = userProfile?.email || extractEmailFromToken(authToken);
       
+      console.log('\n' + '='.repeat(80));
+      console.log('📤 SENDING MESSAGE TO /ask');
+      console.log('='.repeat(80));
+      console.log('Message:', text);
+      console.log('Email:', userEmail);
+      console.log('SSE Email:', sseEmail);
+      console.log('Session ID:', sessionId);
+      console.log('API URL:', `${API}/ask`);
+      console.log('Auth Token exists:', !!authToken);
+      console.log('='.repeat(80));
+      
       const payload: any = {
         query: text,
       };
@@ -447,6 +500,9 @@ const Index = () => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
+      console.log('📤 Request payload:', JSON.stringify(payload, null, 2));
+      console.log('📤 Request headers:', JSON.stringify(headers, null, 2));
+
       const response = await fetch(`${API}/ask`, {
         method: "POST",
         headers,
@@ -456,10 +512,17 @@ const Index = () => {
       });
 
       const data = await response.json();
-      console.log('📨 ========== /ask RESPONSE RECEIVED ==========');
-      console.log('📨 Response data:', JSON.stringify(data, null, 2));
-      console.log('📨 pending_jobs:', data.pending_jobs);
-      console.log('📨 sseEmail at response time:', sseEmail);
+      
+      console.log('\n' + '='.repeat(80));
+      console.log('📥 RESPONSE FROM /ask');
+      console.log('='.repeat(80));
+      console.log('Full response:', JSON.stringify(data, null, 2));
+      console.log('Messages count:', data.messages?.length);
+      console.log('Pending jobs:', data.pending_jobs);
+      console.log('Pending jobs type:', typeof data.pending_jobs);
+      console.log('Is array:', Array.isArray(data.pending_jobs));
+      console.log('SSE Email at response time:', sseEmail);
+      console.log('='.repeat(80));
 
       // Update session ID if provided
       if (data.session_id) {
@@ -503,22 +566,38 @@ const Index = () => {
       }
 
       // Check if there are pending jobs to track via SSE
-      console.log('🎯 ========== CHECKING PENDING JOBS ==========');
-      console.log('🎯 data.pending_jobs:', data.pending_jobs);
-      console.log('🎯 Is array:', Array.isArray(data.pending_jobs));
-      console.log('🎯 Length:', data.pending_jobs?.length);
+      console.log('\n' + '='.repeat(80));
+      console.log('🎯 CHECKING PENDING JOBS');
+      console.log('='.repeat(80));
+      console.log('data.pending_jobs:', data.pending_jobs);
+      console.log('Type:', typeof data.pending_jobs);
+      console.log('Is array:', Array.isArray(data.pending_jobs));
+      console.log('Length:', data.pending_jobs?.length);
+      console.log('Current sseEmail:', sseEmail);
+      console.log('='.repeat(80));
       
       if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
-        console.log('🎯 ✅ STARTING TO TRACK JOBS:', data.pending_jobs);
-        console.log('🎯 Current sseEmail:', sseEmail);
+        console.log('\n🎯 ✅ FOUND PENDING JOBS!');
+        console.log('Job IDs:', data.pending_jobs);
         
-        // Start monitoring each job with SSE
-        data.pending_jobs.forEach((jobId: string) => {
+        data.pending_jobs.forEach((jobId: string, index: number) => {
+          console.log(`\n📋 Job #${index + 1}:`);
+          console.log('   Job ID:', jobId);
+          console.log('   Will start monitoring...');
           console.log(`🎯 Calling startMonitoringJob for: ${jobId}`);
           startMonitoringJob(jobId);
+          console.log(`✅ startMonitoringJob called for: ${jobId}`);
         });
       } else {
-        console.log('🎯 ❌ NO PENDING JOBS TO TRACK');
+        console.log('\n🎯 ❌ NO PENDING JOBS TO TRACK');
+        console.log('   Reason:');
+        if (!data.pending_jobs) {
+          console.log('   - pending_jobs is undefined or null');
+        } else if (!Array.isArray(data.pending_jobs)) {
+          console.log('   - pending_jobs is not an array');
+        } else if (data.pending_jobs.length === 0) {
+          console.log('   - pending_jobs array is empty');
+        }
       }
 
       // Append any messages from the backend - filter out system messages only
