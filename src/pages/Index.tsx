@@ -565,22 +565,65 @@ const Index = () => {
         }
       }
 
-      // Check if there are pending jobs to track via SSE
+      // ✅ Extract job IDs from messages (fallback if pending_jobs not in response)
       console.log('\n' + '='.repeat(80));
-      console.log('🎯 CHECKING PENDING JOBS');
+      console.log('🎯 EXTRACTING JOB IDs FROM MESSAGES');
       console.log('='.repeat(80));
-      console.log('data.pending_jobs:', data.pending_jobs);
-      console.log('Type:', typeof data.pending_jobs);
-      console.log('Is array:', Array.isArray(data.pending_jobs));
-      console.log('Length:', data.pending_jobs?.length);
+      const extractedJobIds: string[] = [];
+
+      // Check pending_jobs first (if backend returns it)
+      if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
+        console.log('✅ Found pending_jobs in response:', data.pending_jobs);
+        extractedJobIds.push(...data.pending_jobs);
+      } else {
+        console.log('⚠️ No pending_jobs in response, extracting from messages...');
+        
+        // Extract from messages as fallback
+        if (data.messages && Array.isArray(data.messages)) {
+          console.log(`🔍 Checking ${data.messages.length} messages for job IDs...`);
+          
+          data.messages.forEach((msg: any, index: number) => {
+            console.log(`   [${index}] type: ${msg.type}, content length: ${msg.content?.length || 0}`);
+            
+            // Look for tool messages or any message with job_id
+            if (msg.type === "tool" || msg.content) {
+              const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+              
+              // Try to match job_id patterns
+              const jobIdPatterns = [
+                /"jobId":\s*"(qwen_\d+)"/g,
+                /"job_id":\s*"(qwen_\d+)"/g,
+                /qwen_\d+/g  // Fallback: any qwen_ pattern
+              ];
+              
+              for (const pattern of jobIdPatterns) {
+                const matches = content.matchAll(pattern);
+                for (const match of matches) {
+                  const jobId = match[1] || match[0];
+                  if (jobId && jobId.startsWith('qwen_') && !extractedJobIds.includes(jobId)) {
+                    console.log(`   ✅ Found job ID: ${jobId}`);
+                    extractedJobIds.push(jobId);
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      console.log('\n' + '='.repeat(80));
+      console.log('🎯 EXTRACTED JOB IDs SUMMARY');
+      console.log('='.repeat(80));
+      console.log('Total job IDs found:', extractedJobIds.length);
+      console.log('Job IDs:', extractedJobIds);
       console.log('Current sseEmail:', sseEmail);
       console.log('='.repeat(80));
-      
-      if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
-        console.log('\n🎯 ✅ FOUND PENDING JOBS!');
-        console.log('Job IDs:', data.pending_jobs);
+
+      // ✅ Start monitoring each extracted job
+      if (extractedJobIds.length > 0) {
+        console.log('🎯 ✅ STARTING TO TRACK JOBS:', extractedJobIds);
         
-        data.pending_jobs.forEach((jobId: string, index: number) => {
+        extractedJobIds.forEach((jobId: string, index: number) => {
           console.log(`\n📋 Job #${index + 1}:`);
           console.log('   Job ID:', jobId);
           console.log('   Will start monitoring...');
@@ -589,15 +632,12 @@ const Index = () => {
           console.log(`✅ startMonitoringJob called for: ${jobId}`);
         });
       } else {
-        console.log('\n🎯 ❌ NO PENDING JOBS TO TRACK');
-        console.log('   Reason:');
-        if (!data.pending_jobs) {
-          console.log('   - pending_jobs is undefined or null');
-        } else if (!Array.isArray(data.pending_jobs)) {
-          console.log('   - pending_jobs is not an array');
-        } else if (data.pending_jobs.length === 0) {
-          console.log('   - pending_jobs array is empty');
-        }
+        console.log('🎯 ❌ NO JOB IDs FOUND TO TRACK');
+        console.log('   Response structure:', {
+          has_pending_jobs: !!data.pending_jobs,
+          has_messages: !!data.messages,
+          messages_count: data.messages?.length || 0
+        });
       }
 
       // Append any messages from the backend - filter out system messages only
