@@ -42,51 +42,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
 
   // Listen for refresh events (e.g., after title generation)
   useEffect(() => {
-    const handleRefresh = async (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        session?: Partial<Session>;
-        updateNameOnly?: boolean;
-      }>;
-
-      const detail = customEvent.detail;
-
-      // If we get session details, upsert locally to avoid a full refetch
-      if (detail?.session?.session_id) {
-        setSessions((prev) => {
-          const existingIndex = prev.findIndex(
-            (s) => s.session_id === detail.session!.session_id
-          );
-
-          const now = new Date().toISOString();
-          const existingSession = existingIndex !== -1 ? prev[existingIndex] : undefined;
-
-          const updatedSession: Session = {
-            session_id: detail.session.session_id,
-            created_at: detail.session.created_at || existingSession?.created_at || now,
-            updated_at: detail.session.updated_at || now,
-            message_count:
-              detail.session.message_count ??
-              existingSession?.message_count ??
-              1,
-          };
-
-          if (existingIndex !== -1) {
-            const updated = [...prev];
-            updated[existingIndex] = updatedSession;
-            return updated;
-          }
-
-          return [updatedSession, ...prev];
-        });
-        return;
-      }
-
-      // If only the name changed, force a re-render to read from localStorage
-      if (detail?.updateNameOnly) {
-        setSessions((prev) => [...prev]);
-        return;
-      }
-
+    const handleRefresh = async () => {
       if (userProfile?.email) {
         setIsRefreshing(true);
         await fetchSessions();
@@ -94,8 +50,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
       }
     };
 
-    window.addEventListener("refreshChatSidebar", handleRefresh as EventListener);
-    return () => window.removeEventListener("refreshChatSidebar", handleRefresh as EventListener);
+    window.addEventListener('refreshChatSidebar', handleRefresh);
+    return () => window.removeEventListener('refreshChatSidebar', handleRefresh);
   }, [userProfile?.email]);
 
   const fetchSessions = async () => {
