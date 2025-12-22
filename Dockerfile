@@ -1,20 +1,17 @@
 # ------------------------
-# Stage 1: Build with Yarn
+# Stage 1: Build with npm
 # ------------------------
 FROM node:18-alpine AS build
 WORKDIR /app
 
 # Copy only package files first
-COPY package.json yarn.lock ./
+COPY package.json package-lock.json ./
 
-
-ENV YARN_IGNORE_ENGINES=true
-RUN yarn config set ignore-engines true
-RUN yarn install --frozen-lockfile
+RUN npm ci
 
 # Now copy source
 COPY . .
-RUN yarn build
+RUN npm run build
 
 
 # ------------------------
