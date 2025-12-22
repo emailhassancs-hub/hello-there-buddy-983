@@ -38,11 +38,6 @@ interface Message {
   interruptMessage?: string;
   formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: any;
-  // SSE generation tracking
-  messageType?: "processing" | "image" | "error" | "debug";
-  jobId?: string;
-  imageUrl?: string;
-  errorMessage?: string;
 }
 
 // Helper function to extract email from JWT token
@@ -71,182 +66,10 @@ const Index = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
- 
-   //const apiUrl = "http://localhost:8000";
-   const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app"
 
-   const API = apiUrl;
- 
-   // User email for SSE and /ask payloads (fallback to token if profile is unavailable)
-   const sseEmail = useMemo(() => {
-     const profileEmail = userProfile?.email;
-     const tokenEmail = extractEmailFromToken(authToken);
-     const finalEmail = profileEmail || tokenEmail || "";
-     console.log("📧 Resolved SSE email:", finalEmail, { profileEmail, tokenEmail });
-     return finalEmail;
-   }, [userProfile, authToken]);
-
-  // Handle job completion - update message in chat
-  const handleJobComplete = useCallback((jobId: string, imageUrl: string | null) => {
-    console.log(`✅ Job ${jobId} completed with image:`, imageUrl);
-    
-    setMessages(prev => prev.map(msg => {
-      if (msg.jobId === jobId && msg.messageType === "processing") {
-        if (imageUrl) {
-          return {
-            ...msg,
-            messageType: "image" as const,
-            imageUrl,
-            text: "Image generated successfully!",
-          };
-        } else {
-          return {
-            ...msg,
-            messageType: "error" as const,
-            errorMessage: "Generation completed but no image URL returned",
-            text: "Generation completed but no image was returned.",
-          };
-        }
-      }
-      return msg;
-    }));
-
-    // Trigger image gallery refresh
-    setImageRefreshTrigger(prev => prev + 1);
-    
-    // Refresh user credits
-    queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-  }, [queryClient]);
-
-  // Handle job error - update message in chat
-  const handleJobError = useCallback((jobId: string, error: string) => {
-    console.error(`❌ Job ${jobId} failed:`, error);
-    
-    setMessages(prev => prev.map(msg => {
-      if (msg.jobId === jobId && msg.messageType === "processing") {
-        return {
-          ...msg,
-          messageType: "error" as const,
-          errorMessage: error,
-          text: `Generation failed: ${error}`,
-        };
-      }
-      return msg;
-    }));
-
-    toast({
-      title: "Generation Failed",
-      description: error,
-      variant: "destructive",
-    });
-  }, [toast]);
-
-  // Handle raw SSE messages for debugging
-  const handleRawMessage = useCallback((jobId: string, rawData: string, parsedData: any) => {
-    console.log(`🔍 RAW SSE DEBUG for ${jobId}:`, rawData);
-    
-    // Add debug message to chat
-    const debugMessage: Message = {
-      role: "system",
-      text: `🔍 RAW SSE MESSAGE (Job: ${jobId.substring(0, 12)}...):\n\`\`\`json\n${rawData}\n\`\`\``,
-      timestamp: new Date(),
-      messageType: "debug",
-      jobId,
-    };
-    setMessages(prev => [...prev, debugMessage]);
-
-    // If completed, add parsed info
-    if (parsedData?.status?.toLowerCase() === 'completed') {
-      const imageUrl = parsedData?.data?.image_path || parsedData?.data?.imageUrl;
-      const parsedDebug: Message = {
-        role: "system",
-        text: `✅ PARSED: Status=${parsedData.status}, Image URL=${imageUrl || 'NOT FOUND'}`,
-        timestamp: new Date(),
-        messageType: "debug",
-        jobId,
-      };
-      setMessages(prev => [...prev, parsedDebug]);
-    }
-  }, []);
-
-  // Multi-job SSE hook
-  const { 
-    processingJobs, 
-    startMonitoring,
-    isProcessing 
-  } = useMultiJobSSE({
-    email: sseEmail,
-    apiUrl,
-    onJobComplete: handleJobComplete,
-    onJobError: handleJobError,
-    onRawMessage: handleRawMessage,
-  });
-
-  // Start monitoring jobs and add processing messages to chat
-  const startMonitoringJob = useCallback((jobId: string) => {
-    console.log('🎯 Starting to monitor job:', jobId);
-    
-    // Add processing message to chat
-    const processingMessage: Message = {
-      role: "assistant",
-      text: "Generating image...",
-      timestamp: new Date(),
-      messageType: "processing",
-      jobId,
-    };
-    setMessages(prev => [...prev, processingMessage]);
-    
-    // Start SSE monitoring
-    startMonitoring(jobId);
-  }, [startMonitoring]);
-
-  // Helper to extract URLs from tool response
-  const extractUrlsFromResponse = (data: any): string[] => {
-    const urls: string[] = [];
-    const urlRegex = /https?:\/\/[^\s"'<>]+/g;
-    
-    if (typeof data === 'string') {
-      const matches = data.match(urlRegex);
-      if (matches) urls.push(...matches);
-    } else if (data && typeof data === 'object') {
-      const jsonStr = JSON.stringify(data);
-      const matches = jsonStr.match(urlRegex);
-      if (matches) urls.push(...matches);
-    }
-    
-    return [...new Set(urls)]; // Remove duplicates
-  };
-
-  // Helper to extract image URL from Pub/Sub data
-  const extractImageUrl = (data: any): string | null => {
-    // Check common field names for image URLs
-    if (data?.imageUrl) return data.imageUrl;
-    if (data?.image_url) return data.image_url;
-    if (data?.resultUrl) return data.resultUrl;
-    if (data?.result_url) return data.result_url;
-    if (data?.url) return data.url;
-    
-    // Try to extract URL from string content
-    if (typeof data === 'string') {
-      const urlMatch = data.match(/https?:\/\/[^\s]+\.(png|jpg|jpeg|webp)/);
-      if (urlMatch) return urlMatch[0];
-    }
-    
-    // Check if URL is nested in data object
-    if (data?.data && typeof data.data === 'object') {
-      return extractImageUrl(data.data);
-    }
-    
-    return null;
-  };
-
-  // Helper to get file type from URL
-  const getFileType = (url: string): string => {
-    if (url.match(/\.(png|jpg|jpeg|webp|gif)$/i)) return 'image';
-    if (url.match(/\.(glb|gltf|fbx|obj)$/i)) return '3D model';
-    if (url.match(/\.(mp4|avi|mov)$/i)) return 'video';
-    return 'file';
-  };
+  //const apiUrl = "http://localhost:8000";
+  const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app".replace(/\/+$/, "");
+  const API = apiUrl;
  
   // Token capture from URL
   useEffect(() => {
@@ -349,6 +172,9 @@ const Index = () => {
   const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
+    const previousMessageCount = messages.length;
+    const currentHasImages = !!(imageUrls && imageUrls.length > 0);
+
     // Store uploaded image URLs and blob paths in session state for agent reuse
     if (imageUrls && imageUrls.length > 0) {
       setUploadedImageUrls(imageUrls);
@@ -432,6 +258,21 @@ const Index = () => {
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
+        const nowIso = new Date().toISOString();
+
+        // Optimistically update sidebar without triggering full reload
+        window.dispatchEvent(
+          new CustomEvent("refreshChatSidebar", {
+            detail: {
+              session: {
+                session_id: data.session_id,
+                created_at: nowIso,
+                updated_at: nowIso,
+                message_count: previousMessageCount + 1, // user message just sent
+              },
+            },
+          })
+        );
         
         // Generate chat title for first message in new chat
         const isFirstMessage = messages.length === 0 || (!sessionId && data.session_id);
@@ -468,16 +309,6 @@ const Index = () => {
         //     // Fallback to default title format - already handled by ChatSidebar
         //   }
         // }
-      }
-
-      // Check if there are pending jobs to track via SSE
-      if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
-        console.log('🎯 Starting to track jobs:', data.pending_jobs);
-        
-        // Start monitoring each job with SSE
-        data.pending_jobs.forEach((jobId: string) => {
-          startMonitoringJob(jobId);
-        });
       }
 
       // Append any messages from the backend - filter out system messages only
@@ -577,16 +408,6 @@ const Index = () => {
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
-      }
-
-      // Check if there are pending jobs to track via SSE
-      if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
-        console.log('🎯 Starting to track jobs from tool confirmation:', data.pending_jobs);
-        
-        // Start monitoring each job with SSE
-        data.pending_jobs.forEach((jobId: string) => {
-          startMonitoringJob(jobId);
-        });
       }
 
       // Append any messages from the backend - filter out system messages only
@@ -1105,11 +926,6 @@ The process:
                     Video Gallery
                     <span className="text-[10px] italic ml-1 text-muted-foreground">Coming Soon</span>
                   </TabsTrigger>
-                  <TabsTrigger value="game-design-pro" className="gap-2 relative" disabled>
-                    <Sparkles className="w-4 h-4" />
-                    Game Design Pro
-                    <span className="text-[10px] italic ml-1 text-muted-foreground">Coming Soon</span>
-                  </TabsTrigger>
                 </TabsList>
                 
                 <button
@@ -1168,12 +984,6 @@ The process:
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
-      
-      {/* Floating generation status indicator */}
-      <GenerationIndicatorFloating 
-        count={processingJobs.length} 
-        status={processingJobs[0]?.status} 
-      />
     </div>
   );
 };
