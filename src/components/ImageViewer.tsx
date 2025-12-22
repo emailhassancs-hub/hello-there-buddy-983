@@ -100,6 +100,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       // Extract images from the nested data property
       const imageList = data.data || [];
       
+      // Use hasMore from API response instead of calculating from filtered length
+      const apiHasMore = data.hasMore === true;
+      
       // Map the response to ImageItem format
       const mapped: ImageItem[] = imageList.map((item: any) => ({
         name: item.prompt || item.id || 'generated-image.png',
@@ -117,11 +120,11 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       if (append) {
         setImages(prev => [...prev, ...sorted]);
         setOffset(prev => prev + LIMIT);
-        setHasMore(sorted.length === LIMIT);
+        setHasMore(apiHasMore);
       } else {
         setImages(sorted);
         setOffset(LIMIT);
-        setHasMore(sorted.length === LIMIT);
+        setHasMore(apiHasMore);
       }
     } catch (error) {
       toast({
@@ -185,6 +188,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       // Extract images from the nested data property
       const imageList = data.data || [];
       
+      // Use hasMore from API response instead of calculating from filtered length
+      const apiHasMore = data.hasMore === true;
+      
       // Map the response to EditedImageItem format - only COMPLETED items
       const mapped: EditedImageItem[] = imageList
         .filter((item: any) => item.status === "COMPLETED")
@@ -213,11 +219,11 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       if (append) {
         setEditedImages(prev => [...prev, ...sorted]);
         setOffsetEdited(prev => prev + LIMIT);
-        setHasMoreEdited(sorted.length === LIMIT);
+        setHasMoreEdited(apiHasMore);
       } else {
         setEditedImages(sorted);
         setOffsetEdited(LIMIT);
-        setHasMoreEdited(sorted.length === LIMIT);
+        setHasMoreEdited(apiHasMore);
       }
     } catch (error) {
       toast({
