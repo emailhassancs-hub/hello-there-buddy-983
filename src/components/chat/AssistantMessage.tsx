@@ -39,14 +39,21 @@ export const AssistantMessage = ({
   // Check if message has image content
   const parsed = parseToolResponse(message.text);
   const isPlainImageUrl = isImageUrl(message.text.trim());
+  const status = parsed?.status?.toLowerCase();
+  const isProcessing = status === "processing" || status === "listening";
+  const isCompleted = status === "completed";
+  
   const hasImageContent = Boolean(
     (parsed && (parsed.thumbnail_url || parsed.img_url || parsed.image_path || parsed.type === "image" || parsed.type === "image_generation")) ||
     isPlainImageUrl ||
     is3DModelTool(message.toolName)
   );
 
-  // Don't render text if message is just an image URL or contains parsed image content (hide the JSON/text, show only image)
-  const shouldShowText = !isPlainImageUrl && !hasImageContent && cleanedText.length > 0;
+  // Don't render text if:
+  // - message is just an image URL
+  // - contains parsed image content (hide the JSON/text, show only image)
+  // - status is processing/listening (hide JSON, show loading instead)
+  const shouldShowText = !isPlainImageUrl && !hasImageContent && !isProcessing && cleanedText.length > 0;
 
   return (
     <div className="flex justify-start">
@@ -61,16 +68,18 @@ export const AssistantMessage = ({
           <TypewriterText text={cleanedText} speed={3} />
         )}
 
-        {/* Render image content after text */}
-        <MessageImageRenderer
-          message={message}
-          apiUrl={apiUrl}
-          onImageZoom={onImageZoom}
-          onModelSelect={onModelSelect}
-        />
+        {/* Render image content after text - only if status is completed or no status (for backward compatibility) */}
+        {(!status || isCompleted) && (
+          <MessageImageRenderer
+            message={message}
+            apiUrl={apiUrl}
+            onImageZoom={onImageZoom}
+            onModelSelect={onModelSelect}
+          />
+        )}
 
-        {/* Render tool response collapsible */}
-        {message.toolName && message.text && !hasImageContent && (
+        {/* Render tool response collapsible - only if not processing/listening */}
+        {message.toolName && message.text && !hasImageContent && !isProcessing && (
           <ToolResponseCollapsible
             toolName={message.toolName}
             text={message.text}

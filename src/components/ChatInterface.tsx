@@ -8,7 +8,7 @@ import toolsIcon from "@/assets/tools-icon.png";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Message, ChatInterfaceProps, ToolCall } from "./chat/types";
-import { filterMessages, validateToolArgs } from "./chat/utils";
+import { filterMessages, validateToolArgs, parseToolResponse } from "./chat/utils";
 import { UserMessage } from "./chat/UserMessage";
 import { AssistantMessage } from "./chat/AssistantMessage";
 import { ToolConfirmationUI } from "./chat/ToolConfirmationUI";
@@ -83,6 +83,60 @@ const ChatInterface = ({
   const filteredMessages = useMemo(() => {
     return filterMessages(messages);
   }, [messages]);
+
+  // Check if any recent message has processing or listening status, or is an image generation tool without completed status
+  const isProcessingStatus = useMemo(() => {
+    if (filteredMessages.length === 0) return false;
+    
+    // Check the last few assistant messages (up to 3)
+    const recentMessages = filteredMessages
+      .filter(msg => msg.role === "assistant")
+      .slice(-3);
+    
+    for (const message of recentMessages) {
+      const parsed = parseToolResponse(message.text);
+      
+      // Check if status is processing or listening
+      if (parsed?.status) {
+        const status = parsed.status.toLowerCase();
+        if (status === "processing" || status === "listening") {
+          return true;
+        }
+        // If status is completed, don't show loading for this message
+        if (status === "completed") {
+          continue;
+        }
+      }
+      
+      // Check if it's an image generation tool without completed status or image content
+      const isImageGenerationTool = message.toolName?.includes('image_generation') || 
+                                     message.toolName?.includes('text_to_image');
+      
+      if (isImageGenerationTool) {
+        // Check if there's image content
+        const hasImageContent = parsed && (
+          parsed.image_path || 
+          parsed.img_url || 
+          parsed.thumbnail_url
+        );
+        
+        // If parsed is null (not valid JSON), assume it's processing
+        if (!parsed) {
+          return true;
+        }
+        
+        // If there's no image content and status is not completed, show loading
+        if (!hasImageContent) {
+          const status = parsed?.status?.toLowerCase();
+          if (!status || (status !== "completed" && status !== "error" && status !== "failed")) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    return false;
+  }, [filteredMessages]);
 
   // Scroll to bottom when messages change
   const scrollToBottom = useCallback(() => {
@@ -413,7 +467,7 @@ const ChatInterface = ({
           </div>
         ))}
 
-        {isGenerating && (
+        {(isGenerating || isProcessingStatus) && (
           <div className="flex justify-start">
             <div className="bg-chat-assistant-bubble text-chat-assistant-foreground p-4 rounded-2xl shadow-soft border border-border/20 mr-4">
               <div className="flex items-center space-x-2">
@@ -422,7 +476,9 @@ const ChatInterface = ({
                   <div className="w-2 h-2 bg-primary rounded-full typing-indicator" style={{ animationDelay: "0.2s" }}></div>
                   <div className="w-2 h-2 bg-primary rounded-full typing-indicator" style={{ animationDelay: "0.4s" }}></div>
                 </div>
-                <span className="text-sm shimmer-text">Processing request...</span>
+                <span className="text-sm shimmer-text">
+                  {isProcessingStatus ? "Processing your request..." : "Processing request..."}
+                </span>
               </div>
             </div>
           </div>

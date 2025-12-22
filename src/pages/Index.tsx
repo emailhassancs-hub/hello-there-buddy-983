@@ -429,7 +429,7 @@ const Index = () => {
             }
             
             return {
-              role: msg.type === "ai" ? "assistant"  : msg.type =='tool' ? 'tool' : "user",
+              role: msg.type === "ai" || "tool" ? "assistant"   : "user",
               text: msg.content || "",
               toolName: msg.type === "tool" ? msg.name : undefined,
               jobId,
