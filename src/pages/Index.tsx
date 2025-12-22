@@ -550,19 +550,19 @@ const Index = () => {
     
     // Update message with final status
     console.log(messages,'here is prev message before update')
-    setMessages((prev) =>
-      prev.map((msg) => {
-        // console.log('single message---------------------<<<<<<<<<<',msg)
+    setMessages((prev: Message[]) =>
+      prev.map((msg: any) => {
+        console.log('single message---------------------<<<<<<<<<<',msg)
         if ((msg as any).jobId === jobId) {
           let updatedText: any = msg.text;
           try {
             const parsed = JSON.parse(msg.text);
             if (parsed.job_id === jobId) {
-              updatedText = {
+              updatedText = JSON.stringify({
                 ...parsed,
                 ...finalStatus.data,
                 status: finalStatus.status
-              };
+              });
 
             }
           } catch {
@@ -572,16 +572,16 @@ const Index = () => {
 
           console.log({
             ...msg,
-            text: updatedText?.image_path || updatedText,
+            text: updatedText,
             role: 'assistant'
           },'final objecttttttttttttttttttttttttttttttttttttttttttttttttttttttt')
           
           return {
             ...msg,
-            text: updatedText?.image_path || updatedText,
+            text: updatedText,
             role: 'assistant',
-            status: updatedText?.status
-          };
+            status: finalStatus.status || 'COMPLETED'
+          }
         }
         return msg;
       })

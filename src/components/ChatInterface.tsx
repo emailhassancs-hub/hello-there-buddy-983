@@ -106,7 +106,7 @@ const ChatInterface = ({
 
     try {
       const parsed = JSON.parse(lastMessage.text);
-      if (parsed?.img_url) {
+      if (parsed?.img_url || parsed?.image_path || parsed?.thumbnail_url) {
         onImageGeneratedRef.current?.();
       }
       if (parsed?.thumbnail_url && lastMessage.toolName?.includes('text_to_3d')) {

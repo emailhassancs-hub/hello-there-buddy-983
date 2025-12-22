@@ -31,7 +31,6 @@ export function useSSE({
   autoReconnect,
   reconnectDelay,
 }: UseSSEOptions) {
-  const [status, setStatus] = useState<SSEStatusUpdate | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Event | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -151,9 +150,8 @@ export function useSSE({
             console.log('event==========>>>',event);
           const data: SSEStatusUpdate = JSON.parse(event.data);
           
-          setStatus(data);
-          onStatusUpdate?.(data);
-          
+          // onStatusUpdate?.(data);
+          // onStatusUpdate?.(data);
           // Check if job is complete
           console.log('data.status==========>>>',data.status)
           if (data.status.toLocaleLowerCase() === 'completed' || data.status.toLocaleLowerCase() === 'error' || data.status.toLocaleLowerCase() === 'failed') {
@@ -219,7 +217,6 @@ export function useSSE({
   }, [cleanup]);
 
   return {
-    status,
     isConnected,
     error,
     reconnect,

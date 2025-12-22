@@ -96,6 +96,29 @@ export const MessageImageRenderer = ({
     );
   }
 
+  // Check for image_path (new format for image generation)
+  if (parsed.image_path) {
+    return (
+      <div className="space-y-2">
+        <ImageWithFallback
+          src={parsed.image_path}
+          alt={parsed.prompt || parsed.job_id || 'Generated image'}
+          className="rounded-xl max-w-[320px] h-auto"
+          style={{ marginTop: '8px' }}
+          onImageClick={onImageZoom}
+        />
+        {parsed.job_id && (
+          <p className="text-xs text-muted-foreground italic">Job ID: {parsed.job_id}</p>
+        )}
+        {parsed.prompt && (
+          <p className="text-xs text-muted-foreground italic whitespace-pre-wrap break-words">
+            {parsed.prompt}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   // Check for img_url
   if (parsed.img_url) {
     return (
@@ -116,8 +139,8 @@ export const MessageImageRenderer = ({
     );
   }
 
-  // Check for type: "image"
-  if (parsed.type === "image") {
+  // Check for type: "image" or "image_generation"
+  if (parsed.type === "image" || parsed.type === "image_generation") {
     const imagePath = parsed.path || parsed.filename;
     const prompt = parsed.prompt || "Generated image";
 

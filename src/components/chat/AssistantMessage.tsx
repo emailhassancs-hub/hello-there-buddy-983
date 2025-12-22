@@ -40,13 +40,13 @@ export const AssistantMessage = ({
   const parsed = parseToolResponse(message.text);
   const isPlainImageUrl = isImageUrl(message.text.trim());
   const hasImageContent = Boolean(
-    (parsed && (parsed.thumbnail_url || parsed.img_url || parsed.type === "image")) ||
+    (parsed && (parsed.thumbnail_url || parsed.img_url || parsed.image_path || parsed.type === "image" || parsed.type === "image_generation")) ||
     isPlainImageUrl ||
     is3DModelTool(message.toolName)
   );
 
-  // Don't render text if message is just an image URL (hide the URL text, show only image)
-  const shouldShowText = !isPlainImageUrl && cleanedText.length > 0;
+  // Don't render text if message is just an image URL or contains parsed image content (hide the JSON/text, show only image)
+  const shouldShowText = !isPlainImageUrl && !hasImageContent && cleanedText.length > 0;
 
   return (
     <div className="flex justify-start">
