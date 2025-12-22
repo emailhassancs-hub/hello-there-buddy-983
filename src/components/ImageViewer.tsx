@@ -36,13 +36,28 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
   const [editedImages, setEditedImages] = useState<EditedImageItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingEdited, setIsLoadingEdited] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoadingMoreEdited, setIsLoadingMoreEdited] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImageItem | null>(null);
   const [selectedEditedImage, setSelectedEditedImage] = useState<EditedImageItem | null>(null);
   const [activeTab, setActiveTab] = useState("generation");
+  
+  // Pagination state
+  const [offset, setOffset] = useState(0);
+  const [offsetEdited, setOffsetEdited] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [hasMoreEdited, setHasMoreEdited] = useState(true);
+  const LIMIT = 20;
+  
   const { toast } = useToast();
 
-  const fetchImages = async () => {
-    setIsLoading(true);
+  const fetchImages = async (append = false) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+    
     try {
       // Resolve auth token from URL first, then window, then localStorage
       const params = new URLSearchParams(window.location.search);
@@ -57,14 +72,16 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
         });
         setImages([]);
         setIsLoading(false);
+        setIsLoadingMore(false);
         return;
       }
 
       // Cache globally for other components
       (window as any).authToken = authToken;
 
+      const currentOffset = append ? offset : 0;
       const response = await fetch(
-        "https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-generation/history?limit=50&offset=0",
+        `https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-generation/history?limit=${LIMIT}&offset=${currentOffset}`,
         {
           method: "GET",
           headers: {
@@ -83,6 +100,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       // Extract images from the nested data property
       const imageList = data.data || [];
       
+      // Use hasMore from API response instead of calculating from filtered length
+      const apiHasMore = data.hasMore === true;
+      
       // Map the response to ImageItem format
       const mapped: ImageItem[] = imageList.map((item: any) => ({
         name: item.prompt || item.id || 'generated-image.png',
@@ -97,7 +117,15 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
         return timeB - timeA;
       });
 
-      setImages(sorted);
+      if (append) {
+        setImages(prev => [...prev, ...sorted]);
+        setOffset(prev => prev + LIMIT);
+        setHasMore(apiHasMore);
+      } else {
+        setImages(sorted);
+        setOffset(LIMIT);
+        setHasMore(apiHasMore);
+      }
     } catch (error) {
       toast({
         title: "Failed to load images",
@@ -107,11 +135,17 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       console.error("Error fetching images:", error);
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
-  const fetchEditedImages = async () => {
-    setIsLoadingEdited(true);
+  const fetchEditedImages = async (append = false) => {
+    if (append) {
+      setIsLoadingMoreEdited(true);
+    } else {
+      setIsLoadingEdited(true);
+    }
+    
     try {
       // Resolve auth token from URL first, then window, then localStorage
       const params = new URLSearchParams(window.location.search);
@@ -126,14 +160,16 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
         });
         setEditedImages([]);
         setIsLoadingEdited(false);
+        setIsLoadingMoreEdited(false);
         return;
       }
 
       // Cache globally for other components
       (window as any).authToken = authToken;
 
+      const currentOffset = append ? offsetEdited : 0;
       const response = await fetch(
-        "https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-editing/history?limit=50&offset=0",
+        `https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-editing/history?limit=${LIMIT}&offset=${currentOffset}`,
         {
           method: "GET",
           headers: {
@@ -151,6 +187,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       
       // Extract images from the nested data property
       const imageList = data.data || [];
+      
+      // Use hasMore from API response instead of calculating from filtered length
+      const apiHasMore = data.hasMore === true;
       
       // Map the response to EditedImageItem format - only COMPLETED items
       const mapped: EditedImageItem[] = imageList
@@ -177,7 +216,15 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
         return timeB - timeA;
       });
 
-      setEditedImages(sorted);
+      if (append) {
+        setEditedImages(prev => [...prev, ...sorted]);
+        setOffsetEdited(prev => prev + LIMIT);
+        setHasMoreEdited(apiHasMore);
+      } else {
+        setEditedImages(sorted);
+        setOffsetEdited(LIMIT);
+        setHasMoreEdited(apiHasMore);
+      }
     } catch (error) {
       toast({
         title: "Failed to load edited images",
@@ -187,20 +234,29 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       console.error("Error fetching edited images:", error);
     } finally {
       setIsLoadingEdited(false);
+      setIsLoadingMoreEdited(false);
     }
   };
 
   // Fetch on mount and when refreshTrigger changes
   useEffect(() => {
-    fetchImages();
-    fetchEditedImages();
+    setOffset(0);
+    setOffsetEdited(0);
+    setHasMore(true);
+    setHasMoreEdited(true);
+    fetchImages(false);
+    fetchEditedImages(false);
   }, [refreshTrigger]);
 
   // Auto-refresh every 30 seconds (but not on initial mount)
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchImages();
-      fetchEditedImages();
+      setOffset(0);
+      setOffsetEdited(0);
+      setHasMore(true);
+      setHasMoreEdited(true);
+      fetchImages(false);
+      fetchEditedImages(false);
     }, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -222,8 +278,12 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
           variant="black"
           size="sm"
           onClick={() => {
-            fetchImages();
-            fetchEditedImages();
+            setOffset(0);
+            setOffsetEdited(0);
+            setHasMore(true);
+            setHasMoreEdited(true);
+            fetchImages(false);
+            fetchEditedImages(false);
           }}
           disabled={isLoading || isLoadingEdited}
           className="gap-2"
@@ -268,31 +328,52 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {images.map((image, index) => (
-                    <div
-                      key={index}
-                      className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => setSelectedImage(image)}
-                    >
-                      <div className="aspect-square overflow-hidden bg-muted/20">
-                        <img
-                          src={image.url}
-                          alt={image.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.currentTarget.src = "/placeholder.svg";
-                          }}
-                        />
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {images.map((image, index) => (
+                      <div
+                        key={index}
+                        className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => setSelectedImage(image)}
+                      >
+                        <div className="aspect-square overflow-hidden bg-muted/20">
+                          <img
+                            src={image.url}
+                            alt={image.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                        <div className="p-3 border-t border-border/50">
+                          <p className="text-sm font-medium text-foreground line-clamp-2" title={image.name}>
+                            {image.name}
+                          </p>
+                        </div>
                       </div>
-                      <div className="p-3 border-t border-border/50">
-                        <p className="text-sm font-medium text-foreground line-clamp-2" title={image.name}>
-                          {image.name}
-                        </p>
-                      </div>
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <div className="flex justify-center mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => fetchImages(true)}
+                        disabled={isLoadingMore}
+                        className="gap-2"
+                      >
+                        {isLoadingMore ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          "Load More"
+                        )}
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </ScrollArea>
@@ -324,36 +405,57 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {editedImages.map((image, index) => (
-                    <div
-                      key={index}
-                      className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => setSelectedEditedImage(image)}
-                    >
-                      <div className="aspect-square overflow-hidden bg-muted/20">
-                        <img
-                          src={image.outputImagePath}
-                          alt="Edited image"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.currentTarget.src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
-                      <div className="p-3 border-t border-border/50">
-                        <p className="text-sm font-medium text-foreground line-clamp-2" title={image.prompt}>
-                          {image.prompt}
-                        </p>
-                        {image.technique && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {image.technique}
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {editedImages.map((image, index) => (
+                      <div
+                        key={index}
+                        className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => setSelectedEditedImage(image)}
+                      >
+                        <div className="aspect-square overflow-hidden bg-muted/20">
+                          <img
+                            src={image.outputImagePath}
+                            alt="Edited image"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                        <div className="p-3 border-t border-border/50">
+                          <p className="text-sm font-medium text-foreground line-clamp-2" title={image.prompt}>
+                            {image.prompt}
                           </p>
-                        )}
+                          {image.technique && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {image.technique}
+                            </p>
+                          )}
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                  {hasMoreEdited && (
+                    <div className="flex justify-center mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => fetchEditedImages(true)}
+                        disabled={isLoadingMoreEdited}
+                        className="gap-2"
+                      >
+                        {isLoadingMoreEdited ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          "Load More"
+                        )}
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </ScrollArea>

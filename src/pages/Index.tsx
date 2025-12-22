@@ -9,8 +9,8 @@ import { ModelUploader } from "@/components/ModelUploader";
 import ModelGallery from "@/pages/ModelGallery";
 import { apiFetch } from "@/lib/api";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { useMultiJobSSE } from "@/hooks/useMultiJobSSE";
-import { GenerationIndicatorFloating, ProcessingMessage, GeneratedImage, GenerationError } from "@/components/GenerationStatusIndicator";
+import { SSEStatusListener } from "@/components/SSEStatusListener";
+import { SSEStatusUpdate } from "@/hooks/useSSE";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -67,6 +67,7 @@ const Index = () => {
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
+  const [activeJobIds, setActiveJobIds] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
@@ -427,46 +428,46 @@ const Index = () => {
       });
 
       const data = await response.json();
-
+    // console.log(data,'here is data response getting from backend==>>')
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
         
         // Generate chat title for first message in new chat
         const isFirstMessage = messages.length === 0 || (!sessionId && data.session_id);
-        if (isFirstMessage) {
-          try {
-            const titleResponse = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-                },
-                body: JSON.stringify({ message: text }),
-              }
-            );
+        // if (isFirstMessage) {
+        //   try {
+        //     const titleResponse = await fetch(
+        //       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`,
+        //       {
+        //         method: "POST",
+        //         headers: {
+        //           "Content-Type": "application/json",
+        //           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        //         },
+        //         body: JSON.stringify({ message: text }),
+        //       }
+        //     );
 
-            if (titleResponse.ok) {
-              const { title } = await titleResponse.json();
-              if (title) {
-                // Save the generated title to localStorage
-                const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
-                chatNames[data.session_id] = title;
-                localStorage.setItem("chatNames", JSON.stringify(chatNames));
+        //     if (titleResponse.ok) {
+        //       const { title } = await titleResponse.json();
+        //       if (title) {
+        //         // Save the generated title to localStorage
+        //         const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
+        //         chatNames[data.session_id] = title;
+        //         localStorage.setItem("chatNames", JSON.stringify(chatNames));
                 
-                // Wait a brief moment to ensure the title is saved, then refresh
-                setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('refreshChatSidebar'));
-                }, 100);
-              }
-            }
-          } catch (titleError) {
-            console.error("Failed to generate chat title:", titleError);
-            // Fallback to default title format - already handled by ChatSidebar
-          }
-        }
+        //         // Wait a brief moment to ensure the title is saved, then refresh
+        //         setTimeout(() => {
+        //           window.dispatchEvent(new CustomEvent('refreshChatSidebar', { detail: { updateNameOnly: true } }));
+        //         }, 100);
+        //       }
+        //     }
+        //   } catch (titleError) {
+        //     console.error("Failed to generate chat title:", titleError);
+        //     // Fallback to default title format - already handled by ChatSidebar
+        //   }
+        // }
       }
 
       // Check if there are pending jobs to track via SSE
@@ -571,7 +572,8 @@ const Index = () => {
       });
 
       const data = await response.json();
-
+       console.log(data,'data after tool invoke===============>>>>')
+       console.log(messages,'here is before messages==>>>')
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
@@ -589,15 +591,44 @@ const Index = () => {
 
       // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
-        const newMessages = data.messages
+          const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
-          .map((msg: any) => ({
-            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
-            text: msg.content || "",
-            toolName: msg.type === "tool" ? msg.name : undefined,
-          }))
+          .map((msg: any) => {
+            // Extract job_id from tool responses
+            let jobId: string | undefined;
+            try {
+              if (msg.content) {
+                const parsed = JSON.parse(msg.content);
+                if (parsed.job_id) {
+                  jobId = parsed.job_id;
+                }
+              }
+            } catch {
+              // Not JSON, ignore
+            }
+            
+            return {
+              role: msg.type === "ai" ? "assistant"  : msg.type =='tool' ? 'tool' : "user",
+              text: msg.content || "",
+              toolName: msg.type === "tool" ? msg.name : undefined,
+              jobId,
+            };
+          })
           .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+          console.log(newMessages,'new messages==>>>')
         setMessages((prev) => [...prev, ...newMessages]);
+        const jobIds = newMessages
+          .map((m: any) => m.jobId)
+          .filter((id: string | undefined): id is string => !!id);
+        
+        if (jobIds.length > 0) {
+          setActiveJobIds((prev) => {
+            const combined = [...prev, ...jobIds];
+            return Array.from(new Set(combined)); // Remove duplicates
+          });
+        }
+
+        // console.log(jobIds,'here is main job ids i am getting====>>>>')
       }
 
       if (data.status === "awaiting_confirmation") {
@@ -646,6 +677,111 @@ const Index = () => {
     setImageRefreshTrigger(prev => prev + 1);
     queryClient.invalidateQueries({ queryKey: ['user-profile'] });
   }, [queryClient]);
+
+  // Handle SSE status updates
+  const handleSSEStatusUpdate = useCallback((jobId: string, update: SSEStatusUpdate) => {
+    console.log(`[SSE] Status update for job ${jobId}:`, update);
+    
+    // Update the message that contains this job ID
+    // setMessages((prev) =>
+    //   prev.map((msg) => {
+    //     if ((msg as any).jobId === jobId) {
+    //       // Update message text with status if needed
+    //       let updatedText = msg.text;
+    //       try {
+    //         const parsed = JSON.parse(msg.text);
+    //         if (parsed.job_id === jobId) {
+    //           // Update the status in the JSON
+    //           updatedText = JSON.stringify({
+    //             ...parsed,
+    //             status: update.status,
+    //             ...update,
+    //           });
+    //         }
+    //       } catch {
+    //         // Not JSON, keep original text
+    //       }
+          
+    //       return {
+    //         ...msg,
+    //         text: updatedText,
+    //       };
+    //     }
+    //     return msg;
+    //   })
+    // );
+    
+    // // Show toast for important status changes
+    // if (update.status === 'processing') {
+    //   toast({
+    //     title: "Processing",
+    //     description: update.message || "Your request is being processed...",
+    //   });
+    // }
+  }, [toast]);
+
+  // Handle SSE job completion
+  const handleSSEJobComplete = useCallback((jobId: string, finalStatus: SSEStatusUpdate) => {
+    console.log(`[SSE] Job ${jobId} completed:`, finalStatus);
+    
+    // Remove from active jobs
+    setActiveJobIds((prev) => prev.filter((id) => id !== jobId));
+    
+    // Update message with final status
+    console.log(messages,'here is prev message before update')
+    setMessages((prev: Message[]) =>
+      prev.map((msg: any) => {
+        console.log('single message---------------------<<<<<<<<<<',msg)
+        if ((msg as any).jobId === jobId) {
+          let updatedText: any = msg.text;
+          try {
+            const parsed = JSON.parse(msg.text);
+            if (parsed.job_id === jobId) {
+              updatedText = JSON.stringify({
+                ...parsed,
+                ...finalStatus.data,
+                status: finalStatus.status
+              });
+
+            }
+          } catch {
+            // Not JSON, keep original
+          }
+
+
+          console.log({
+            ...msg,
+            text: updatedText,
+            role: 'assistant'
+          },'final objecttttttttttttttttttttttttttttttttttttttttttttttttttttttt')
+          
+          return {
+            ...msg,
+            text: updatedText,
+            role: 'assistant',
+            status: finalStatus.status || 'COMPLETED'
+          }
+        }
+        return msg;
+      })
+    );
+    
+    // Show completion toast
+    if (finalStatus.status.toLocaleLowerCase() === 'completed') {
+      toast({
+        title: "Completed",
+        description: finalStatus.message || "Your request has been completed!",
+      });
+      // Refresh images when job completes
+      handleImageGenerated();
+    } else if (finalStatus.status.toLocaleLowerCase() === 'error' || finalStatus.status.toLocaleLowerCase() === 'failed') {
+      toast({
+        title: "Error",
+        description: finalStatus.message || "An error occurred processing your request.",
+        variant: "destructive",
+      });
+    }
+  }, [toast, handleImageGenerated]);
 
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
     console.log("Optimization form submit:", type, data);
@@ -876,6 +1012,15 @@ The process:
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
+      {/* SSE Status Listener - listens for real-time updates */}
+      <SSEStatusListener
+        apiUrl={apiUrl}
+        email={userProfile?.email || extractEmailFromToken(authToken) || undefined}
+        activeJobIds={activeJobIds}
+        onStatusUpdate={handleSSEStatusUpdate}
+        onJobComplete={handleSSEJobComplete}
+      />
+      
       {/* Hidden file input for model uploads */}
       <input
         id="model-file-input"
