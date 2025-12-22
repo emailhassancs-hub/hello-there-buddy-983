@@ -78,6 +78,12 @@ export const MessageImageRenderer = ({
     return null;
   }
 
+  // Only show images when status is completed or not set (for backward compatibility)
+  const status = parsed?.status?.toLowerCase();
+  if (status && status !== "completed" && (status === "processing" || status === "listening")) {
+    return null;
+  }
+
   // Check for thumbnail_url (priority)
   if (parsed.thumbnail_url) {
     return (
