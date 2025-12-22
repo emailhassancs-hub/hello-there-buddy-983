@@ -6,18 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Calendar, Upload, Download, CheckCircle, Loader2 } from "lucide-react";
 
-interface ModelInfo {
+export interface ModelInfo {
   id: number;
   name: string;
   image: string;
   creationDate: string;
 }
 
-interface OptimizationPresets {
+export interface OptimizationPresets {
   presets: Record<string, { text: string; id: string }[]>;
 }
 
-interface OptimizationResult {
+export interface OptimizationResult {
   id: string;
   name: string;
   preset_name: string;
