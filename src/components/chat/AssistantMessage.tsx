@@ -30,29 +30,34 @@ export const AssistantMessage = ({
   onModelSelect,
   onOptimizationFormSubmit,
 }: AssistantMessageProps) => {
-  if (typeof message.text !== 'string') {
-    return null;
-  }
-
-  const cleanedText = cleanImageTags(message.text);
+  // Handle case where text might be null, undefined, or non-string (images/models come in separate fields)
+  const messageText = typeof message.text === 'string' ? message.text : '';
+  const cleanedText = cleanImageTags(messageText);
   
-  // Check if message has image content
-  const parsed = parseToolResponse(message.text);
-  const isPlainImageUrl = isImageUrl(message.text.trim());
-  const status = parsed?.status?.toLowerCase();
-  const isProcessing = status === "processing" || status === "listening";
-  const isCompleted = status === "completed";
-  
+  // Check for image/model content directly on message object (not in text)
   const hasImageContent = Boolean(
-    (parsed && (parsed.thumbnail_url || parsed.img_url || parsed.image_path || parsed.type === "image" || parsed.type === "image_generation")) ||
-    isPlainImageUrl ||
+    message.image_path ||
+    message.img_url ||
+    message.thumbnail_url ||
+    message.model_url ||
+    message.type === "image" ||
+    message.type === "image_generation" ||
     is3DModelTool(message.toolName)
   );
-
-  // Don't render text if:
-  // - message is just an image URL
-  // - contains parsed image content (hide the JSON/text, show only image)
-  // - status is processing/listening (hide JSON, show loading instead)
+  
+  // Check status directly on message object
+  const status = message.status?.toLowerCase();
+  const isProcessing = status === "processing" || status === "listening";
+  const isCompleted = status === "completed" || status === "complete";
+  
+  // Check if text is a plain image URL (for backward compatibility)
+  const isPlainImageUrl = messageText ? isImageUrl(messageText.trim()) : false;
+  
+  // Only show text if:
+  // - It's not a plain image URL
+  // - There's no image/model content on the message object
+  // - Status is not processing/listening
+  // - Text exists and is not empty
   const shouldShowText = !isPlainImageUrl && !hasImageContent && !isProcessing && cleanedText.length > 0;
 
   return (
@@ -68,8 +73,8 @@ export const AssistantMessage = ({
           <TypewriterText text={cleanedText} speed={3} />
         )}
 
-        {/* Render image content after text - only if status is completed or no status (for backward compatibility) */}
-        {(!status || isCompleted) && (
+        {/* Render image content after text - always render if image content exists */}
+        {hasImageContent && (
           <MessageImageRenderer
             message={message}
             apiUrl={apiUrl}
@@ -79,11 +84,11 @@ export const AssistantMessage = ({
         )}
 
         {/* Render tool response collapsible - only if not processing/listening */}
-        {message.toolName && message.text && !hasImageContent && !isProcessing && (
+        {message.toolName && messageText && !hasImageContent && !isProcessing && (
           <ToolResponseCollapsible
             toolName={message.toolName}
-            text={message.text}
-            isImageUrl={isImageUrl(message.text.trim())}
+            text={messageText}
+            isImageUrl={messageText ? isImageUrl(messageText.trim()) : false}
             onImageClick={onImageZoom}
           />
         )}

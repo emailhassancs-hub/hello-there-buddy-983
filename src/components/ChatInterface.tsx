@@ -94,18 +94,14 @@ const ChatInterface = ({
       .slice(-3);
     
     for (const message of recentMessages) {
-      const parsed = parseToolResponse(message.text);
-      
-      // Check if status is processing or listening
-      if (parsed?.status) {
-        const status = parsed.status.toLowerCase();
-        if (status === "processing" || status === "listening") {
-          return true;
-        }
-        // If status is completed, don't show loading for this message
-        if (status === "completed") {
-          continue;
-        }
+      // Check status directly on message object first (new structure)
+      const status = message.status?.toLowerCase();
+      if (status === "processing" || status === "listening") {
+        return true;
+      }
+      // If status is completed, don't show loading for this message
+      if (status === "completed" || status === "complete") {
+        continue;
       }
       
       // Check if it's an image generation tool without completed status or image content
@@ -113,24 +109,26 @@ const ChatInterface = ({
                                      message.toolName?.includes('text_to_image');
       
       if (isImageGenerationTool) {
-        // Check if there's image content
-        const hasImageContent = parsed && (
-          parsed.image_path || 
-          parsed.img_url || 
-          parsed.thumbnail_url
-        );
-        
-        // If parsed is null (not valid JSON), assume it's processing
-        if (!parsed) {
-          return true;
-        }
+        // Check if there's image content on message object (new structure)
+        const hasImageContent = message.image_path || 
+                                message.img_url || 
+                                message.thumbnail_url;
         
         // If there's no image content and status is not completed, show loading
         if (!hasImageContent) {
-          const status = parsed?.status?.toLowerCase();
-          if (!status || (status !== "completed" && status !== "error" && status !== "failed")) {
+          // Check status on message object
+          if (!status || (status !== "completed" && status !== "complete" && status !== "error" && status !== "failed")) {
             return true;
           }
+        }
+      }
+      
+      // Fallback: Check parsed text for backward compatibility
+      const parsed = parseToolResponse(message.text);
+      if (parsed?.status) {
+        const parsedStatus = parsed.status.toLowerCase();
+        if (parsedStatus === "processing" || parsedStatus === "listening") {
+          return true;
         }
       }
     }
@@ -158,6 +156,15 @@ const ChatInterface = ({
     const key = `${lastMessage.text}|${lastMessage.toolName || ""}`;
     if (lastProcessedImageKeyRef.current === key) return;
 
+    // Check message object first for image fields (new structure)
+    if (lastMessage.image_path || lastMessage.img_url || lastMessage.thumbnail_url) {
+      onImageGeneratedRef.current?.();
+    }
+    if (lastMessage.thumbnail_url && lastMessage.toolName?.includes('text_to_3d')) {
+      setText3dPopup(lastMessage.thumbnail_url);
+    }
+    
+    // Fallback: Check parsed text for backward compatibility
     try {
       const parsed = JSON.parse(lastMessage.text);
       if (parsed?.img_url || parsed?.image_path || parsed?.thumbnail_url) {
