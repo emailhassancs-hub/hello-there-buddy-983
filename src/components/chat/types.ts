@@ -11,12 +11,20 @@ export interface Message {
   toolCalls?: ToolCall[];
   conversationId?: string;
   toolName?: string;
-  status?: "awaiting_confirmation" | "complete";
+  status?: "awaiting_confirmation" | "complete" | "processing" | "listening" | "completed" | "error" | "failed";
   interruptMessage?: string;
   imagePaths?: string[];
   formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: unknown;
   jobId?: string;
+  // Image/model fields - these come from SSE updates, not from text
+  image_path?: string;
+  img_url?: string;
+  thumbnail_url?: string;
+  model_url?: string;
+  prompt?: string;
+  generation_type?: string;
+  type?: string;
 }
 
 export interface ChatInterfaceProps {

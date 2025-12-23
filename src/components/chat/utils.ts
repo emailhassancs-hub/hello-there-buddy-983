@@ -14,7 +14,11 @@ const IMAGE_TAG_PATTERNS = [
 
 const HIDDEN_PARAMS = ["output_path", "input_path", "random_seed", "filename"];
 
-export const cleanImageInputBlocks = (text: string): string => {
+export const cleanImageInputBlocks = (text: string | null | undefined): string => {
+  // Ensure we always have a string
+  if (typeof text !== 'string') {
+    return '';
+  }
   let cleaned = text;
   IMAGE_INPUT_PATTERNS.forEach(pattern => {
     cleaned = cleaned.replace(pattern, '');
@@ -22,7 +26,11 @@ export const cleanImageInputBlocks = (text: string): string => {
   return cleaned.trim();
 };
 
-export const cleanImageTags = (text: string): string => {
+export const cleanImageTags = (text: string | null | undefined): string => {
+  // Ensure we always have a string
+  if (typeof text !== 'string') {
+    return '';
+  }
   let cleaned = text;
   IMAGE_TAG_PATTERNS.forEach(pattern => {
     cleaned = cleaned.replace(pattern, '');
@@ -39,7 +47,10 @@ export const is3DModelTool = (toolName?: string): boolean => {
   );
 };
 
-export const parseToolResponse = (text: string): ParsedToolResponse | null => {
+export const parseToolResponse = (text: string | null | undefined): ParsedToolResponse | null => {
+  if (typeof text !== 'string') {
+    return null;
+  }
   try {
     // Extract JSON from tool response format like "Tool: tool_name { ... }"
     let jsonText = text;
@@ -53,7 +64,10 @@ export const parseToolResponse = (text: string): ParsedToolResponse | null => {
   }
 };
 
-export const isImageUrl = (text: string): boolean => {
+export const isImageUrl = (text: string | null | undefined): boolean => {
+  if (typeof text !== 'string') {
+    return false;
+  }
   const trimmed = text.trim();
   const urlPattern = /^https?:\/\/.+/;
   const imageExtensionPattern = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i;
@@ -71,16 +85,16 @@ export const filterMessages = (messages: Message[]): Message[] => {
   return messages
     .filter(msg => msg.role !== "system")
     .filter(msg => msg.role === "user" || msg.role === "assistant")
-    .map(msg => {
-      if (msg.role === "user") {
-        return {
-          ...msg,
-          text: cleanImageInputBlocks(msg.text)
-        };
-      }
-      return msg;
-    })
-    .filter(msg => msg.text.length > 0 || msg.imagePaths?.length);
+    // .map(msg => {
+    //   if (msg.role === "user") {
+    //     return {
+    //       ...msg,
+    //       text: cleanImageInputBlocks(msg.text)
+    //     };
+    //   }
+    //   return msg;
+    // })
+    // .filter(msg => msg.text.length > 0 || msg.imagePaths?.length);
 };
 
 export const validateToolArgs = (

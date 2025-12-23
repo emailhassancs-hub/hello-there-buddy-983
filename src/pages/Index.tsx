@@ -412,31 +412,42 @@ const Index = () => {
 
       // Append any messages from the backend - filter out system messages only
       if (data.messages && Array.isArray(data.messages)) {
-          const newMessages = data.messages
+        const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => {
-            // Extract job_id from tool responses
             let jobId: string | undefined;
+            let contentParsed: any = undefined;
+            let isJSONParsed = false;
             try {
               if (msg.content) {
-                const parsed = JSON.parse(msg.content);
-                if (parsed.job_id) {
-                  jobId = parsed.job_id;
+                contentParsed = JSON.parse(msg.content);
+                isJSONParsed = true;
+                if (contentParsed && typeof contentParsed === 'object' && contentParsed.job_id) {
+                  jobId = contentParsed.job_id;
                 }
               }
             } catch {
               // Not JSON, ignore
             }
-            
-            return {
-              role: msg.type === "ai" || "tool" ? "assistant"   : "user",
-              text: msg.content || "",
-              toolName: msg.type === "tool" ? msg.name : undefined,
-              jobId,
-            };
+
+             if (isJSONParsed && typeof contentParsed === 'object' && contentParsed !== null) {
+              return {
+                role: msg.type === "ai" || msg.type === "tool" ? "assistant" : "user",
+                ...contentParsed,
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                jobId,
+              };
+            } else {
+              return {
+                role: msg.type === "ai" || msg.type === "tool" ? "assistant" : "user",
+                text: msg.content || "",
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                jobId,
+              };
+            }
           })
-          .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
-          console.log(newMessages,'new messages==>>>')
+          .filter((m: any) => (typeof m.text === "string" ? !isToolInvocation(m.text) : true));
+        console.log(newMessages, 'new messages==>>>')
         setMessages((prev) => [...prev, ...newMessages]);
         const jobIds = newMessages
           .map((m: any) => m.jobId)
@@ -552,33 +563,28 @@ const Index = () => {
     console.log(messages,'here is prev message before update')
     setMessages((prev: Message[]) =>
       prev.map((msg: any) => {
-        console.log('single message---------------------<<<<<<<<<<',msg)
         if ((msg as any).jobId === jobId) {
-          let updatedText: any = msg.text;
-          try {
-            const parsed = JSON.parse(msg.text);
-            if (parsed.job_id === jobId) {
-              updatedText = JSON.stringify({
-                ...parsed,
+          let updatedText: any ={}
+          
+              updatedText ={
+                ...msg,
                 ...finalStatus.data,
                 status: finalStatus.status
-              });
+              };
 
-            }
-          } catch {
-            // Not JSON, keep original
-          }
+          
+          
 
 
           console.log({
             ...msg,
-            text: updatedText,
+            ...updatedText,
             role: 'assistant'
           },'final objecttttttttttttttttttttttttttttttttttttttttttttttttttttttt')
           
           return {
             ...msg,
-            text: updatedText,
+            ...updatedText,
             role: 'assistant',
             status: finalStatus.status || 'COMPLETED'
           }
@@ -799,6 +805,7 @@ The process:
       const loadedMessages: Message[] = data.messages
         .filter((msg: any) => msg.type !== "system")
         .map((msg: any) => ({
+          ...msg,
           role: msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant",
           text: msg.content || "",
           timestamp: new Date(),
