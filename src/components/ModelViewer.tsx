@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, Box, ZoomIn, Palette, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -119,7 +118,6 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [cameraHeight, setCameraHeight] = useState([3]);
   const [bgColor, setBgColor] = useState("#e5e5e5");
   const [token, setToken] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"TEXT_TO_3D" | "IMAGE_TO_3D" | "POST_PROCESS">("TEXT_TO_3D");
   const [isViewerOpen, setIsViewerOpen] = useState(true);
   const { toast } = useToast();
 
@@ -210,7 +208,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   }, [selectedModel]);
 
   // Filter models by active tab
-  const filteredModels = models.filter(m => m.generationType === activeTab && m.status === "COMPLETED");
+  const filteredModels = models.filter(m =>  m.status === "COMPLETED");
 
   const getModelType = (url?: string) => {
     if (!url) return '.glb';
@@ -381,70 +379,57 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
 
         <ResizableHandle withHandle />
 
-        {/* Category Tabs Panel */}
+        {/* Generated Models Panel */}
         <ResizablePanel defaultSize={40} minSize={20}>
           <div className="h-full flex flex-col bg-background">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col min-h-0">
-              <TabsList className="mx-3 mt-2 w-auto gap-2 shrink-0">
-                <TabsTrigger value="TEXT_TO_3D" className="text-xs">
-                  📝 Text to 3D
-                </TabsTrigger>
-                <TabsTrigger value="IMAGE_TO_3D" className="text-xs">
-                  🖼️ Image to 3D
-                </TabsTrigger>
-                <TabsTrigger value="POST_PROCESS" className="text-xs">
-                  🧰 Post Processing
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value={activeTab} className="flex-1 mt-2 min-h-0 m-0">
-                <ScrollArea className="h-full px-3">
-                  <div className="pb-3">
-                    {filteredModels.length === 0 ? (
-                      <div className="text-center py-6 text-muted-foreground text-sm">
-                        No {activeTab === "TEXT_TO_3D" ? "text to 3D" : activeTab === "IMAGE_TO_3D" ? "image to 3D" : "post processing"} models available
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                        {filteredModels.map((model) => (
-                          <div
-                            key={model.id}
-                            className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
-                              selectedModel?.id === model.id
-                                ? 'border-primary shadow-lg'
-                                : 'border-border'
-                            }`}
-                            onClick={() => setInternalSelectedModel(model)}
-                          >
-                            {model.thumbnailUrl ? (
-                              <img 
-                                src={model.thumbnailUrl} 
-                                alt={model.prompt}
-                                className="w-full h-32 object-cover rounded-t-md"
-                                loading="lazy"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = "/placeholder.svg";
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-32 bg-muted rounded-t-md flex items-center justify-center">
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  {getModelType(model.modelUrl).toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                            <div className="p-2">
-                              <p className="text-xs font-medium truncate">{model.prompt}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+            <div className="px-3 pt-3 pb-2 shrink-0">
+              <h3 className="text-base font-semibold">Generated models</h3>
+            </div>
+            <ScrollArea className="h-full px-3 flex-1">
+              <div className="pb-3">
+                {filteredModels.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm">
+                    No models available
                   </div>
-                  <ScrollBar orientation="vertical" />
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
+                ) : (
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                    {filteredModels.map((model) => (
+                      <div
+                        key={model.id}
+                        className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
+                          selectedModel?.id === model.id
+                            ? 'border-primary shadow-lg'
+                            : 'border-border'
+                        }`}
+                        onClick={() => setInternalSelectedModel(model)}
+                      >
+                        {model.thumbnailUrl ? (
+                          <img 
+                            src={model.thumbnailUrl} 
+                            alt={model.prompt}
+                            className="w-full h-32 object-cover rounded-t-md"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-32 bg-muted rounded-t-md flex items-center justify-center">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {getModelType(model.modelUrl).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div className="p-2">
+                          <p className="text-xs font-medium truncate">{model.prompt}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <ScrollBar orientation="vertical" />
+            </ScrollArea>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>

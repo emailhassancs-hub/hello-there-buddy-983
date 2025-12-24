@@ -56,19 +56,30 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
 
   // Fetch first prompts for all sessions when sessions are loaded
   useEffect(() => {
-    if (sessions.length > 0) {
-      sessions.forEach((session) => {
-        const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
-        const cachedPrompts = JSON.parse(localStorage.getItem("sessionFirstPrompts") || "{}");
-        // Only fetch if there's no saved name and we don't have the prompt yet (cached or in state)
-        if (!chatNames[session.session_id] && !cachedPrompts[session.session_id]) {
-          // Use a small delay to batch requests
-          setTimeout(() => {
-            fetchFirstPrompt(session.session_id);
-          }, 0);
-        }
-      });
+    if (sessions.length === 0 || !userProfile?.email) {
+      return;
     }
+
+    const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
+    const cachedPrompts = JSON.parse(localStorage.getItem("sessionFirstPrompts") || "{}");
+    
+    // Batch fetch prompts with a delay to avoid overwhelming the server
+    sessions.forEach((session, index) => {
+      // Skip if already has custom name or cached prompt
+      if (chatNames[session.session_id] || cachedPrompts[session.session_id]) {
+        return;
+      }
+      
+      // Skip if already loading or already fetched
+      if (loadingPrompts.has(session.session_id) || firstPrompts[session.session_id]) {
+        return;
+      }
+      
+      // Stagger requests to avoid race conditions
+      setTimeout(() => {
+        fetchFirstPrompt(session.session_id);
+      }, index * 100); // 100ms delay between each request
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessions.length, apiUrl, userProfile?.email]);
 
@@ -214,16 +225,20 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     // Check localStorage cache again (might have been updated)
     const cachedPrompts = JSON.parse(localStorage.getItem("sessionFirstPrompts") || "{}");
     if (cachedPrompts[sessionId]) {
-      setFirstPrompts((prev) => ({ ...prev, [sessionId]: cachedPrompts[sessionId] }));
+      // Update state asynchronously to avoid render side effects
+      setTimeout(() => {
+        setFirstPrompts((prev) => {
+          if (!prev[sessionId]) {
+            return { ...prev, [sessionId]: cachedPrompts[sessionId] };
+          }
+          return prev;
+        });
+      }, 0);
       return cachedPrompts[sessionId];
     }
     
-    // Otherwise, trigger fetch and show fallback
-    if (!loadingPrompts.has(sessionId)) {
-      fetchFirstPrompt(sessionId);
-    }
-    
     // Fallback while loading or if fetch fails - use date as last resort
+    // DO NOT trigger fetch here - that should only happen in useEffect
     return `Chat - ${new Date(createdAt).toLocaleDateString()}`;
   };
 

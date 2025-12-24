@@ -291,7 +291,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
           className="gap-2"
         >
           <RefreshCw className={`w-4 h-4 ${(isLoading || isLoadingEdited) ? "animate-spin" : ""}`} />
-          Refresh
+          Refresh Images
         </Button>
       </div>
 
