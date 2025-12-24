@@ -1,5 +1,5 @@
 // API utility function for model optimization
-const BASE_URL = "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+const BASE_URL = import.meta.env.VITE_API_BACKEND_URL || "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
 
 export async function apiFetch<T>(
   endpoint: string,

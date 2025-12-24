@@ -19,7 +19,7 @@ export class GenerationStatusStream {
   private email: string;
   private baseUrl: string;
 
-  constructor(jobId: string, email: string, baseUrl: string = 'http://localhost:8000') {
+  constructor(jobId: string, email: string, baseUrl: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000') {
     this.jobId = jobId;
     this.email = email;
     this.baseUrl = baseUrl.replace(/\/+$/, '');

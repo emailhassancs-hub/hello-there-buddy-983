@@ -18,7 +18,7 @@ interface UseGenerationStatusResult {
 export function useGenerationStatus(
   jobId: string | null,
   email: string,
-  apiUrl: string = 'http://localhost:8000'
+  apiUrl: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 ): UseGenerationStatusResult {
   const [status, setStatus] = useState<GenerationStatus | null>(null);
   const [isComplete, setIsComplete] = useState(false);

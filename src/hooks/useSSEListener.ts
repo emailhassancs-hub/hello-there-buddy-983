@@ -30,7 +30,7 @@ export function useSSEListener(
   jobId: string | null,
   email: string,
   onUpdate: SSECallback,
-  apiUrl: string = 'http://localhost:8000'
+  apiUrl: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 ) {
   const eventSourceRef = useRef<EventSource | null>(null);
 

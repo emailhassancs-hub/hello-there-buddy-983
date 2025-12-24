@@ -125,7 +125,7 @@ function SSEConnection({
   onComplete,
   onError,
 }: SSEConnectionProps) {
-  const { status, isConnected, error } = useSSE({
+  const { isConnected, error } = useSSE({
     apiUrl,
     jobId,
     email,
