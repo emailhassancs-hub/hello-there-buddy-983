@@ -16,6 +16,10 @@ interface Session {
   message_count: number;
 }
 
+interface SessionFirstPrompt {
+  [sessionId: string]: string;
+}
+
 interface ChatSidebarProps {
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
@@ -30,8 +34,18 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [firstPrompts, setFirstPrompts] = useState<SessionFirstPrompt>({});
+  const [loadingPrompts, setLoadingPrompts] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const { data: userProfile } = useUserProfile();
+
+  // Load cached prompts from localStorage on mount
+  useEffect(() => {
+    const cachedPrompts = JSON.parse(localStorage.getItem("sessionFirstPrompts") || "{}");
+    if (Object.keys(cachedPrompts).length > 0) {
+      setFirstPrompts(cachedPrompts);
+    }
+  }, []);
 
   // Load all sessions on mount and when user profile loads
   useEffect(() => {
@@ -39,6 +53,24 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
       fetchSessions();
     }
   }, [userProfile?.email]);
+
+  // Fetch first prompts for all sessions when sessions are loaded
+  useEffect(() => {
+    if (sessions.length > 0) {
+      sessions.forEach((session) => {
+        const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
+        const cachedPrompts = JSON.parse(localStorage.getItem("sessionFirstPrompts") || "{}");
+        // Only fetch if there's no saved name and we don't have the prompt yet (cached or in state)
+        if (!chatNames[session.session_id] && !cachedPrompts[session.session_id]) {
+          // Use a small delay to batch requests
+          setTimeout(() => {
+            fetchFirstPrompt(session.session_id);
+          }, 0);
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessions.length, apiUrl, userProfile?.email]);
 
   // Listen for refresh events (e.g., after title generation)
   useEffect(() => {
@@ -93,9 +125,106 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     }
   };
 
+  // Fetch first prompt for a session
+  const fetchFirstPrompt = async (sessionId: string) => {
+    // Skip if already loading or already fetched
+    if (loadingPrompts.has(sessionId) || firstPrompts[sessionId]) {
+      return;
+    }
+
+    // Check localStorage for cached prompt
+    const cachedPrompts = JSON.parse(localStorage.getItem("sessionFirstPrompts") || "{}");
+    if (cachedPrompts[sessionId]) {
+      setFirstPrompts((prev) => ({ ...prev, [sessionId]: cachedPrompts[sessionId] }));
+      return;
+    }
+
+    setLoadingPrompts((prev) => {
+      const next = new Set(prev);
+      next.add(sessionId);
+      return next;
+    });
+
+    try {
+      // Get access token from URL first, then window, then localStorage
+      const params = new URLSearchParams(window.location.search);
+      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const email = userProfile?.email;
+      const exportUrl = email 
+        ? `${apiUrl}/session/${sessionId}/export?email=${encodeURIComponent(email)}`
+        : `${apiUrl}/session/${sessionId}/export`;
+      
+      const response = await fetch(exportUrl, { headers });
+      if (!response.ok) {
+        throw new Error("Failed to fetch first prompt");
+      }
+      
+      const data = await response.json();
+      
+      // Find the first user message
+      const firstUserMessage = data.messages?.find((msg: any) => 
+        msg.type === "human" || (msg.type === "user" && msg.content)
+      );
+      
+      if (firstUserMessage?.content) {
+        // Truncate if too long
+        const prompt = firstUserMessage.content.length > 50 
+          ? firstUserMessage.content.substring(0, 50) + "..." 
+          : firstUserMessage.content;
+        
+        setFirstPrompts((prev) => ({ ...prev, [sessionId]: prompt }));
+        
+        // Cache in localStorage
+        const updatedCache = { ...cachedPrompts, [sessionId]: prompt };
+        localStorage.setItem("sessionFirstPrompts", JSON.stringify(updatedCache));
+      }
+    } catch (error) {
+      console.error("Error fetching first prompt:", error);
+    } finally {
+      setLoadingPrompts((prev) => {
+        const next = new Set(prev);
+        next.delete(sessionId);
+        return next;
+      });
+    }
+  };
+
   const getChatName = (sessionId: string, createdAt: string): string => {
     const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
-    return chatNames[sessionId] || `Chat - ${new Date(createdAt).toLocaleDateString()}`;
+    
+    // If there's a saved name, use it
+    if (chatNames[sessionId]) {
+      return chatNames[sessionId];
+    }
+    
+    // If we have the first prompt, use it
+    if (firstPrompts[sessionId]) {
+      return firstPrompts[sessionId];
+    }
+    
+    // Check localStorage cache again (might have been updated)
+    const cachedPrompts = JSON.parse(localStorage.getItem("sessionFirstPrompts") || "{}");
+    if (cachedPrompts[sessionId]) {
+      setFirstPrompts((prev) => ({ ...prev, [sessionId]: cachedPrompts[sessionId] }));
+      return cachedPrompts[sessionId];
+    }
+    
+    // Otherwise, trigger fetch and show fallback
+    if (!loadingPrompts.has(sessionId)) {
+      fetchFirstPrompt(sessionId);
+    }
+    
+    // Fallback while loading or if fetch fails - use date as last resort
+    return `Chat - ${new Date(createdAt).toLocaleDateString()}`;
   };
 
   const saveChatName = (sessionId: string, name: string) => {
@@ -270,11 +399,11 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                 ) : (
                   <>
                     <div className="flex items-start justify-between gap-1">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-xs truncate dark:text-white">
+                      <div className="flex-1 min-w-0 pr-6">
+                        <h3 className="font-medium text-xs truncate dark:text-white leading-tight mb-0.5">
                           {getChatName(session.session_id, session.created_at)}
                         </h3>
-                        <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-muted-foreground">
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                           <span>{session.message_count}</span>
                           <span>•</span>
                           <span className="truncate">{formatTimestamp(session.updated_at)}</span>
@@ -285,7 +414,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                       )}
                     </div>
                     <div
-                      className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-background/80 rounded"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Button

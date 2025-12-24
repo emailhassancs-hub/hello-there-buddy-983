@@ -32,7 +32,10 @@ cd <YOUR_PROJECT_NAME>
 # Step 3: Install the necessary dependencies.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Create a .env file with your environment variables (see Environment Variables section below)
+# Copy .env.example to .env and update the values if needed
+
+# Step 5: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
@@ -49,6 +52,25 @@ npm run dev
 - Select the "Codespaces" tab.
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
+
+## Environment Variables
+
+This project uses environment variables for API configuration. Create a `.env` file in the root directory with the following variables:
+
+```env
+# Main API URL (Middleware/Agentic) - used for chat, sessions, video list, etc.
+VITE_API_BASE_URL=https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app
+
+# Backend API URL (Nest) - used for image generation history, model optimization, etc.
+VITE_API_BACKEND_URL=https://games-ai-studio-be-nest-347148155332.us-central1.run.app
+
+# Video Streaming URL - used for video playback
+VITE_VIDEO_STREAM_URL=http://35.209.183.202:8000
+```
+
+**Note**: All environment variables in Vite must be prefixed with `VITE_` to be exposed to the client code.
+
+If these variables are not set, the application will use the default production URLs as fallbacks.
 
 ## What technologies are used for this project?
 

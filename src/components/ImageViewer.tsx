@@ -80,8 +80,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       (window as any).authToken = authToken;
 
       const currentOffset = append ? offset : 0;
+      const backendUrl = import.meta.env.VITE_API_BACKEND_URL || "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
       const response = await fetch(
-        `https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-generation/history?limit=${LIMIT}&offset=${currentOffset}`,
+        `${backendUrl}/api/image-generation/history?limit=${LIMIT}&offset=${currentOffset}`,
         {
           method: "GET",
           headers: {
@@ -168,8 +169,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       (window as any).authToken = authToken;
 
       const currentOffset = append ? offsetEdited : 0;
+      const backendUrl = import.meta.env.VITE_API_BACKEND_URL || "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
       const response = await fetch(
-        `https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-editing/history?limit=${LIMIT}&offset=${currentOffset}`,
+        `${backendUrl}/api/image-editing/history?limit=${LIMIT}&offset=${currentOffset}`,
         {
           method: "GET",
           headers: {
@@ -249,17 +251,17 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
   }, [refreshTrigger]);
 
   // Auto-refresh every 30 seconds (but not on initial mount)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOffset(0);
-      setOffsetEdited(0);
-      setHasMore(true);
-      setHasMoreEdited(true);
-      fetchImages(false);
-      fetchEditedImages(false);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setOffset(0);
+  //     setOffsetEdited(0);
+  //     setHasMore(true);
+  //     setHasMoreEdited(true);
+  //     fetchImages(false);
+  //     fetchEditedImages(false);
+  //   }, 30000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">

@@ -67,8 +67,7 @@ const Index = () => {
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
 
-  //const apiUrl = "http://localhost:8000";
-  const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app".replace(/\/+$/, "");
+  const apiUrl = (import.meta.env.VITE_API_BASE_URL || "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app").replace(/\/+$/, "");
   const API = apiUrl;
  
   // Token capture from URL
@@ -273,42 +272,6 @@ const Index = () => {
             },
           })
         );
-        
-        // Generate chat title for first message in new chat
-        const isFirstMessage = messages.length === 0 || (!sessionId && data.session_id);
-        // if (isFirstMessage) {
-        //   try {
-        //     const titleResponse = await fetch(
-        //       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`,
-        //       {
-        //         method: "POST",
-        //         headers: {
-        //           "Content-Type": "application/json",
-        //           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        //         },
-        //         body: JSON.stringify({ message: text }),
-        //       }
-        //     );
-
-        //     if (titleResponse.ok) {
-        //       const { title } = await titleResponse.json();
-        //       if (title) {
-        //         // Save the generated title to localStorage
-        //         const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
-        //         chatNames[data.session_id] = title;
-        //         localStorage.setItem("chatNames", JSON.stringify(chatNames));
-                
-        //         // Wait a brief moment to ensure the title is saved, then refresh
-        //         setTimeout(() => {
-        //           window.dispatchEvent(new CustomEvent('refreshChatSidebar', { detail: { updateNameOnly: true } }));
-        //         }, 100);
-        //       }
-        //     }
-        //   } catch (titleError) {
-        //     console.error("Failed to generate chat title:", titleError);
-        //     // Fallback to default title format - already handled by ChatSidebar
-        //   }
-        // }
       }
 
       // Append any messages from the backend - filter out system messages only
@@ -515,33 +478,33 @@ const Index = () => {
     console.log(`[SSE] Status update for job ${jobId}:`, update);
     
     // Update the message that contains this job ID
-    // setMessages((prev) =>
-    //   prev.map((msg) => {
-    //     if ((msg as any).jobId === jobId) {
-    //       // Update message text with status if needed
-    //       let updatedText = msg.text;
-    //       try {
-    //         const parsed = JSON.parse(msg.text);
-    //         if (parsed.job_id === jobId) {
-    //           // Update the status in the JSON
-    //           updatedText = JSON.stringify({
-    //             ...parsed,
-    //             status: update.status,
-    //             ...update,
-    //           });
-    //         }
-    //       } catch {
-    //         // Not JSON, keep original text
-    //       }
+    setMessages((prev: Message[]) =>
+      prev.map((msg: any) => {
+        if ((msg as any).jobId === jobId) {
+          let updatedText: any ={}
           
-    //       return {
-    //         ...msg,
-    //         text: updatedText,
-    //       };
-    //     }
-    //     return msg;
-    //   })
-    // );
+              updatedText ={
+                ...msg,
+                ...update.data,
+                status: update.status
+              };
+
+          console.log({
+            ...msg,
+            ...updatedText,
+            role: 'assistant'
+          },'final objecttttttttttttttttttttttttttttttttttttttttttttttttttttttt')
+          
+          return {
+            ...msg,
+            ...updatedText,
+            role: 'assistant',
+            status: update.status || 'listening'
+          }
+        }
+        return msg;
+      })
+    );
     
     // // Show toast for important status changes
     // if (update.status === 'processing') {
@@ -571,10 +534,6 @@ const Index = () => {
                 ...finalStatus.data,
                 status: finalStatus.status
               };
-
-          
-          
-
 
           console.log({
             ...msg,
@@ -620,7 +579,8 @@ const Index = () => {
         const params = new URLSearchParams(window.location.search);
         const currentToken = params.get("token") || authToken || (window as any).authToken || localStorage.getItem("auth_token");
         
-        const response = await fetch(`https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/model-optimization/presets`, {
+        const backendUrl = import.meta.env.VITE_API_BACKEND_URL || "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+        const response = await fetch(`${backendUrl}/api/model-optimization/presets`, {
           headers: {
             "Authorization": currentToken ? `Bearer ${currentToken}` : "",
             "Content-Type": "application/json"

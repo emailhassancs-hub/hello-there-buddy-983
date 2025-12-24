@@ -1,6 +1,7 @@
 import { Message } from "./types";
 import { Sparkles, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cleanImageTags, isImageUrl, parseToolResponse, is3DModelTool } from "./utils";
 import TypewriterText from "../TypewriterText";
 import { MessageImageRenderer } from "./MessageImageRenderer";
@@ -34,12 +35,17 @@ export const AssistantMessage = ({
   const messageText = typeof message.text === 'string' ? message.text : '';
   const cleanedText = cleanImageTags(messageText);
   
-  // Check for image/model content directly on message object (not in text)
-  const hasImageContent = Boolean(
+  // Check for actual image/model content (URLs, paths) - used for rendering actual content
+  const hasActualContent = Boolean(
     message.image_path ||
     message.img_url ||
     message.thumbnail_url ||
-    message.model_url ||
+    message.model_url
+  );
+  
+  // Check for image/model content (including tool detection) - used for text display logic
+  const hasImageContent = Boolean(
+    hasActualContent ||
     message.type === "image" ||
     message.type === "image_generation" ||
     is3DModelTool(message.toolName)
@@ -47,7 +53,7 @@ export const AssistantMessage = ({
   
   // Check status directly on message object
   const status = message.status?.toLowerCase();
-  const isProcessing = status === "processing" || status === "listening";
+  const isListening = status === "listening";
   const isCompleted = status === "completed" || status === "complete";
   
   // Check if text is a plain image URL (for backward compatibility)
@@ -56,9 +62,13 @@ export const AssistantMessage = ({
   // Only show text if:
   // - It's not a plain image URL
   // - There's no image/model content on the message object
-  // - Status is not processing/listening
+  // - Status is not listening
   // - Text exists and is not empty
-  const shouldShowText = !isPlainImageUrl && !hasImageContent && !isProcessing && cleanedText.length > 0;
+  const shouldShowText = !isPlainImageUrl && !hasImageContent && !isListening && cleanedText.length > 0;
+  
+  // Show placeholder when status is listening and no actual content exists (generic placeholder)
+  // This works for both image and model generation
+  const shouldShowImagePlaceholder = isListening && !hasActualContent;
 
   return (
     <div className="flex justify-start">
@@ -73,6 +83,23 @@ export const AssistantMessage = ({
           <TypewriterText text={cleanedText} speed={3} />
         )}
 
+        {/* Render image placeholder when status is listening and no image content exists */}
+        {shouldShowImagePlaceholder && (
+          <div className="space-y-2 mt-3">
+            <div className="relative rounded-xl w-[320px] h-[320px] overflow-hidden bg-muted">
+              {/* Shimmer overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shine"></div>
+              {/* Loading spinner and text */}
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                  <span className="text-xs text-muted-foreground font-medium">Generating ...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Render image content after text - always render if image content exists */}
         {hasImageContent && (
           <MessageImageRenderer
@@ -83,8 +110,8 @@ export const AssistantMessage = ({
           />
         )}
 
-        {/* Render tool response collapsible - only if not processing/listening */}
-        {message.toolName && messageText && !hasImageContent && !isProcessing && (
+        {/* Render tool response collapsible - only if not listening */}
+        {message.toolName && messageText && !hasImageContent && !isListening && (
           <ToolResponseCollapsible
             toolName={message.toolName}
             text={messageText}

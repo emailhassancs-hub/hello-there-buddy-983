@@ -151,7 +151,7 @@ export function useSSE({
           const data: SSEStatusUpdate = JSON.parse(event.data);
           
           // onStatusUpdate?.(data);
-          // onStatusUpdate?.(data);
+          onStatusUpdate?.(data);
           // Check if job is complete
           console.log('data.status==========>>>',data.status)
           if (data.status.toLocaleLowerCase() === 'completed' || data.status.toLocaleLowerCase() === 'error' || data.status.toLocaleLowerCase() === 'failed') {
@@ -170,14 +170,37 @@ export function useSSE({
         const readyState = eventSource?.readyState;
         
         console.error('[SSE] Connection error:', err, `ReadyState: ${readyState}`);
-        console.error('[SSE] Connection failed. No retry will be attempted.');
         
-        setError(err);
-        setIsConnected(false);
-        onError?.(err);
+        // ReadyState values:
+        // 0 = CONNECTING (initial connection attempt)
+        // 1 = OPEN (connected and receiving data)
+        // 2 = CLOSED (connection closed)
         
-        // Just cleanup - no retry
-        cleanup();
+        if (readyState === EventSource.CLOSED) {
+          // Connection was closed - could be intentional or error
+          console.warn('[SSE] Connection closed. This might be normal if job completed or server closed connection.');
+          setError(err);
+          setIsConnected(false);
+          onError?.(err);
+          cleanup();
+        } else if (readyState === EventSource.CONNECTING) {
+          // Still trying to connect - wait a bit before treating as error
+          console.warn('[SSE] Connection attempt in progress (ReadyState: CONNECTING). This might be normal during initial connection.');
+          // Don't immediately treat as error - EventSource will retry automatically
+        } else {
+          // Other errors (network issues, CORS, etc.)
+          console.error('[SSE] Connection failed. Possible reasons:');
+          console.error('  - Job may not exist yet on backend (timing issue)');
+          console.error('  - Network connectivity problems');
+          console.error('  - CORS configuration issues');
+          console.error('  - Server might be down or overloaded');
+          console.error('  - Authentication/authorization failed');
+          
+          setError(err);
+          setIsConnected(false);
+          onError?.(err);
+          cleanup();
+        }
       };
     } catch (err) {
       console.error('[SSE] Failed to create EventSource:', err);
