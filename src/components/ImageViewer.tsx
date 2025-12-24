@@ -251,17 +251,17 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
   }, [refreshTrigger]);
 
   // Auto-refresh every 30 seconds (but not on initial mount)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOffset(0);
-      setOffsetEdited(0);
-      setHasMore(true);
-      setHasMoreEdited(true);
-      fetchImages(false);
-      fetchEditedImages(false);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setOffset(0);
+  //     setOffsetEdited(0);
+  //     setHasMore(true);
+  //     setHasMoreEdited(true);
+  //     fetchImages(false);
+  //     fetchEditedImages(false);
+  //   }, 30000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
