@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Image as ImageIcon, RefreshCw, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Image as ImageIcon, RefreshCw, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -140,6 +140,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
     }
   };
 
+
   const fetchEditedImages = async (append = false) => {
     if (append) {
       setIsLoadingMoreEdited(true);
@@ -237,6 +238,51 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
     } finally {
       setIsLoadingEdited(false);
       setIsLoadingMoreEdited(false);
+    }
+  };
+
+
+
+  const handleDownloadImage = async (imageUrl: string, modelName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Fetch the image as a blob
+      const response = await fetch(imageUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const filename = `${modelName}_${timestamp}.png`;
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download started",
+        description: "Image download has started",
+      });
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      toast({
+        title: "Download failed",
+        description: error instanceof Error ? error.message : "Failed to download image. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -338,7 +384,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                         className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
                         onClick={() => setSelectedImage(image)}
                       >
-                        <div className="aspect-square overflow-hidden bg-muted/20">
+                        <div className="aspect-square overflow-hidden bg-muted/20 relative">
                           <img
                             src={image.url}
                             alt={image.name}
@@ -347,6 +393,18 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                               e.currentTarget.src = "/placeholder.svg";
                             }}
                           />
+                          {/* Download button - prominent on hover */}
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 gap-2 font-medium"
+                              onClick={(e) => handleDownloadImage(image.url, 'generated_image',e)}
+                            >
+                              <Download className="h-4 w-4" />
+                              Download
+                            </Button>
+                          </div>
                         </div>
                         <div className="p-3 border-t border-border/50">
                           <p className="text-sm font-medium text-foreground line-clamp-2" title={image.name}>
@@ -415,7 +473,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                         className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
                         onClick={() => setSelectedEditedImage(image)}
                       >
-                        <div className="aspect-square overflow-hidden bg-muted/20">
+                        <div className="aspect-square overflow-hidden bg-muted/20 relative">
                           <img
                             src={image.outputImagePath}
                             alt="Edited image"
@@ -424,6 +482,18 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                               e.currentTarget.src = "/placeholder.svg";
                             }}
                           />
+                          {/* Download button - prominent on hover */}
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 gap-2 font-medium"
+                              onClick={(e) => handleDownloadImage(image.outputImagePath, `edited_image`,e)}
+                            >
+                              <Download className="h-4 w-4" />
+                              Download
+                            </Button>
+                          </div>
                         </div>
                         <div className="p-3 border-t border-border/50">
                           <p className="text-sm font-medium text-foreground line-clamp-2" title={image.prompt}>

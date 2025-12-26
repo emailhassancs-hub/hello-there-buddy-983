@@ -148,6 +148,50 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
     }
   };
 
+  // Download model from card menu
+  const handleDownloadModel = async (modelUrl: string | undefined, prompt: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    if (!modelUrl) {
+      toast({
+        title: "Download Failed",
+        description: "Model URL not available",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+   
+      const response = await fetch(modelUrl);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      const filename = modelUrl.split('/').pop() || `${prompt || 'model'}.glb`;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up blob URL after a short delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
+      
+      toast({
+        title: "Download Started",
+        description: "Your model is being downloaded",
+      });
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast({
+        title: "Download Failed",
+        description: "Unable to download the model",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get("token");
@@ -396,30 +440,45 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                     {filteredModels.map((model) => (
                       <div
                         key={model.id}
-                        className={`cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 ${
+                        className={`group cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 relative ${
                           selectedModel?.id === model.id
                             ? 'border-primary shadow-lg'
                             : 'border-border'
                         }`}
                         onClick={() => setInternalSelectedModel(model)}
                       >
-                        {model.thumbnailUrl ? (
-                          <img 
-                            src={model.thumbnailUrl} 
-                            alt={model.prompt}
-                            className="w-full h-32 object-cover rounded-t-md"
-                            loading="lazy"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/placeholder.svg";
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-32 bg-muted rounded-t-md flex items-center justify-center">
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {getModelType(model.modelUrl).toUpperCase()}
-                            </span>
+                        <div className="relative">
+                          {model.thumbnailUrl ? (
+                            <img 
+                              src={model.thumbnailUrl} 
+                              alt={model.prompt}
+                              className="w-full h-32 object-cover rounded-t-md"
+                              loading="lazy"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/placeholder.svg";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-32 bg-muted rounded-t-md flex items-center justify-center">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {getModelType(model.modelUrl).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          {/* Download button - prominent on hover */}
+                          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8 px-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 gap-1.5 font-medium text-xs"
+                              onClick={(e) => handleDownloadModel(model.modelUrl, 'model', e)}
+                              disabled={!model.modelUrl}
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              Download
+                            </Button>
                           </div>
-                        )}
+                        </div>
                         <div className="p-2">
                           <p className="text-xs font-medium truncate">{model.prompt}</p>
                         </div>
