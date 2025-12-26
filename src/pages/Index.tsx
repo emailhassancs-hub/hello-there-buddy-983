@@ -914,7 +914,7 @@ The process:
                 <div className="h-full flex flex-col">
                   <div className="p-4 border-b flex justify-between items-center">
                     <h3 className="text-lg font-semibold">3D Models</h3>
-                    <ModelUploader 
+                    {/* <ModelUploader 
                       apiUrl={apiUrl} 
                       authToken={authToken || ''} 
                       onUploadComplete={(assetId) => {
@@ -924,7 +924,7 @@ The process:
                           description: "Model uploaded and registered successfully!",
                         });
                       }}
-                    />
+                    /> */}
                   </div>
                   <div className="flex-1 overflow-hidden">
                     <ModelViewer apiUrl={apiUrl} selectedModel={selectedModel} />
