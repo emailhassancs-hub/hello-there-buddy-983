@@ -5,6 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { apiFetch } from "@/lib/api"
 import { useUserProfile } from "@/hooks/use-user-profile"
+import { LocalStorageKeys } from "@/enums/localstorage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -437,10 +438,9 @@ Be friendly and instructive. Use short explanations and examples where needed.`
 
     // Step 2: Send the actual system prompt to backend silently
     try {
-      const API_URL = (import.meta.env.VITE_API_BASE_URL || "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app").replace(/\/+$/, "");
-      // Get access token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      const API_URL = import.meta.env.VITE_API_BASE_URL;
+      // Get access token from localStorage
+      const authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
       
       const headers: HeadersInit = {
         "Content-Type": "application/json",

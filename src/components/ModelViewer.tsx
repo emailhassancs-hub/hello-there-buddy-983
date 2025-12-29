@@ -12,6 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { LocalStorageKeys } from "@/enums/localstorage";
 
 interface ModelData {
   id: string;
@@ -193,8 +194,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get("token");
+    const accessToken = localStorage.getItem(LocalStorageKeys.AccessToken);
     setToken(accessToken);
   }, []);
 
@@ -214,7 +214,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
     if (!token) {
       toast({
         title: "No token found",
-        description: "Please provide a token in the URL query parameter",
+        description: "Please login to access this page",
         variant: "destructive",
       });
       return;

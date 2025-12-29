@@ -75,6 +75,8 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        "v0-blue": "#4169e1", // Royal Blue
+        "v0-purple": "#9400d3", // Dark Violet
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { LocalStorageKeys } from "@/enums/localstorage";
 
 interface ImageItem {
   name: string;
@@ -59,9 +60,8 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
     }
     
     try {
-      // Resolve auth token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      let authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get auth token from localStorage
+      let authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
 
       if (!authToken) {
         console.warn("No auth token available for image history request");
@@ -80,7 +80,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       (window as any).authToken = authToken;
 
       const currentOffset = append ? offset : 0;
-      const backendUrl = import.meta.env.VITE_API_BACKEND_URL || "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+      const backendUrl = import.meta.env.VITE_API_BACKEND_URL;
       const response = await fetch(
         `${backendUrl}/api/image-generation/history?limit=${LIMIT}&offset=${currentOffset}`,
         {
@@ -149,9 +149,8 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
     }
     
     try {
-      // Resolve auth token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      let authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get auth token from localStorage
+      let authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
 
       if (!authToken) {
         console.warn("No auth token available for edited image history request");
@@ -170,7 +169,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       (window as any).authToken = authToken;
 
       const currentOffset = append ? offsetEdited : 0;
-      const backendUrl = import.meta.env.VITE_API_BACKEND_URL || "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+      const backendUrl = import.meta.env.VITE_API_BACKEND_URL || "http://localhost:8000";
       const response = await fetch(
         `${backendUrl}/api/image-editing/history?limit=${LIMIT}&offset=${currentOffset}`,
         {

@@ -8,8 +8,9 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { RefreshCw, Download, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ModelViewer from "@/components/ModelViewer";
+import { LocalStorageKeys } from "@/enums/localstorage";
 
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app").replace(/\/+$/, "");
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 interface ModelItem {
   id: string;
@@ -43,8 +44,7 @@ export default function ModelGallery() {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get("token");
+    const accessToken = localStorage.getItem(LocalStorageKeys.AccessToken);
     setToken(accessToken);
   }, []);
 
@@ -52,7 +52,7 @@ export default function ModelGallery() {
     if (!token) {
       toast({
         title: "No token found",
-        description: "Please provide a token in the URL query parameter",
+        description: "Please login to access this page",
         variant: "destructive",
       });
       setLoading(false);

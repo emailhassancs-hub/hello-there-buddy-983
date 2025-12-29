@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { UserInfo } from "@/components/UserInfo";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { LocalStorageKeys } from "@/enums/localstorage";
 
 interface Session {
   session_id: string;
@@ -101,9 +102,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     const loadingState = !isRefreshing; // Only set main loading if not refreshing
     if (loadingState) setIsLoading(true);
     try {
-      // Get access token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get access token from localStorage
+      const authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
       
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -157,9 +157,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     });
 
     try {
-      // Get access token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get access token from localStorage
+      const authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
       
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -275,9 +274,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     }
 
     try {
-      // Get access token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get access token from localStorage
+      const authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
       
       const headers: HeadersInit = {
         "Content-Type": "application/json",

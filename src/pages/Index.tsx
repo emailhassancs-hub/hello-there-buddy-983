@@ -9,6 +9,7 @@ import { ModelUploader } from "@/components/ModelUploader";
 import ModelGallery from "@/pages/ModelGallery";
 import { apiFetch } from "@/lib/api";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { LocalStorageKeys } from "@/enums/localstorage";
 import { SSEStatusListener } from "@/components/SSEStatusListener";
 import { SSEStatusUpdate } from "@/hooks/useSSE";
 
@@ -67,41 +68,14 @@ const Index = () => {
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
 
-  const apiUrl = (import.meta.env.VITE_API_BASE_URL || "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app").replace(/\/+$/, "");
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
   const API = apiUrl;
  
-  // Token capture from URL
+  // Load token from localStorage only
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    if (token) {
-      console.log("🔑 Token captured from URL:", token);
-      setAuthToken(token);
-      // Store globally for child components and API calls
-      (window as any).authToken = token;
-      localStorage.setItem("auth_token", token);
-      
-      fetch(`${apiUrl}/store-token`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ token }),
-      })
-        .then(res => res.json())
-        .then(data => console.log("✅ Token stored successfully on backend:", data))
-        .catch(err => console.error("❌ Error storing token on backend:", err));
-    } else {
-      // Try to load from localStorage or window as fallback
-      const storedToken = localStorage.getItem("auth_token") || (window as any).authToken;
-      if (storedToken) {
-        console.log("🔑 Token loaded from storage:", storedToken);
-        setAuthToken(storedToken);
-        (window as any).authToken = storedToken;
-      } else {
-        console.warn("⚠️ No token found in URL or storage");
-      }
+    const storedToken = localStorage.getItem(LocalStorageKeys.AccessToken);
+    if (storedToken) {
+      setAuthToken(storedToken);
     }
   }, []);
 
@@ -575,11 +549,10 @@ const Index = () => {
     if (type === "model-selected") {
       // Fetch presets before showing optimization config form
       try {
-        // Get the latest token from URL, window, or localStorage
-        const params = new URLSearchParams(window.location.search);
-        const currentToken = params.get("token") || authToken || (window as any).authToken || localStorage.getItem("auth_token");
+        // Get token from localStorage
+        const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
         
-        const backendUrl = import.meta.env.VITE_API_BACKEND_URL || "https://games-ai-studio-be-nest-347148155332.us-central1.run.app";
+        const backendUrl = import.meta.env.VITE_API_BACKEND_URL;
         const response = await fetch(`${backendUrl}/api/model-optimization/presets`, {
           headers: {
             "Authorization": currentToken ? `Bearer ${currentToken}` : "",
@@ -610,9 +583,8 @@ const Index = () => {
       // Find the preset text for the selected strength
       const presetText = presets?.presets?.[optType]?.find((p: any) => p.id === strength)?.text || strength;
       
-      // Extract the ACCESS_TOKEN from URL, window, or localStorage
-      const params = new URLSearchParams(window.location.search);
-      const accessToken = params.get("token") || authToken || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get ACCESS_TOKEN from localStorage
+      const accessToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
       
       // Build the payload with ACCESS_TOKEN
       const payload = {
