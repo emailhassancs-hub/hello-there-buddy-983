@@ -28,7 +28,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Cloud Run requires the app to listen on port 8080
-EXPOSE 8080
+# Cloud Run requires the app to listen on port 7071
+EXPOSE 7071
 
 CMD ["nginx", "-g", "daemon off;"]
