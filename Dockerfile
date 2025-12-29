@@ -1,7 +1,7 @@
 # ------------------------
 # Stage 1: Build with npm
 # ------------------------
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copy only package files first
@@ -20,22 +20,24 @@ ENV VITE_API_BASE_URL=https://games-ai-studio-middleware-agentic-main-3471481553
 # Build the application
 RUN npm run build
 
-
 # ------------------------
-# Stage 2: Serve via nginx
+# Stage 2: Serve with Vite preview
 # ------------------------
-FROM nginx:alpine
+FROM node:20-alpine AS runner
+WORKDIR /app
 
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
+# Copy built static files from build stage
+COPY --from=build /app/dist ./dist
 
-# Copy static build files
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy package.json and install vite
+COPY package.json ./
+RUN npm install vite --legacy-peer-deps
 
 # Cloud Run requires the app to listen on port 7071
 EXPOSE 7071
 
-CMD ["nginx", "-g", "daemon off;"]
+# Set the port
+ENV PORT=7071
+
+# Start Vite preview server
+CMD ["npx", "vite", "preview", "--host", "0.0.0.0", "--port", "7071", "--dir", "dist"]
