@@ -11,6 +11,13 @@ RUN npm ci --legacy-peer-deps
 
 # Now copy source
 COPY . .
+
+# Set environment variables for build (EDIT THESE VALUES)
+ENV NODE_ENV=production
+ENV VITE_API_BACKEND_URL=https://games-ai-studio-be-nest-347148155332.us-central1.run.app
+ENV VITE_API_BASE_URL=https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app
+
+# Build the application
 RUN npm run build
 
 
