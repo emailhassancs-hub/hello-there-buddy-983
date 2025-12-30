@@ -381,11 +381,12 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
   }, [runningTasks.length, selectedModel])
 
   // Send system prompt to /ask endpoint when component is active
-  useEffect(() => {
-    if (isActive && optimizationPresets && models.length > 0) {
-      sendSystemPromptToAgent()
-    }
-  }, [isActive, optimizationPresets, models])
+  // DISABLED: Removed automatic /ask call on tab click or refresh
+  // useEffect(() => {
+  //   if (isActive && optimizationPresets && models.length > 0) {
+  //     sendSystemPromptToAgent()
+  //   }
+  // }, [isActive, optimizationPresets, models])
 
   const sendSystemPromptToAgent = async () => {
     const systemPrompt = `User ka model upload ho gaya!

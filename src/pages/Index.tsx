@@ -12,6 +12,7 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import { LocalStorageKeys } from "@/enums/localstorage";
 import { SSEStatusListener } from "@/components/SSEStatusListener";
 import { SSEStatusUpdate } from "@/hooks/useSSE";
+import { extractImageUrls } from "@/components/chat/utils";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -255,11 +256,26 @@ const Index = () => {
       if (data.messages && Array.isArray(data.messages)) {
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
-          .map((msg: any) => ({
-            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
-            text: msg.content || "",
-            toolName: msg.type === "tool" ? msg.name : undefined,
-          }))
+          .map((msg: any) => {
+            const content = msg.content || "";
+            const role = msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user";
+            
+            // Extract image URLs from content for user messages
+            let imagePaths: string[] | undefined;
+            if (role === "user" && content) {
+              const extractedUrls = extractImageUrls(content);
+              if (extractedUrls.length > 0) {
+                imagePaths = extractedUrls;
+              }
+            }
+            
+            return {
+              role,
+              text: content,
+              toolName: msg.type === "tool" ? msg.name : undefined,
+              imagePaths,
+            };
+          })
           .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
         setMessages((prev) => [...prev, ...newMessages]);
       }
@@ -370,19 +386,33 @@ const Index = () => {
               // Not JSON, ignore
             }
 
+            const role = msg.type === "ai" || msg.type === "tool" ? "assistant" : "user";
+            const content = msg.content || "";
+            
+            // Extract image URLs from content for user messages
+            let imagePaths: string[] | undefined;
+            if (role === "user" && content) {
+              const extractedUrls = extractImageUrls(content);
+              if (extractedUrls.length > 0) {
+                imagePaths = extractedUrls;
+              }
+            }
+            
              if (isJSONParsed && typeof contentParsed === 'object' && contentParsed !== null) {
               return {
-                role: msg.type === "ai" || msg.type === "tool" ? "assistant" : "user",
+                role,
                 ...contentParsed,
                 toolName: msg.type === "tool" ? msg.name : undefined,
                 jobId,
+                imagePaths,
               };
             } else {
               return {
-                role: msg.type === "ai" || msg.type === "tool" ? "assistant" : "user",
-                text: msg.content || "",
+                role,
+                text: content,
                 toolName: msg.type === "tool" ? msg.name : undefined,
                 jobId,
+                imagePaths,
               };
             }
           })
@@ -739,13 +769,28 @@ The process:
       // Filter out system messages only
       const loadedMessages: Message[] = data.messages
         .filter((msg: any) => msg.type !== "system")
-        .map((msg: any) => ({
-          ...msg,
-          role: msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant",
-          text: msg.content || "",
-          timestamp: new Date(),
-          toolName: msg.type === "tool" ? msg.name : undefined,
-        }));
+        .map((msg: any) => {
+          const content = msg.content || "";
+          const role = msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant";
+          
+          // Extract image URLs from content for user messages
+          let imagePaths: string[] | undefined;
+          if (role === "user" && content) {
+            const extractedUrls = extractImageUrls(content);
+            if (extractedUrls.length > 0) {
+              imagePaths = extractedUrls;
+            }
+          }
+          
+          return {
+            ...msg,
+            role,
+            text: content,
+            timestamp: new Date(),
+            toolName: msg.type === "tool" ? msg.name : undefined,
+            imagePaths,
+          };
+        });
       
       setMessages(loadedMessages);
       

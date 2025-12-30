@@ -522,10 +522,6 @@ const ChatInterface = ({
                 <Upload className="w-4 h-4 mr-2" />
                 Upload Image
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <FileText className="w-4 h-4 mr-2" />
-                Upload Episode
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 

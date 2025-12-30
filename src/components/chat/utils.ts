@@ -14,6 +14,27 @@ const IMAGE_TAG_PATTERNS = [
 
 const HIDDEN_PARAMS = ["output_path", "input_path", "random_seed", "filename"];
 
+export const extractImageUrls = (text: string | null | undefined): string[] => {
+  // Ensure we always have a string
+  if (typeof text !== 'string') {
+    return [];
+  }
+  
+  const imageUrls: string[] = [];
+  
+  // Match [IMAGE_INPUT_X]...URL: ...[/IMAGE_INPUT_X] patterns
+  const imageInputPattern = /\[IMAGE_INPUT(?:_\d+)?\]\s*URL:\s*([^\s\n]+)\s*\[\/IMAGE_INPUT(?:_\d+)?\]/gi;
+  let match;
+  
+  while ((match = imageInputPattern.exec(text)) !== null) {
+    if (match[1]) {
+      imageUrls.push(match[1].trim());
+    }
+  }
+  
+  return imageUrls;
+};
+
 export const cleanImageInputBlocks = (text: string | null | undefined): string => {
   // Ensure we always have a string
   if (typeof text !== 'string') {
