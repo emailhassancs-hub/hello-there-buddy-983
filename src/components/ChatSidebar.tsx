@@ -86,12 +86,39 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
 
   // Listen for refresh events (e.g., after title generation)
   useEffect(() => {
-    const handleRefresh = async () => {
-      if (userProfile?.email) {
-        setIsRefreshing(true);
-        await fetchSessions();
-        setIsRefreshing(false);
+    const handleRefresh = async (event: Event) => {
+      if (!userProfile?.email) return;
+      
+      const customEvent = event as CustomEvent;
+      const sessionDetail = customEvent?.detail?.session;
+      
+      // If a specific session is provided, update it optimistically without full reload
+      if (sessionDetail) {
+        setSessions((prev) => {
+          const existingIndex = prev.findIndex((s) => s.session_id === sessionDetail.session_id);
+          
+          if (existingIndex >= 0) {
+            // Update existing session
+            const updated = [...prev];
+            updated[existingIndex] = {
+              ...updated[existingIndex],
+              ...sessionDetail,
+              // Keep the original created_at if not provided
+              created_at: sessionDetail.created_at || updated[existingIndex].created_at,
+            };
+            return updated;
+          } else {
+            // Add new session to the beginning of the list
+            return [sessionDetail, ...prev];
+          }
+        });
+        return; // Don't do full fetch for optimistic updates
       }
+      
+      // Only do full fetch if no session detail provided (for other refresh scenarios)
+      setIsRefreshing(true);
+      await fetchSessions();
+      setIsRefreshing(false);
     };
 
     window.addEventListener('refreshChatSidebar', handleRefresh);
