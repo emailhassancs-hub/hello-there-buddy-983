@@ -16,6 +16,8 @@ import ForgotPasswordPage from "./pages/auth/ForgotPassword";
 import ResetPasswordPage from "./pages/auth/ResetPassword";
 import VerifyEmailPage from "./pages/auth/VerifyEmail";
 import OAuthSuccessPage from "./pages/auth/OAuthSuccess";
+import PaymentSuccessPage from "./pages/payment/PaymentSuccess";
+import PaymentCancelPage from "./pages/payment/PaymentCancel";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +99,14 @@ const App = () => (
             <Route
               path="/oauth-success"
               element={<OAuthSuccessPage />}
+            />
+            <Route
+              path="/payment/success"
+              element={<PaymentSuccessPage />}
+            />
+            <Route
+              path="/payment/cancel"
+              element={<PaymentCancelPage />}
             />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

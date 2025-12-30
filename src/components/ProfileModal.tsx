@@ -1,5 +1,5 @@
 import * as React from "react"
-import { User, Mail, Coins, Loader2 } from "lucide-react"
+import { User, Mail, Coins, Loader2, ShoppingCart } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import { useUserProfile } from "@/hooks/use-user-profile"
+import { CreditPurchaseModal } from "@/components/billing/credit-purchase-modal"
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -19,6 +21,7 @@ interface ProfileModalProps {
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const { data: userProfile, isLoading, error } = useUserProfile(isOpen)
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = React.useState(false)
 
   const initials = React.useMemo(() => {
     if (!userProfile?.name) return "U"
@@ -115,6 +118,16 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               </CardContent>
             </Card>
 
+            {/* Buy More Credits Button */}
+            <Button
+              onClick={() => setIsPurchaseModalOpen(true)}
+              className="w-full"
+              size="lg"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Buy More Credits
+            </Button>
+
             {/* Additional Info */}
             <div className="text-xs text-muted-foreground space-y-1">
               <p>Last updated: {new Date(userProfile.updatedAt).toLocaleString()}</p>
@@ -123,6 +136,12 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           </div>
         ) : null}
       </DialogContent>
+      
+      {/* Credit Purchase Modal */}
+      <CreditPurchaseModal
+        isOpen={isPurchaseModalOpen}
+        onClose={() => setIsPurchaseModalOpen(false)}
+      />
     </Dialog>
   )
 }
