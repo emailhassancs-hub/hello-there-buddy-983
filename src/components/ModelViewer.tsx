@@ -1,18 +1,19 @@
-import { useState, useEffect, Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import { useState, useEffect, Suspense, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as THREE from "three";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Box, ZoomIn, Palette, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshCw, Box, ZoomIn, Palette, Download, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { LocalStorageKeys } from "@/enums/localstorage";
+import { apiFetch } from "@/lib/api";
 
 interface ModelData {
   id: string;
@@ -34,15 +35,45 @@ interface ModelProps {
   url: string;
   type: string;
   onError: (error: string | null) => void;
+  onLoad?: () => void;
 }
 
-function Model({ url, type, onError }: ModelProps) {
+function Model({ url, type, onError, onLoad }: ModelProps) {
   const [model, setModel] = useState<THREE.Object3D | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const hasNotifiedLoad = useRef(false);
+  const modelRef = useRef<THREE.Object3D | null>(null);
+  const frameCountRef = useRef(0);
+
+  // Use useFrame to detect when model is actually rendered
+  useFrame(() => {
+    if (model && !hasNotifiedLoad.current) {
+      frameCountRef.current++;
+      
+      // Check if model has geometry/children (actually rendered)
+      let hasGeometry = false;
+      model.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+          hasGeometry = true;
+        }
+      });
+      
+      // Wait for geometry to be present AND wait at least 5 frames to ensure rendering
+      if (hasGeometry && frameCountRef.current >= 5) {
+        hasNotifiedLoad.current = true;
+        // Wait for one more frame to ensure rendering is complete
+        requestAnimationFrame(() => {
+          onLoad?.();
+        });
+      }
+    }
+  });
 
   useEffect(() => {
     setModel(null);
     setError(null);
+    hasNotifiedLoad.current = false;
+    frameCountRef.current = 0;
 
     const loadModel = async () => {
       try {
@@ -87,20 +118,23 @@ function Model({ url, type, onError }: ModelProps) {
           loadedModel.position.y += 1;
           
           setModel(loadedModel);
+          modelRef.current = loadedModel;
           onError(null);
+          // onLoad will be called by useFrame when model is actually rendered
         }
       } catch (err) {
         console.error('Error loading model:', err);
         const errorMsg = 'Failed to load model. The file may be corrupted or in an unsupported format.';
         setError(errorMsg);
         onError(errorMsg);
+        onLoad?.(); // Still call onLoad to hide loader even on error
       }
     };
 
     if (url) {
       loadModel();
     }
-  }, [url, type, onError]);
+  }, [url, type, onError, onLoad]);
 
   if (error || !model) {
     return null;
@@ -113,6 +147,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [models, setModels] = useState<ModelData[]>([]);
   const [internalSelectedModel, setInternalSelectedModel] = useState<ModelData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isModelLoading, setIsModelLoading] = useState(false);
   const [lightAngleX, setLightAngleX] = useState([45]);
   const [lightAngleY, setLightAngleY] = useState([45]);
   const [lightIntensity, setLightIntensity] = useState([2.5]);
@@ -121,6 +156,13 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [token, setToken] = useState<string | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(true);
   const { toast } = useToast();
+
+  // Pagination state
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const LIMIT = 20;
 
   const handleDownload = async (modelUrl: string) => {
     try {
@@ -210,27 +252,46 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
     createdAt: new Date().toISOString()
   } : internalSelectedModel;
 
-  const loadModels = async () => {
-    if (!token) {
-      toast({
-        title: "No token found",
-        description: "Please login to access this page",
-        variant: "destructive",
-      });
-      return;
+  const loadModels = async (append = false) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
     }
 
     try {
-      const response = await fetch(`${apiUrl}/model-history?limit=100&offset=0`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const currentOffset = append ? offset : 0;
+      const data = await apiFetch<any>(
+        `/api/model-generate-3d/history?limit=${LIMIT}&offset=${currentOffset}`
+      );
+      // Handle different response structures: items, data, or direct array
+      const rawModels = data.items || data.data || data || [];
       
-      if (!response.ok) throw new Error("Failed to load models");
+      // Map API response to ModelData format if needed
+      const newModels: ModelData[] = rawModels.map((item: any) => ({
+        id: item.id || item._id || String(item.taskId || Date.now()),
+        generationType: item.generationType || item.generation_type || item.type || "TEXT_TO_3D",
+        status: item.status || "COMPLETED",
+        modelUrl: item.modelUrl || item.model_url || item.modelPath || item.model_path,
+        thumbnailUrl: item.thumbnailUrl || item.thumbnail_url || item.thumbnailPath || item.thumbnail_path,
+        prompt: item.prompt || item.text || item.description || "",
+        creditsUsed: item.creditsUsed || item.credits_used || 0,
+        createdAt: item.createdAt || item.created_at || item.timestamp || new Date().toISOString(),
+      }));
       
-      const data = await response.json();
-      setModels(data.items || []);
+      // Check if there are more models to load
+      // Use hasMore from API response if available, otherwise check by length
+      const apiHasMore = data.hasMore !== undefined ? data.hasMore : newModels.length === LIMIT;
+      
+      if (append) {
+        setModels(prev => [...prev, ...newModels]);
+        setOffset(prev => prev + LIMIT);
+        setHasMore(apiHasMore);
+      } else {
+        setModels(newModels);
+        setOffset(LIMIT);
+        setHasMore(apiHasMore);
+      }
     } catch (error) {
       console.error("Error loading models:", error);
       toast({
@@ -238,18 +299,47 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
         description: "Unable to load 3D models",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
   useEffect(() => {
     if (token) {
-      loadModels();
+      setOffset(0);
+      setHasMore(true);
+      loadModels(false);
     }
   }, [apiUrl, token]);
 
   useEffect(() => {
     setLoadError(null);
+    // Set loading state when model URL changes
+    if (selectedModel && selectedModel.modelUrl) {
+      setIsModelLoading(true);
+    }
   }, [selectedModel]);
+
+  // Clear loading state when error occurs
+  useEffect(() => {
+    if (loadError) {
+      setIsModelLoading(false);
+    }
+  }, [loadError]);
+
+  // Auto-select first model when models are loaded and no model is selected
+  useEffect(() => {
+    const filteredModels = models.filter(m => m.status === "COMPLETED");
+    if (
+      filteredModels.length > 0 &&
+      !internalSelectedModel &&
+      !externalSelectedModel &&
+      filteredModels[0].modelUrl
+    ) {
+      setInternalSelectedModel(filteredModels[0]);
+    }
+  }, [models, internalSelectedModel, externalSelectedModel]);
 
   // Filter models by active tab
   const filteredModels = models.filter(m =>  m.status === "COMPLETED");
@@ -296,6 +386,17 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
               <div className="h-full">
                 {selectedModel && selectedModel.modelUrl ? (
                   <div className="h-full relative bg-background">
+                    {/* Loading overlay */}
+                    {isModelLoading && !loadError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm z-20">
+                        <div className="text-center space-y-4">
+                          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+                          <p className="text-foreground font-medium">Loading 3D model...</p>
+                          <p className="text-sm text-muted-foreground">Please wait while the model is being loaded</p>
+                        </div>
+                      </div>
+                    )}
+
                     {loadError && (
                       <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
                         <div className="text-center p-6 rounded-lg bg-destructive/10 border border-destructive">
@@ -401,7 +502,8 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                         <Model 
                           url={selectedModel.modelUrl} 
                           type={getModelType(selectedModel.modelUrl)} 
-                          onError={setLoadError} 
+                          onError={setLoadError}
+                          onLoad={() => setIsModelLoading(false)}
                         />
                       </Suspense>
                       
@@ -431,16 +533,24 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
             </div>
             <ScrollArea className="h-full px-3 flex-1">
               <div className="pb-3">
-                {filteredModels.length === 0 ? (
+                {isLoading && filteredModels.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <RefreshCw className="w-8 h-8 text-muted-foreground animate-spin mx-auto" />
+                      <p className="text-muted-foreground">Loading models...</p>
+                    </div>
+                  </div>
+                ) : filteredModels.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground text-sm">
                     No models available
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                    {filteredModels.map((model) => (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredModels.map((model) => (
                       <div
                         key={model.id}
-                        className={`group cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 hover:scale-105 relative ${
+                        className={`group cursor-pointer rounded-lg border-2 transition-all hover:border-primary/50 relative overflow-hidden ${
                           selectedModel?.id === model.id
                             ? 'border-primary shadow-lg'
                             : 'border-border'
@@ -449,24 +559,26 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                       >
                         <div className="relative">
                           {model.thumbnailUrl ? (
-                            <img 
-                              src={model.thumbnailUrl} 
-                              alt={model.prompt}
-                              className="w-full h-32 object-cover rounded-t-md"
-                              loading="lazy"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = "/placeholder.svg";
-                              }}
-                            />
+                            <div className="aspect-square overflow-hidden bg-muted/20 relative rounded-t-md">
+                              <img 
+                                src={model.thumbnailUrl} 
+                                alt={model.prompt}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                loading="lazy"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                                }}
+                              />
+                            </div>
                           ) : (
-                            <div className="w-full h-32 bg-muted rounded-t-md flex items-center justify-center">
+                            <div className="aspect-square bg-muted rounded-t-md flex items-center justify-center">
                               <span className="text-xs font-medium text-muted-foreground">
                                 {getModelType(model.modelUrl).toUpperCase()}
                               </span>
                             </div>
                           )}
                           {/* Download button - prominent on hover */}
-                          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                             <Button
                               variant="default"
                               size="sm"
@@ -483,8 +595,28 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                           <p className="text-xs font-medium truncate">{model.prompt}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                    {hasMore && (
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          variant="outline"
+                          onClick={() => loadModels(true)}
+                          disabled={isLoadingMore}
+                          className="gap-2"
+                        >
+                          {isLoadingMore ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            "Load More"
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <ScrollBar orientation="vertical" />

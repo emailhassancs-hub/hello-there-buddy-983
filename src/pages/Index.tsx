@@ -908,11 +908,7 @@ The process:
                     <Settings className="w-4 h-4" />
                     Model Optimization
                   </TabsTrigger>
-                  <TabsTrigger value="videos" className="gap-2 relative" disabled>
-                    <Video className="w-4 h-4" />
-                    Video Gallery
-                    <span className="text-[10px] italic ml-1 text-muted-foreground">Coming Soon</span>
-                  </TabsTrigger>
+                 
                 </TabsList>
                 
                 <button
