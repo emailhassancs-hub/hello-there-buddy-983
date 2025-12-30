@@ -39,6 +39,7 @@ interface Message {
   interruptMessage?: string;
   formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: any;
+  imagePaths?: string[]; // URLs of uploaded images for user messages
 }
 
 // Helper function to extract email from JWT token
@@ -166,6 +167,7 @@ const Index = () => {
       const userMessage: Message = {
         role: "user",
         text: text,
+        imagePaths: imageUrls, // Include uploaded image URLs
       };
       const assistantMessage: Message = {
         role: "assistant",
@@ -178,6 +180,7 @@ const Index = () => {
     const userMessage: Message = {
       role: "user",
       text: text,
+      imagePaths: imageUrls, // Include uploaded image URLs
     };
 
     // Do not show raw tool invocation messages in chat

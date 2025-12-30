@@ -91,12 +91,34 @@ export const useFileUpload = (options: UploadOptions) => {
     const fileArray = Array.from(files).filter(file => file.type.startsWith('image/'));
     if (fileArray.length === 0) return;
 
+    const MAX_FILES = 4;
+    const currentCount = uploadedImageUrls.length;
+    const remainingSlots = MAX_FILES - currentCount;
+
+    if (remainingSlots <= 0) {
+      toast({
+        title: "Upload limit reached",
+        description: `You can upload a maximum of ${MAX_FILES} files. Please remove some files before uploading more.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Only process files that fit within the limit
+    const filesToProcess = fileArray.slice(0, remainingSlots);
+    if (filesToProcess.length < fileArray.length) {
+      toast({
+        title: "Too many files",
+        description: `Only ${filesToProcess.length} file(s) will be uploaded to stay within the ${MAX_FILES} file limit.`,
+      });
+    }
+
     setIsUploading(true);
-    const previews = fileArray.map(file => URL.createObjectURL(file));
+    const previews = filesToProcess.map(file => URL.createObjectURL(file));
     setUploadedImagePreviews(prev => [...prev, ...previews]);
 
     try {
-      const uploadResult = await uploadImages(fileArray);
+      const uploadResult = await uploadImages(filesToProcess);
       setUploadedImageUrls(prev => [...prev, ...uploadResult.urls]);
     } catch (error) {
       console.error("Upload error:", error);
@@ -104,7 +126,7 @@ export const useFileUpload = (options: UploadOptions) => {
     } finally {
       setIsUploading(false);
     }
-  }, [uploadImages]);
+  }, [uploadImages, uploadedImageUrls.length, toast]);
 
   const removeUploadedUrl = useCallback((index: number) => {
     setUploadedImageUrls(prev => {

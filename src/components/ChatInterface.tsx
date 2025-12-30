@@ -261,9 +261,20 @@ const ChatInterface = ({
 
   // File upload handlers
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // The validation is handled in useFileUpload hook, but we check here for immediate feedback
+    const MAX_FILES = 4;
+    if (e.target.files?.length + uploadedImageUrls.length > MAX_FILES) {
+      toast({
+        title: "Upload limit reached",
+        description: `You can upload a maximum of ${MAX_FILES} files. Please remove some files before uploading more.`,
+      });
+      e.target.value = '';
+      return;
+    }
+
     await handleFileSelectFromHook(e.target.files);
     e.target.value = '';
-  }, [handleFileSelectFromHook]);
+  }, [handleFileSelectFromHook, uploadedImageUrls, toast]);
 
   // Model optimization handler
   const handleModelOptimization = useCallback(async (file: File) => {
@@ -506,7 +517,7 @@ const ChatInterface = ({
                 <Plus className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuContent align="start" className="w-48 bg-white">
               <DropdownMenuItem onClick={triggerFileUpload}>
                 <Upload className="w-4 h-4 mr-2" />
                 Upload Image
@@ -518,7 +529,7 @@ const ChatInterface = ({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -535,7 +546,7 @@ const ChatInterface = ({
                 Model Optimization
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
 
           <Textarea
             ref={textareaRef}
