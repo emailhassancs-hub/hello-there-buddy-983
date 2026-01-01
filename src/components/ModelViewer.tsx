@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, useRef } from "react";
+import { useState, useEffect, Suspense, useRef, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
@@ -134,7 +134,7 @@ function Model({ url, type, onError, onLoad }: ModelProps) {
     if (url) {
       loadModel();
     }
-  }, [url, type, onError, onLoad]);
+  }, [url, type]); // Removed onError and onLoad from dependencies to prevent reload loop
 
   if (error || !model) {
     return null;
@@ -315,18 +315,8 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
 
   useEffect(() => {
     setLoadError(null);
-    // Set loading state when model URL changes
-    if (selectedModel && selectedModel.modelUrl) {
-      setIsModelLoading(true);
-    }
+    setIsModelLoading(true);
   }, [selectedModel]);
-
-  // Clear loading state when error occurs
-  useEffect(() => {
-    if (loadError) {
-      setIsModelLoading(false);
-    }
-  }, [loadError]);
 
   // Auto-select first model when models are loaded and no model is selected
   useEffect(() => {
@@ -388,15 +378,15 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                   <div className="h-full relative bg-background">
                     {/* Loading overlay */}
                     {isModelLoading && !loadError && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm z-20">
-                        <div className="text-center space-y-4">
-                          <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-20">
+                        <div className="text-center p-6 rounded-lg bg-background border border-border shadow-lg">
+                          <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
                           <p className="text-foreground font-medium">Loading 3D model...</p>
-                          <p className="text-sm text-muted-foreground">Please wait while the model is being loaded</p>
+                          <p className="text-sm text-muted-foreground mt-2">Please wait while we prepare your model</p>
                         </div>
                       </div>
                     )}
-
+                    
                     {loadError && (
                       <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
                         <div className="text-center p-6 rounded-lg bg-destructive/10 border border-destructive">
