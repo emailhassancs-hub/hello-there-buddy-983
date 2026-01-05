@@ -35,6 +35,7 @@ export interface ChatInterfaceProps {
   apiUrl: string;
   onModelSelect?: (modelUrl: string, thumbnailUrl: string, workflow: string) => void;
   onImageGenerated?: () => void;
+  onModelGenerated?: () => void;
   onOptimizationFormSubmit?: (type: string, data: unknown) => void;
   userEmail?: string;
   sessionId?: string;

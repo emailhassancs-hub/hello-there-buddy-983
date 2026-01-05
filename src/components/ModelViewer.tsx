@@ -1,12 +1,12 @@
 import { useState, useEffect, Suspense, useRef, useCallback } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as THREE from "three";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Box, ZoomIn, Palette, Download, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { RefreshCw, Box, ZoomIn, ZoomOut, Palette, Download, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ interface ModelData {
 interface ModelViewerProps {
   apiUrl: string;
   selectedModel?: { modelUrl: string; thumbnailUrl: string; workflow: string } | null;
+  refreshTrigger?: number;
 }
 
 interface ModelProps {
@@ -143,7 +144,30 @@ function Model({ url, type, onError, onLoad }: ModelProps) {
   return <primitive object={model} />;
 }
 
-const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelViewerProps) => {
+// Component to handle zoom controls
+function ZoomControls({ onControlsReady }: { onControlsReady: (controls: any) => void }) {
+  const controlsRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (controlsRef.current) {
+      // Access the underlying controls object
+      const controls = controlsRef.current;
+      onControlsReady(controls);
+    }
+  }, [onControlsReady]);
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      enableDamping
+      dampingFactor={0.05}
+      minDistance={1}
+      maxDistance={10}
+    />
+  );
+}
+
+const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrigger }: ModelViewerProps) => {
   const [models, setModels] = useState<ModelData[]>([]);
   const [internalSelectedModel, setInternalSelectedModel] = useState<ModelData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -163,6 +187,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const LIMIT = 20;
+  const controlsRef = useRef<any>(null);
 
   const handleDownload = async (modelUrl: string) => {
     try {
@@ -306,12 +331,13 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
   };
 
   useEffect(() => {
+
     if (token) {
       setOffset(0);
       setHasMore(true);
       loadModels(false);
     }
-  }, [apiUrl, token]);
+  }, [apiUrl, token, refreshTrigger]);
 
   useEffect(() => {
     setLoadError(null);
@@ -395,9 +421,62 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
                       </div>
                     )}
                     
-                    {/* Zoom indicator */}
-                    <div className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm p-2 rounded-lg border border-border shadow-sm">
-                      <ZoomIn className="w-4 h-4 text-foreground" />
+                    {/* Zoom Controls */}
+                    <div className="absolute bottom-4 right-4 z-10 bg-background/80 backdrop-blur-sm rounded-lg border border-border shadow-sm flex flex-col gap-1 p-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          if (controlsRef.current) {
+                            // Zoom in by reducing distance
+                            // Access the underlying OrbitControls object
+                            const controls = controlsRef.current;
+                            const camera = controls.object || controls.camera;
+                            const target = controls.target || new THREE.Vector3(0, 0, 0);
+                            
+                            if (camera && target) {
+                              const direction = new THREE.Vector3().subVectors(camera.position, target).normalize();
+                              const currentDistance = camera.position.distanceTo(target);
+                              const newDistance = Math.max(1, currentDistance * 0.8);
+                              camera.position.copy(target).add(direction.multiplyScalar(newDistance));
+                              if (controls.update) {
+                                controls.update();
+                              }
+                            }
+                          }
+                        }}
+                        title="Zoom In"
+                      >
+                        <ZoomIn className="w-4 h-4 text-foreground" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          if (controlsRef.current) {
+                            // Zoom out by increasing distance
+                            // Access the underlying OrbitControls object
+                            const controls = controlsRef.current;
+                            const camera = controls.object || controls.camera;
+                            const target = controls.target || new THREE.Vector3(0, 0, 0);
+                            
+                            if (camera && target) {
+                              const direction = new THREE.Vector3().subVectors(camera.position, target).normalize();
+                              const currentDistance = camera.position.distanceTo(target);
+                              const newDistance = Math.min(10, currentDistance * 1.25);
+                              camera.position.copy(target).add(direction.multiplyScalar(newDistance));
+                              if (controls.update) {
+                                controls.update();
+                              }
+                            }
+                          }
+                        }}
+                        title="Zoom Out"
+                      >
+                        <ZoomOut className="w-4 h-4 text-foreground" />
+                      </Button>
                     </div>
 
                     {/* Light Controls */}
@@ -462,12 +541,9 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel }: ModelView
 
                     <Canvas shadows style={{ background: bgColor }}>
                       <PerspectiveCamera makeDefault position={[3, cameraHeight[0], 3]} />
-                      <OrbitControls 
-                        enableDamping
-                        dampingFactor={0.05}
-                        minDistance={1}
-                        maxDistance={10}
-                      />
+                      <ZoomControls onControlsReady={(controls) => {
+                        controlsRef.current = controls;
+                      }} />
                       
                       <ambientLight intensity={0.5} />
                       <directionalLight 
