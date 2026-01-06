@@ -732,7 +732,7 @@ The process:
           handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
         }
       } catch (error) {
-        console.error("Error fetching optimization guide:", error);
+        console.error("Error fetching optimization guide:  ", error);
         handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
       }
     }
