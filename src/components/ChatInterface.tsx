@@ -8,7 +8,7 @@ import toolsIcon from "@/assets/tools-icon.png";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Message, ChatInterfaceProps, ToolCall } from "./chat/types";
-import { filterMessages, validateToolArgs, parseToolResponse } from "./chat/utils";
+import { filterMessages, validateToolArgs } from "./chat/utils";
 import { UserMessage } from "./chat/UserMessage";
 import { AssistantMessage } from "./chat/AssistantMessage";
 import { ToolConfirmationUI } from "./chat/ToolConfirmationUI";
@@ -30,6 +30,7 @@ const ChatInterface = ({
   apiUrl,
   onModelSelect,
   onImageGenerated,
+  onModelGenerated,
   onOptimizationFormSubmit,
   userEmail,
   sessionId,
@@ -58,6 +59,11 @@ const ChatInterface = ({
   useEffect(() => {
     onImageGeneratedRef.current = onImageGenerated;
   }, [onImageGenerated]);
+
+  const onModelGeneratedRef = useRef(onModelGenerated);
+  useEffect(() => {
+    onModelGeneratedRef.current = onModelGenerated;
+  }, [onModelGenerated]);
 
   const onToolConfirmationRef = useRef(onToolConfirmation);
   useEffect(() => {
@@ -95,7 +101,7 @@ const ChatInterface = ({
     }
   }, [filteredMessages, scrollToBottom]);
 
-  // Detect when an image is generated in the latest assistant message
+  // Detect when an image or model is generated in the latest assistant message
   useEffect(() => {
     if (filteredMessages.length === 0) return;
     const lastMessage = filteredMessages[filteredMessages.length - 1];
@@ -108,6 +114,10 @@ const ChatInterface = ({
     if (lastMessage.image_path || lastMessage.img_url || lastMessage.thumbnail_url) {
       onImageGeneratedRef.current?.();
     }
+    // Check for model_url and trigger model refresh
+    if (lastMessage.model_url) {
+      onModelGeneratedRef.current?.();
+    }
     if (lastMessage.thumbnail_url && lastMessage.toolName?.includes('text_to_3d')) {
       setText3dPopup(lastMessage.thumbnail_url);
     }
@@ -117,6 +127,10 @@ const ChatInterface = ({
       const parsed = JSON.parse(lastMessage.text);
       if (parsed?.img_url || parsed?.image_path || parsed?.thumbnail_url) {
         onImageGeneratedRef.current?.();
+      }
+      // Check for model_url in parsed text
+      if (parsed?.model_url) {
+        onModelGeneratedRef.current?.();
       }
       if (parsed?.thumbnail_url && lastMessage.toolName?.includes('text_to_3d')) {
         setText3dPopup(parsed.thumbnail_url);

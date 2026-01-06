@@ -78,8 +78,8 @@ const Index = () => {
   const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
+  const [modelRefreshTrigger, setModelRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
-  const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
   const [activeJobIds, setActiveJobIds] = useState<string[]>([]);
   
   // Workflow chain state
@@ -191,9 +191,7 @@ const Index = () => {
     if (imageUrls && imageUrls.length > 0) {
       setUploadedImageUrls(imageUrls);
     }
-    if (blobPaths && blobPaths.length > 0) {
-      setUploadedBlobPaths(blobPaths);
-    }
+   
 
     // Update session ID if provided from upload
     if (uploadSessionId) {
@@ -737,6 +735,11 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
 }, [toast, handleImageGenerated, API, authToken, userProfile?.email]);
 
 
+  const handleModelGenerated = useCallback(() => {
+    setModelRefreshTrigger(prev => prev + 1);
+    queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+  }, [queryClient]);
+
   // Handle SSE status updates
   const handleSSEStatusUpdate = useCallback((jobId: string, update: SSEStatusUpdate) => {
     console.log(`[SSE] Status update for job ${jobId}:`, update);
@@ -818,6 +821,10 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       });
       // Refresh images when job completes
       handleImageGenerated();
+      // Also refresh models if this is a model generation job
+      if (finalStatus.data?.model_url) {
+        handleModelGenerated();
+      }
     } else if (finalStatus.status.toLocaleLowerCase() === 'error' || finalStatus.status.toLocaleLowerCase() === 'failed') {
       toast({
         title: "Error",
@@ -825,7 +832,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         variant: "destructive",
       });
     }
-  }, [toast, handleImageGenerated]);
+  }, [toast, handleImageGenerated, handleModelGenerated]);
 
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
     console.log("Optimization form submit:", type, data);
@@ -976,7 +983,7 @@ The process:
           handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
         }
       } catch (error) {
-        console.error("Error fetching optimization guide:", error);
+        console.error("Error fetching optimization guide:  ", error);
         handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
       }
     }
@@ -1120,6 +1127,7 @@ The process:
               apiUrl={apiUrl}
               onModelSelect={handleModelSelect}
               onImageGenerated={handleImageGenerated}
+              onModelGenerated={handleModelGenerated}
               onOptimizationFormSubmit={handleOptimizationFormSubmit}
               userEmail={userProfile?.email || extractEmailFromToken(authToken)}
               sessionId={sessionId || undefined}
@@ -1223,7 +1231,7 @@ The process:
                     /> */}
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <ModelViewer apiUrl={apiUrl} selectedModel={selectedModel} />
+                    <ModelViewer apiUrl={apiUrl} selectedModel={selectedModel} refreshTrigger={modelRefreshTrigger} />
                   </div>
                 </div>
               </TabsContent>
