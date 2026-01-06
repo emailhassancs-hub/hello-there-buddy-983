@@ -7,8 +7,9 @@ type SocialAuthProps = {
   className?: string
 }
 
-// Get API URL - same as in api.ts
-const API_BASE_URL = import.meta.env.VITE_API_BACKEND_URL || 'https://games-ai-studio-be-nest-347148155332.us-central1.run.app'
+// Get API URLs
+const API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL || 'http://localhost:5000'
+const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:7071'
 
 export function SocialAuth({ className }: SocialAuthProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -16,10 +17,10 @@ export function SocialAuth({ className }: SocialAuthProps) {
   // Simply redirect to backend endpoint - backend handles everything
   // This is a direct browser redirect, not an API call
   const handleGoogleLogin = () => {
-
-    console.log(API_BASE_URL,'here is api base url')
+    const redirectUri = encodeURIComponent(`${FRONTEND_URL}/auth/oauth-success`)
+    console.log('Redirecting to backend with callback URL:', `${API_BACKEND_URL}/auth/google?redirect_uri=${redirectUri}`)
     setIsLoading(true)
-    window.location.href = `${API_BASE_URL}/auth/google`
+    window.location.href = `${API_BACKEND_URL}/auth/google?redirect_uri=${redirectUri}`
   }
 
   return (

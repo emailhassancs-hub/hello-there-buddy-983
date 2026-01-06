@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
@@ -13,6 +13,13 @@ import { LocalStorageKeys } from "@/enums/localstorage";
 import { SSEStatusListener } from "@/components/SSEStatusListener";
 import { SSEStatusUpdate } from "@/hooks/useSSE";
 import { extractImageUrls } from "@/components/chat/utils";
+import { WorkflowProgressDisplay } from "@/components/WorkflowProgressDisplay";
+import { WorkflowChainResults } from "@/components/WorkflowChainResults";
+import {
+  createChainSSEConnection,
+  WorkflowChainData,
+  ChainResults,
+} from "@/utils/workflowChainHandler";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -36,11 +43,19 @@ interface Message {
   toolCalls?: ToolCall[];
   conversationId?: string;
   toolName?: string;
-  status?: "awaiting_confirmation" | "complete";
+  status?: "awaiting_confirmation" | "complete" | "listening" | "COMPLETED" | "error";
   interruptMessage?: string;
   formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: any;
-  imagePaths?: string[]; // URLs of uploaded images for user messages
+  imagePaths?: string[];
+  image_path?: string;
+  job_id?: string;
+  jobId?: string;
+  generation_type?: string;
+  seed?: number;
+  model?: string;
+  chainId?: string;
+  taskNumber?: number;
 }
 
 // Helper function to extract email from JWT token
@@ -66,11 +81,24 @@ const Index = () => {
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
   const [activeJobIds, setActiveJobIds] = useState<string[]>([]);
+  
+  // Workflow chain state
+  const [workflowChain, setWorkflowChain] = useState<WorkflowChainData | null>(null);
+  const [workflowProgress, setWorkflowProgress] = useState({ current: 0, total: 0 });
+  const [workflowStatus, setWorkflowStatus] = useState<string>("");
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
+  const [workflowResults, setWorkflowResults] = useState<ChainResults | null>(null);
+  const [isWorkflowLoading, setIsWorkflowLoading] = useState(false);
+  const chainSSERef = useRef<EventSource | null>(null);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
 
-  const apiUrl = import.meta.env.VITE_API_BASE_URL;
+  //const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+
+  const apiUrl = "http://localhost:8080";
   const API = apiUrl;
  
   // Load token from localStorage only
@@ -87,6 +115,15 @@ const Index = () => {
     if (storedSessionId) {
       setSessionId(storedSessionId);
     }
+  }, []);
+
+  // Cleanup workflow SSE on unmount
+  useEffect(() => {
+    return () => {
+      if (chainSSERef.current) {
+        chainSSERef.current.close();
+      }
+    };
   }, []);
 
   const updateSessionId = (newSessionId: string) => {
@@ -231,6 +268,16 @@ const Index = () => {
       });
 
       const data = await response.json();
+
+      // ===== ADD THIS DEBUG =====
+      console.log('=== /ask RESPONSE DEBUG ===');
+      console.log('workflow_chain exists:', !!data.workflow_chain);
+      console.log('workflow_chain:', JSON.stringify(data.workflow_chain, null, 2));
+      console.log('pending_jobs:', data.pending_jobs);
+      console.log('stream_urls:', data.stream_urls);
+      console.log('===========================');
+      // ===== END DEBUG =====
+
     // console.log(data,'here is data response getting from backend==>>')
       // Update session ID if provided
       if (data.session_id) {
@@ -252,7 +299,19 @@ const Index = () => {
         );
       }
 
-      // Append any messages from the backend - filter out system messages only
+      // ============================================
+      // CHECK: Is this a Workflow Chain?
+      // ============================================
+      if (data.workflow_chain) {
+        console.log('🔗 Workflow Chain Detected!', data.workflow_chain);
+        handleWorkflowChain(data.workflow_chain);
+        setIsGenerating(false);
+        return;
+      }
+
+      // ============================================
+      // ELSE: Single Job or Regular Response
+      // ============================================
       if (data.messages && Array.isArray(data.messages)) {
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
@@ -361,12 +420,54 @@ const Index = () => {
       const data = await response.json();
        console.log(data,'data after tool invoke===============>>>>')
        console.log(messages,'here is before messages==>>>')
+
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
       }
 
-      // Append any messages from the backend - filter out system messages only
+      // ============================================
+      // ✅ CHECK FOR WORKFLOW CHAIN FIRST!
+      // ============================================
+      if (data.workflow_chain) {
+        console.log('🔗 [CONFIRMATION] Workflow Chain Detected!', data.workflow_chain);
+        
+        // Add the messages to chat first
+        if (data.messages && Array.isArray(data.messages)) {
+          const newMessages = data.messages
+            .filter((msg: any) => msg.type !== "system")
+            .map((msg: any) => {
+              const content = msg.content || "";
+              const role = msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user";
+              
+              let imagePaths: string[] | undefined;
+              if (role === "user" && content) {
+                const extractedUrls = extractImageUrls(content);
+                if (extractedUrls.length > 0) {
+                  imagePaths = extractedUrls;
+                }
+              }
+              
+              return {
+                role,
+                text: content,
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                imagePaths,
+              };
+            })
+            .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+          setMessages((prev) => [...prev, ...newMessages]);
+        }
+        
+        // Then start the workflow chain handler
+        handleWorkflowChain(data.workflow_chain);
+        setIsGenerating(false);
+        return;  // ✅ IMPORTANT: Exit here, don't continue
+      }
+
+      // ============================================
+      // ELSE: Normal tool confirmation response
+      // ============================================
       if (data.messages && Array.isArray(data.messages)) {
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
@@ -475,10 +576,166 @@ const Index = () => {
   };
 
 
+  
   const handleImageGenerated = useCallback(() => {
     setImageRefreshTrigger(prev => prev + 1);
     queryClient.invalidateQueries({ queryKey: ['user-profile'] });
   }, [queryClient]);
+  
+  // ============================================
+  // WORKFLOW CHAIN HANDLER
+  // ============================================
+const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
+  console.log(`🔗 Starting workflow chain: ${chain.chain_id}`);
+  
+  setWorkflowChain(chain);
+  setWorkflowProgress({ current: 0, total: chain.total_tasks });
+  setWorkflowStatus("🔗 Starting workflow with " + chain.total_tasks + " tasks...");
+  setWorkflowError(null);
+  setWorkflowResults(null);
+  setIsWorkflowLoading(true);
+
+  // Add placeholder for first task
+  const firstTaskPlaceholder: Message = {
+    role: "assistant",
+    text: `🔗 Starting task 1/${chain.total_tasks}...`,
+    job_id: `chain_task_1_${chain.chain_id}`,
+    status: "listening",
+    generation_type: "image_generation",
+    chainId: chain.chain_id,
+    taskNumber: 1,
+  };
+  setMessages((prev) => [...prev, firstTaskPlaceholder]);
+
+  if (chainSSERef.current) {
+    chainSSERef.current.close();
+  }
+
+  const userEmail = userProfile?.email || extractEmailFromToken(authToken);
+  const streamUrl = `${API}/generation-status/${chain.chain_id}/stream?email=${encodeURIComponent(userEmail || "")}`;
+  console.log(`🔗 Opening SSE connection to: ${streamUrl}`);
+
+  const taskPlaceholdersAdded = new Set<number>([1]);
+
+  const eventSource = createChainSSEConnection(
+    streamUrl,
+    chain.total_tasks,
+    {
+      onTaskStarting: (event) => {
+        setWorkflowStatus(`⚡ Task ${event.task_number}/${event.total_tasks}: ${event.prompt || event.task_type}`);
+        
+        if (!taskPlaceholdersAdded.has(event.task_number)) {
+          taskPlaceholdersAdded.add(event.task_number);
+          const taskPlaceholder: Message = {
+            role: "assistant",
+            text: `⚡ Starting task ${event.task_number}/${event.total_tasks}...`,
+            job_id: `chain_task_${event.task_number}_${event.chain_id}`,
+            status: "listening",
+            generation_type: event.task_type === "image_editing" ? "image_editing" : "image_generation",
+            chainId: event.chain_id,
+            taskNumber: event.task_number,
+          };
+          setMessages((prev) => [...prev, taskPlaceholder]);
+        }
+      },
+      
+      onTaskStarted: (event) => {
+        setWorkflowStatus(`🎧 Processing task ${event.task_number}/${event.total_tasks}...`);
+        setMessages((prev) =>
+          prev.map((msg: any) => {
+            if (msg.chainId === event.chain_id && msg.taskNumber === event.task_number) {
+              return { ...msg, job_id: event.job_id, text: `🎧 Processing task ${event.task_number}/${event.total_tasks}...` };
+            }
+            return msg;
+          })
+        );
+      },
+      
+      onTaskCompleted: (event) => {
+        setWorkflowProgress({ current: event.task_number || 0, total: chain.total_tasks });
+        setWorkflowStatus(`✅ Task ${event.task_number}/${event.total_tasks} completed!`);
+        
+        const imagePath = event.image_path || event.output?.image_path;
+        if (imagePath) {
+          setMessages((prev) =>
+            prev.map((msg: any) => {
+              if (msg.job_id === event.job_id || (msg.chainId === event.chain_id && msg.taskNumber === event.task_number)) {
+                return { ...msg, status: "COMPLETED", image_path: imagePath, text: `✅ Task ${event.task_number}/${event.total_tasks} completed` };
+              }
+              return msg;
+            })
+          );
+        }
+      },
+      
+      onChainCompleted: (event) => {
+        const results: ChainResults = {
+          images: event.outputs?.images || [],
+          models: event.outputs?.models || [],
+          allOutputs: event.outputs || {},
+        };
+        setWorkflowResults(results);
+        setWorkflowProgress({ current: chain.total_tasks, total: chain.total_tasks });
+        setWorkflowStatus(`🎉 All ${chain.total_tasks} tasks completed successfully!`);
+        setIsWorkflowLoading(false);
+
+        if (event.outputs) {
+          const outputKeys = Object.keys(event.outputs).filter(k => k.startsWith('output_'));
+          setMessages((prev) => {
+            let updatedMessages = [...prev];
+            outputKeys.forEach((key, index) => {
+              const output = event.outputs[key];
+              if (output && output.image_path) {
+                const alreadyHasImage = updatedMessages.some((msg: any) => msg.image_path === output.image_path);
+                if (!alreadyHasImage) {
+                  const taskNumber = index + 1;
+                  const placeholderIndex = updatedMessages.findIndex(
+                    (msg: any) => msg.chainId === event.chain_id && msg.taskNumber === taskNumber && !msg.image_path
+                  );
+                  if (placeholderIndex !== -1) {
+                    updatedMessages[placeholderIndex] = { ...updatedMessages[placeholderIndex], status: "COMPLETED", image_path: output.image_path, text: `✅ Result ${taskNumber}/${outputKeys.length}` };
+                  } else {
+                    updatedMessages.push({ role: "assistant", text: `✅ Result ${taskNumber}/${outputKeys.length}`, status: "COMPLETED", image_path: output.image_path, generation_type: output.type || "image_generation", job_id: output.job_id });
+                  }
+                }
+              }
+            });
+            return updatedMessages;
+          });
+        }
+
+        toast({ title: "Workflow Complete", description: `Generated ${results.images.length} images and ${results.models.length} models` });
+        handleImageGenerated();
+      },
+      
+      onTaskFailed: (event) => {
+        setWorkflowError(`Task ${event.task_number} failed: ${event.error || "Unknown error"}`);
+        setIsWorkflowLoading(false);
+        setMessages((prev) =>
+          prev.map((msg: any) => {
+            if (msg.chainId === event.chain_id && msg.taskNumber === event.task_number) {
+              return { ...msg, status: "error", text: `❌ Task ${event.task_number} failed: ${event.error || "Unknown error"}` };
+            }
+            return msg;
+          })
+        );
+        toast({ title: "Workflow Error", description: `Task ${event.task_number} failed: ${event.error}`, variant: "destructive" });
+      },
+      
+      onStatusUpdate: (message) => setWorkflowStatus(message),
+      onProgressUpdate: (current, total) => setWorkflowProgress({ current, total }),
+      onError: (error) => {
+        setWorkflowError(error);
+        setIsWorkflowLoading(false);
+        toast({ title: "Connection Error", description: error, variant: "destructive" });
+      },
+      onLoaderToggle: (show) => setIsWorkflowLoading(show),
+    }
+  );
+
+  chainSSERef.current = eventSource;
+}, [toast, handleImageGenerated, API, authToken, userProfile?.email]);
+
 
   // Handle SSE status updates
   const handleSSEStatusUpdate = useCallback((jobId: string, update: SSEStatusUpdate) => {
@@ -513,13 +770,7 @@ const Index = () => {
       })
     );
     
-    // // Show toast for important status changes
-    // if (update.status === 'processing') {
-    //   toast({
-    //     title: "Processing",
-    //     description: update.message || "Your request is being processed...",
-    //   });
-    // }
+
   }, [toast]);
 
   // Handle SSE job completion
@@ -921,6 +1172,35 @@ The process:
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
+              
+              {/* Workflow Chain Progress/Results */}
+              {workflowChain && (
+                <div className="border-b p-4 bg-muted/20">
+                  {workflowResults ? (
+                    <WorkflowChainResults
+                      chainId={workflowChain.chain_id}
+                      images={workflowResults.images}
+                      models={workflowResults.models}
+                      totalTasks={workflowChain.total_tasks}
+                      onClose={() => {
+                        setWorkflowChain(null);
+                        setWorkflowResults(null);
+                        setWorkflowProgress({ current: 0, total: 0 });
+                        setWorkflowStatus("");
+                      }}
+                    />
+                  ) : (
+                    <WorkflowProgressDisplay
+                      chainId={workflowChain.chain_id}
+                      totalTasks={workflowChain.total_tasks}
+                      currentTask={workflowProgress.current}
+                      currentStatus={workflowStatus}
+                      isLoading={isWorkflowLoading}
+                      error={workflowError}
+                    />
+                  )}
+                </div>
+              )}
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
                 <ImageViewer apiUrl={apiUrl} refreshTrigger={imageRefreshTrigger} />
