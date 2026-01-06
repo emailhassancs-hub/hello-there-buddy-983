@@ -95,10 +95,10 @@ const Index = () => {
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
 
-  //const apiUrl = import.meta.env.VITE_API_BASE_URL;
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
 
-  const apiUrl = "http://localhost:8080";
+  //const apiUrl = "http://localhost:8080";
   const API = apiUrl;
  
   // Load token from localStorage only
