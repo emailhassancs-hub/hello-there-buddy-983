@@ -2,10 +2,11 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { apiFetch } from "@/lib/api"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { LocalStorageKeys } from "@/enums/localstorage"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -212,6 +213,8 @@ interface ModelOptimizationProps {
 
 export default function ModelOptimization({ isActive = false, onSendMessage, onAddDirectMessage }: ModelOptimizationProps) {
   const { data: userProfile } = useUserProfile();
+  const { toast } = useToast();
+  const prevRunningTasksLengthRef = useRef(0);
   const [selectedModel, setSelectedModel] = useState<number | null>(null)
   const [optimizationType, setOptimizationType] = useState("")
   const [optimizationStrength, setOptimizationStrength] = useState("")
@@ -242,6 +245,63 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
   // Fetch models on component mount
   useEffect(() => {
     fetchModelsData()
+  }, [])
+
+  // Listen for model refresh events (from uploads)
+  useEffect(() => {
+    const handleRefresh = () => {
+      refreshModelsData()
+    }
+    window.addEventListener('refreshOptimizationModels', handleRefresh)
+    return () => window.removeEventListener('refreshOptimizationModels', handleRefresh)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Listen for optimization started from chat
+  useEffect(() => {
+    const handleOptimizationStarted = async (event: CustomEvent) => {
+      console.log("Optimization started from chat, checking for running jobs...", event.detail)
+      
+      try {
+        const response = await fetchRunningJobs()
+        const runningJobs = response.jobs
+
+        console.log("Found running jobs after chat optimization:", runningJobs)
+
+        if (runningJobs.length > 0) {
+          // Convert running jobs to tasks
+          const newTasks: RunningTask[] = runningJobs.map((job) => ({
+            id: `task-${Date.now()}-${Math.random()}`,
+            modelName: job.model_name || "Unknown Model",
+            optimizationType: job.preset?.name || "Optimization",
+            strength: "Standard",
+            status: "processing" as const,
+            startTime: new Date(),
+          }))
+
+          console.log("Creating tasks from chat optimization:", newTasks)
+          setRunningTasks((prevTasks) => {
+            // Merge with existing tasks, avoiding duplicates by model name
+            // If we have asset_id from event detail, we can use it for better matching
+            const existingModelNames = new Set(prevTasks.map(t => t.modelName))
+            const uniqueNewTasks = newTasks.filter(t => !existingModelNames.has(t.modelName))
+            
+            if (uniqueNewTasks.length > 0) {
+              console.log(`Added ${uniqueNewTasks.length} new tasks from chat optimization`)
+            }
+            
+            return [...prevTasks, ...uniqueNewTasks]
+          })
+        } else {
+          console.log("No running jobs found yet, will retry on next poll")
+        }
+      } catch (error) {
+        console.error("Error checking running jobs after chat optimization:", error)
+      }
+    }
+
+    window.addEventListener('optimizationStartedFromChat', handleOptimizationStarted as EventListener)
+    return () => window.removeEventListener('optimizationStartedFromChat', handleOptimizationStarted as EventListener)
   }, [])
 
   // Fetch associated models when selected model changes
@@ -379,6 +439,33 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
 
     return () => clearInterval(pollInterval)
   }, [runningTasks.length, selectedModel])
+
+  // Toast notifications for optimization start and completion
+  useEffect(() => {
+    const currentLength = runningTasks.length;
+    const prevLength = prevRunningTasksLengthRef.current;
+
+    // Optimization started: runningTasks went from 0 to > 0
+    if (prevLength === 0 && currentLength > 0) {
+      toast({
+        title: "Optimization Started",
+        description: "Your model optimization is being started. You will be notified once optimization is completed.",
+        duration: 5000,
+      });
+    }
+
+    // Optimization completed: runningTasks went from > 0 to 0
+    if (prevLength > 0 && currentLength === 0) {
+      toast({
+        title: "Optimization Completed",
+        description: "Your model optimization has been completed successfully!",
+        duration: 5000,
+      });
+    }
+
+    // Update ref for next comparison
+    prevRunningTasksLengthRef.current = currentLength;
+  }, [runningTasks.length, toast]);
 
   // Send system prompt to /ask endpoint when component is active
   // DISABLED: Removed automatic /ask call on tab click or refresh

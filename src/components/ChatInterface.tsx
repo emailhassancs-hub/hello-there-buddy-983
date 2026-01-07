@@ -378,7 +378,7 @@ const ChatInterface = ({
   }, []);
 
   const triggerModelUpload = useCallback(() => {
-    onOptimizationFormSubmit?.("model-optimization-clicked", {});
+    onOptimizationFormSubmit?.("show-optimization-form", {});
   }, [onOptimizationFormSubmit]);
 
   const handleImageZoom = useCallback((src: string) => {
@@ -539,7 +539,7 @@ const ChatInterface = ({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* <DropdownMenu>
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -550,13 +550,13 @@ const ChatInterface = ({
                 <span className="text-xs">Tools</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="start" className="w-56 bg-white">
               <DropdownMenuItem onClick={triggerModelUpload}>
                 <Box className="w-4 h-4 mr-2" />
                 Model Optimization
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu> */}
+          </DropdownMenu>
 
           <Textarea
             ref={textareaRef}

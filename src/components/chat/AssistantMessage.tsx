@@ -213,11 +213,12 @@ const OptimizationForms = ({
   const authToken = (window as { authToken?: string }).authToken || null;
 
   if (message.formType === "model-selection" && message.formData) {
-    const formData = message.formData as { models: ModelInfo[] };
+    const formData = message.formData as { models: ModelInfo[]; isUploading?: boolean };
     return (
       <div className="mt-3">
         <ModelSelectionForm
           models={formData.models}
+          isUploading={formData.isUploading || false}
           onModelSelect={(modelId) => {
             onOptimizationFormSubmit?.("model-selected", { modelId });
           }}

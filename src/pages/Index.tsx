@@ -13,6 +13,7 @@ import { LocalStorageKeys } from "@/enums/localstorage";
 import { SSEStatusListener } from "@/components/SSEStatusListener";
 import { SSEStatusUpdate } from "@/hooks/useSSE";
 import { extractImageUrls } from "@/components/chat/utils";
+import { Message, ToolCall } from "@/components/chat/types";
 import { WorkflowProgressDisplay } from "@/components/WorkflowProgressDisplay";
 import { WorkflowChainResults } from "@/components/WorkflowChainResults";
 import {
@@ -29,34 +30,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ErrorBoundary from "@/components/ui/error-boundary";
-
-interface ToolCall {
-  id: string;
-  name: string;
-  args: Record<string, any>;
-}
-
-interface Message {
-  role: "user" | "assistant" | "system";
-  text: string;
-  timestamp?: Date;
-  toolCalls?: ToolCall[];
-  conversationId?: string;
-  toolName?: string;
-  status?: "awaiting_confirmation" | "complete" | "listening" | "COMPLETED" | "error";
-  interruptMessage?: string;
-  formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
-  formData?: any;
-  imagePaths?: string[];
-  image_path?: string;
-  job_id?: string;
-  jobId?: string;
-  generation_type?: string;
-  seed?: number;
-  model?: string;
-  chainId?: string;
-  taskNumber?: number;
-}
 
 // Helper function to extract email from JWT token
 const extractEmailFromToken = (token: string | null): string | null => {
@@ -125,6 +98,57 @@ const Index = () => {
       }
     };
   }, []);
+
+  // Listen for model selection form refresh event
+  useEffect(() => {
+    const handleRefreshModelSelection = async () => {
+      try {
+        const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
+        const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
+        
+        const response = await fetch(`${backendUrl}/api/model-optimization/models`, {
+          headers: {
+            "Authorization": currentToken ? `Bearer ${currentToken}` : "",
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const modelsArray = data.models || data || [];
+          
+          const updatedModels: any[] = modelsArray.map((model: any) => ({
+            id: model.assetId,
+            name: model.name || model.filename || model.fileName || `Model ${model.id || model.asset_id || model.assetId}`,
+            image: model.thumbnail_url || model.thumbnailUrl || model.image || "/placeholder.svg",
+            creationDate: model.created_at || model.createdAt 
+              ? new Date(model.created_at || model.createdAt).toLocaleDateString() 
+              : new Date().toLocaleDateString()
+          }));
+
+          // Update all messages with model-selection form type, preserving isUploading state
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                ? {
+                    ...msg,
+                    formData: {
+                      models: updatedModels,
+                      isUploading: (msg.formData as Record<string, any>).isUploading || false,
+                    },
+                  }
+                : msg
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error refreshing model selection form:", error);
+      }
+    };
+
+    window.addEventListener('refreshModelSelectionForm', handleRefreshModelSelection);
+    return () => window.removeEventListener('refreshModelSelectionForm', handleRefreshModelSelection);
+  }, [authToken, apiUrl]);
 
   const updateSessionId = (newSessionId: string) => {
     setSessionId(newSessionId);
@@ -530,6 +554,43 @@ const Index = () => {
         }
 
         // console.log(jobIds,'here is main job ids i am getting====>>>>')
+
+        // Check if any message is a successful model optimization
+        if (data.messages && Array.isArray(data.messages)) {
+          for (const msg of data.messages) {
+            if (msg.type === "tool" && 
+                (msg.name === "optimize_single_model_tool" || msg.name === "optimize_multiple_models_tool")) {
+              try {
+                const toolContent = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content;
+                // Check for success and any status that indicates optimization has started
+                const activeStatuses = ["running", "PENDING", "pending", "processing", "PROCESSING", "queued", "QUEUED"];
+                if (toolContent && 
+                    toolContent.success === true && 
+                    toolContent.status && 
+                    activeStatuses.includes(toolContent.status)) {
+                  // Redirect to optimization tab immediately
+                  setActiveTab("optimization");
+                  
+                  // Dispatch event to trigger polling after 5 seconds (to allow job to be registered)
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('optimizationStartedFromChat', {
+                      detail: { 
+                        modelId: toolContent.model_id,
+                        presetId: toolContent.preset_id,
+                        status: toolContent.status
+                      }
+                    }));
+                  }, 5000); // 5 second delay before starting polling to allow job registration
+                  
+                  console.log("Model optimization started, redirecting to optimization tab and starting polling in 5 seconds", toolContent);
+                  break; // Only handle the first optimization found
+                }
+              } catch (error) {
+                console.error("Error parsing optimization tool content:", error);
+              }
+            }
+          }
+        }
       }
 
       if (data.status === "awaiting_confirmation") {
@@ -879,11 +940,11 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       
       // Build the payload with ACCESS_TOKEN
       const payload = {
-        ACCESS_TOKEN: accessToken,
         optimization_type: optType,
         presetId: strength,
         reduction_strength: presetText,
-        modelId: modelId
+        modelId: modelId,
+        role: 'system'
       };
       
       // Display friendly message to user
@@ -908,84 +969,54 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
     } else if (type === "reset") {
       // Reset workflow - user can start over
       handleAddDirectMessage("assistant", "Ready to optimize another model! Click the Model Optimization tab to begin.");
-    } else if (type === "model-optimization-clicked") {
-      // When Model Optimization button is clicked
-      // Send system prompt silently to /ask endpoint
-      const systemPrompt = `You are a 3D model optimization assistant. When a user requests model optimization, explain the following:
-
-Available optimization categories:
-- **Simple**: General purpose optimization for most 3D models
-- **Batch**: Optimize multiple models at once with consistent settings
-- **Hard Surface**: Specialized for mechanical, architectural, or man-made objects
-- **Foliage**: Optimized for plants, trees, and organic vegetation
-- **Animated**: Preserve animation data while reducing polygon count
-
-Optimization strength levels:
-- **10-30%**: Light optimization, preserves most detail
-- **35-60%**: Moderate optimization, balanced quality/performance
-- **70-95%**: Aggressive optimization, maximum performance
-
-The process:
-1. Select a model from your library or upload a new one
-2. Choose the optimization type that matches your model
-3. Select the reduction strength based on your needs
-4. Download optimized files in GLB, USDZ, or FBX formats`;
-
-      // Show simple user message first
-      handleAddDirectMessage("user", "Model optimization invoked.");
+    } else if (type === "show-optimization-form") {
+      // When Model Optimization button is clicked, fetch models and display them in chat
+      handleAddDirectMessage("user", "Model optimization");
       
-      // Send system prompt to backend and get response
+      // Fetch models from API
       try {
-        const payload: any = {
-          query: systemPrompt,
-        };
+        const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
+        const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
         
-        if (sessionId) {
-          payload.session_id = sessionId;
-        }
-
-        if (userProfile?.email) {
-          payload.email = userProfile.email;
-        }
-
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-        };
-        
-        if (authToken) {
-          headers["Authorization"] = `Bearer ${authToken}`;
-        }
-
-        const response = await fetch(`${API}/ask`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
+        const response = await fetch(`${backendUrl}/api/model-optimization/models`, {
+          headers: {
+            "Authorization": currentToken ? `Bearer ${currentToken}` : "",
+            "Content-Type": "application/json"
+          }
         });
 
+        if (!response.ok) throw new Error("Failed to fetch models");
+
         const data = await response.json();
+        
+        // Handle different API response formats
+        const modelsArray = data.models || data || [];
+        
+        // Convert API models to ModelInfo format
+        const models: any[] = modelsArray.map((model: any) => ({
+          id: model.assetId,
+          name: model.name || model.filename || model.fileName || `Model ${model.id || model.asset_id || model.assetId}`,
+          image: model.thumbnail_url || model.thumbnailUrl || model.image || "/placeholder.svg",
+          creationDate: model.created_at || model.createdAt 
+            ? new Date(model.created_at || model.createdAt).toLocaleDateString() 
+            : new Date().toLocaleDateString()
+        }));
 
-        // Update session ID if provided
-        if (data.session_id) {
-          updateSessionId(data.session_id);
-        }
-
-        // Show agent's response
-        if (data.messages && Array.isArray(data.messages)) {
-          const assistantMessages = data.messages.filter((msg: any) => msg.type === "ai");
-          if (assistantMessages.length > 0) {
-            const lastAssistantMsg = assistantMessages[assistantMessages.length - 1];
-            handleAddDirectMessage("assistant", lastAssistantMsg.content || "", "optimization-inline");
-          }
-        } else if (data.response) {
-          handleAddDirectMessage("assistant", data.response, "optimization-inline");
-        } else {
-          // Fallback if no response from backend
-          handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
-        }
+        handleAddDirectMessage("assistant", "Select a model to optimize:", "model-selection", {
+          models: models
+        });
       } catch (error) {
-        console.error("Error fetching optimization guide:  ", error);
-        handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
+        console.error("Error fetching models:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load models. Please try again.",
+          variant: "destructive"
+        });
+        handleAddDirectMessage("assistant", "Failed to load models. Please try again.");
       }
+    } else if (type === "upload-new") {
+      // When user clicks "Upload New" button in model selection form
+      document.getElementById('model-file-input')?.click();
     }
   };
 
@@ -1096,12 +1127,150 @@ The process:
         onChange={async (e) => {
           const file = e.target.files?.[0];
           if (file) {
-            // Handle model upload here if needed
-            console.log("Model file selected:", file.name);
-            toast({
-              title: "Upload not implemented",
-              description: "Model upload from optimization form is not yet implemented",
-            });
+            // Set loading state on model selection form
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                  ? {
+                      ...msg,
+                      formData: {
+                        ...(msg.formData as Record<string, any>),
+                        isUploading: true,
+                      },
+                    }
+                  : msg
+              )
+            );
+
+            try {
+              const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
+              
+              if (!currentToken) {
+                // Reset loading state on error
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                      ? {
+                          ...msg,
+                          formData: {
+                            ...(msg.formData as Record<string, any>),
+                            isUploading: false,
+                          },
+                        }
+                      : msg
+                  )
+                );
+                toast({
+                  title: "Authentication required",
+                  description: "Please authenticate first to upload models.",
+                  variant: "destructive",
+                });
+                return;
+              }
+
+              toast({
+                title: "Preparing upload...",
+                description: "Getting upload credentials",
+              });
+
+              const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
+              const signedUrlResponse = await fetch(`${backendUrl}/api/model-optimization/get-signed-url`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${currentToken}`
+                },
+                body: JSON.stringify({
+                  model_name: file.name,
+                  filename: file.name,
+                }),
+              });
+
+              if (!signedUrlResponse.ok) {
+                throw new Error(`Request failed with status ${signedUrlResponse.status}`);
+              }
+
+              const { s3_upload_url, asset_id } = await signedUrlResponse.json();
+
+              toast({
+                title: "Uploading...",
+                description: "Uploading your model to storage",
+              });
+
+              const uploadResponse = await fetch(s3_upload_url, {
+                method: "PUT",
+                headers: { "Content-Type": "application/octet-stream" },
+                body: file,
+              });
+
+              if (!uploadResponse.ok) {
+                throw new Error("Failed to upload model to S3");
+              }
+
+              toast({
+                title: "Registering...",
+                description: "Registering your model for optimization",
+              });
+
+              const completeResponse = await fetch(`${backendUrl}/api/model-optimization/complete-upload/${asset_id}`, {
+                method: "GET",
+                headers: {
+                  "Authorization": `Bearer ${currentToken}`,
+                  "Content-Type": "application/json",
+                },
+              });
+
+              if (!completeResponse.ok) {
+                throw new Error("Model registration failed");
+              }
+
+              toast({
+                title: "Success!",
+                description: "Your model has been uploaded and registered for optimization.",
+              });
+
+              // Reset loading state after successful upload
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                    ? {
+                        ...msg,
+                        formData: {
+                          ...(msg.formData as Record<string, any>),
+                          isUploading: false,
+                        },
+                      }
+                    : msg
+                )
+              );
+
+              // Trigger refresh of optimization form models
+              window.dispatchEvent(new CustomEvent("refreshOptimizationModels"));
+              
+              // Trigger refresh of model selection form in chat
+              window.dispatchEvent(new CustomEvent("refreshModelSelectionForm"));
+            } catch (error) {
+              console.error("Model upload error:", error);
+              // Reset loading state on error
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                    ? {
+                        ...msg,
+                        formData: {
+                          ...(msg.formData as Record<string, any>),
+                          isUploading: false,
+                        },
+                      }
+                    : msg
+                )
+              );
+              toast({
+                title: "Upload failed",
+                description: error instanceof Error ? error.message : "Failed to upload model",
+                variant: "destructive",
+              });
+            }
           }
           e.target.value = '';
         }}

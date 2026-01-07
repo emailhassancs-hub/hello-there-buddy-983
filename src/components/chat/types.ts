@@ -11,12 +11,13 @@ export interface Message {
   toolCalls?: ToolCall[];
   conversationId?: string;
   toolName?: string;
-  status?: "awaiting_confirmation" | "complete" | "processing" | "listening" | "completed" | "error" | "failed";
+  status?: "awaiting_confirmation" | "complete" | "processing" | "listening" | "completed" | "COMPLETED" | "error" | "failed";
   interruptMessage?: string;
   imagePaths?: string[];
   formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
   formData?: unknown;
   jobId?: string;
+  job_id?: string;
   // Image/model fields - these come from SSE updates, not from text
   image_path?: string;
   img_url?: string;
@@ -25,6 +26,11 @@ export interface Message {
   prompt?: string;
   generation_type?: string;
   type?: string;
+  // Workflow chain fields
+  chainId?: string;
+  taskNumber?: number;
+  seed?: number;
+  model?: string;
 }
 
 export interface ChatInterfaceProps {

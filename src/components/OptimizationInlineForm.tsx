@@ -263,7 +263,7 @@ export const OptimizationInlineForm = ({
               <SelectTrigger>
                 <SelectValue placeholder="Choose a model" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white">
                 {models.map((model) => (
                   <SelectItem key={model.id} value={model.id.toString()}>
                     {model.name}
@@ -280,7 +280,7 @@ export const OptimizationInlineForm = ({
               <SelectTrigger>
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white">
                 {OPTIMIZATION_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
@@ -300,7 +300,7 @@ export const OptimizationInlineForm = ({
               <SelectTrigger>
                 <SelectValue placeholder="Select strength" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white">
                 {optimizationType && presets[optimizationType]?.map((preset) => (
                   <SelectItem key={preset.id} value={preset.id}>
                     {preset.text}

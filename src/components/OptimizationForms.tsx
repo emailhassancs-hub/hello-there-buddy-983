@@ -33,9 +33,11 @@ interface ModelSelectionFormProps {
   models: ModelInfo[];
   onModelSelect: (modelId: number) => void;
   onUploadNew: () => void;
+  isUploading?: boolean;
 }
 
-export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew }: ModelSelectionFormProps) => {
+export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew, isUploading = false }: ModelSelectionFormProps) => {
+  console.log(models,'models===');
   const [selectedModel, setSelectedModel] = useState<number | null>(null);
 
   const handleConfirm = () => {
@@ -85,7 +87,7 @@ export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew }: Model
       <div className="flex gap-2">
         <Button
           onClick={handleConfirm}
-          disabled={!selectedModel}
+          disabled={!selectedModel || isUploading}
           className="flex-1"
         >
           Confirm Selection
@@ -93,10 +95,20 @@ export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew }: Model
         <Button
           onClick={onUploadNew}
           variant="outline"
+          disabled={isUploading}
           className="flex-1"
         >
-          <Upload className="h-4 w-4 mr-2" />
-          Upload New
+          {isUploading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload New
+            </>
+          )}
         </Button>
       </div>
     </div>
@@ -185,7 +197,7 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, a
       onSubmit(optimizationType, optimizationStrength);
       
       // Start polling if we have the necessary data
-      if (apiUrl && authToken && modelId) {
+      if (apiUrl && modelId) {
         try {
           await pollUntilComplete(modelId, parseInt(optimizationStrength));
         } catch (error) {
@@ -219,7 +231,7 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, a
             <SelectTrigger>
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               {Object.keys(presets.presets).map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -241,7 +253,7 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, a
                 optimizationType ? "Select strength" : "Select optimization type first"
               } />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               {optimizationType && 
                 presets.presets[optimizationType]?.map((preset) => (
                   <SelectItem key={preset.id} value={preset.id}>
