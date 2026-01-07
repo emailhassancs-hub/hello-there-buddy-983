@@ -1,19 +1,15 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
 import ModelOptimization from "@/components/ModelOptimization";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChatSidebar } from "@/components/ChatSidebar";
-import { ModelUploader } from "@/components/ModelUploader";
-import ModelGallery from "@/pages/ModelGallery";
-import { apiFetch } from "@/lib/api";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { LocalStorageKeys } from "@/enums/localstorage";
 import { SSEStatusListener } from "@/components/SSEStatusListener";
 import { SSEStatusUpdate } from "@/hooks/useSSE";
 import { extractImageUrls } from "@/components/chat/utils";
-import { Message, ToolCall } from "@/components/chat/types";
+import { Message } from "@/components/chat/types";
 import { WorkflowProgressDisplay } from "@/components/WorkflowProgressDisplay";
 import { WorkflowChainResults } from "@/components/WorkflowChainResults";
 import {
@@ -25,10 +21,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, BookOpen, Box, Settings, Video, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Image as ImageIcon, Box, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import ErrorBoundary from "@/components/ui/error-boundary";
 
 // Helper function to extract email from JWT token
@@ -43,7 +37,6 @@ const extractEmailFromToken = (token: string | null): string | null => {
 };
 
 const Index = () => {
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -155,11 +148,6 @@ const Index = () => {
     localStorage.setItem("mcp_session_id", newSessionId);
   };
 
-
-  const addMessage = (role: "user" | "assistant", text: string, toolName?: string) => {
-    setMessages((prev) => [...prev, { role, text, timestamp: new Date(), toolName }]);
-  };
-
   const handleAddDirectMessage = (role: "user" | "assistant", text: string, formType?: string, formData?: any) => {
     setMessages((prev) => [...prev, { role, text, timestamp: new Date(), formType: formType as any, formData }]);
   };
@@ -173,37 +161,6 @@ const Index = () => {
       content.trim().startsWith("{") && content.includes("model_id")
     );
   }, []);
-
-  const refreshImageUrl = async (blobPath: string): Promise<string | null> => {
-    try {
-      const response = await fetch(`${apiUrl}/images/refresh-url`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": authToken ? `Bearer ${authToken}` : "",
-        },
-        body: JSON.stringify({
-          email: userProfile?.email,
-          blob_path: blobPath
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to refresh URL");
-      }
-
-      const data = await response.json();
-      return data.url;
-    } catch (error) {
-      console.error("Error refreshing image URL:", error);
-      toast({
-        title: "Error",
-        description: "Failed to refresh image URL",
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
 
   const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
