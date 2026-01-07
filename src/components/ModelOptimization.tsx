@@ -215,6 +215,7 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
   const { data: userProfile } = useUserProfile();
   const { toast } = useToast();
   const prevRunningTasksLengthRef = useRef(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedModel, setSelectedModel] = useState<number | null>(null)
   const [optimizationType, setOptimizationType] = useState("")
   const [optimizationStrength, setOptimizationStrength] = useState("")
@@ -452,6 +453,18 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
         description: "Your model optimization is being started. You will be notified once optimization is completed.",
         duration: 5000,
       });
+      
+      // Scroll to bottom of container to show running tasks section when it first appears
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          const container = scrollContainerRef.current;
+          // Scroll to the bottom of the container
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 300); // Delay to ensure DOM is fully updated and section is rendered
     }
 
     // Optimization completed: runningTasks went from > 0 to 0
@@ -934,7 +947,7 @@ Be friendly and instructive. Use short explanations and examples where needed.`
   const selectedModelData = models.find((m) => m.id === selectedModel)
 
   return (
-    <div className="h-full bg-white text-black p-6 overflow-y-auto hide-scrollbar">
+    <div ref={scrollContainerRef} className="h-full bg-white text-black p-6 overflow-y-auto hide-scrollbar">
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
