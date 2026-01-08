@@ -377,38 +377,38 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <Carousel
-              opts={{ align: "start", loop: true }}
-              plugins={[Autoplay({ delay: 2500, stopOnInteraction: false })]}
-              className="w-full"
+          <div className="overflow-hidden">
+            <motion.div
+              className="flex gap-4"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{
+                x: {
+                  duration: 25,
+                  repeat: Infinity,
+                  ease: "linear",
+                },
+              }}
             >
-              <CarouselContent className="-ml-4">
-                {workflowItems.map((item, index) => (
-                  <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
-                      <img
-                        src={item.image}
-                        alt={item.label}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <span className="inline-block px-4 py-2 bg-background/50 border border-white/20 text-white text-sm font-medium rounded-full backdrop-blur-md shadow-lg">
-                          {item.label}
-                        </span>
-                      </div>
+              {/* Duplicate items for seamless loop */}
+              {[...workflowItems, ...workflowItems].map((item, index) => (
+                <div key={index} className="flex-shrink-0 w-[280px] md:w-[320px] lg:w-[350px]">
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
+                    <img
+                      src={item.image}
+                      alt={item.label}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <span className="inline-block px-4 py-2 bg-background/50 border border-white/20 text-white text-sm font-medium rounded-full backdrop-blur-md shadow-lg">
+                        {item.label}
+                      </span>
                     </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          </motion.div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
         </div>
       </section>
 
