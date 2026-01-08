@@ -152,22 +152,22 @@ const Landing = () => {
   const [isImageEditHovered, setIsImageEditHovered] = useState(false);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
 
-  // Cycle through images only when hovering
+  // Cycle through images only when hovering - first image waits 3 seconds before switching
   useEffect(() => {
     if (!isImageGenHovered) return;
-    const interval = setInterval(() => {
+    const timeout = setTimeout(() => {
       setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [isImageGenHovered]);
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, [isImageGenHovered, imageGenIndex]);
 
   useEffect(() => {
     if (!isImageEditHovered) return;
-    const interval = setInterval(() => {
+    const timeout = setTimeout(() => {
       setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [isImageEditHovered]);
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, [isImageEditHovered, imageEditIndex]);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
