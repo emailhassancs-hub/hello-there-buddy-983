@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Check, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -102,6 +103,21 @@ const pricingTiers = [
   },
 ];
 
+// Image arrays for cycling in feature sections
+const imageGenerationImages = [
+  "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&h=600&fit=crop",
+];
+
+const imageEditingImages = [
+  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800&h=600&fit=crop",
+];
+
 // Scrollable storytelling content
 const storyContent = [
   {
@@ -110,7 +126,6 @@ const storyContent = [
     subtitle: "Infinite Styles, Endless Possibilities",
     description:
       "Generate concept art, characters, environments, and marketing visuals in any style. From photorealistic renders to stylized illustrations, our AI adapts to your creative vision and brings ideas to life instantly.",
-    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop",
   },
   {
     id: "image-editing",
@@ -118,7 +133,6 @@ const storyContent = [
     subtitle: "Transform & Enhance",
     description:
       "Edit images with precision using AI-powered tools. Remove backgrounds instantly, upscale to 4x resolution, enhance details, and apply visual effects — all with simple commands.",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
   },
   {
     id: "3d-generation",
@@ -132,6 +146,24 @@ const storyContent = [
 
 const Landing = () => {
   const navigate = useNavigate();
+  const [imageGenIndex, setImageGenIndex] = useState(0);
+  const [imageEditIndex, setImageEditIndex] = useState(0);
+
+  // Cycle through images every 3 seconds
+  useEffect(() => {
+    const imageGenInterval = setInterval(() => {
+      setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
+    }, 3000);
+
+    const imageEditInterval = setInterval(() => {
+      setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
+    }, 3500); // Slightly different timing to avoid sync
+
+    return () => {
+      clearInterval(imageGenInterval);
+      clearInterval(imageEditInterval);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -238,12 +270,19 @@ const Landing = () => {
             className="grid md:grid-cols-2 gap-12 items-center"
           >
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl">
-              <img
-                src={storyContent[0].image}
-                alt={storyContent[0].title}
-                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={imageGenIndex}
+                  src={imageGenerationImages[imageGenIndex]}
+                  alt={storyContent[0].title}
+                  className="w-full h-full object-cover"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                />
+              </AnimatePresence>
+              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
             </div>
             <div className="text-center md:text-left">
               <span className="text-sm font-medium text-primary uppercase tracking-wider">
@@ -270,12 +309,19 @@ const Landing = () => {
               <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[1].description}</p>
             </div>
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl order-1 md:order-2">
-              <img
-                src={storyContent[1].image}
-                alt={storyContent[1].title}
-                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={imageEditIndex}
+                  src={imageEditingImages[imageEditIndex]}
+                  alt={storyContent[1].title}
+                  className="w-full h-full object-cover"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                />
+              </AnimatePresence>
+              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
             </div>
           </motion.div>
 
