@@ -93,27 +93,27 @@ const pricingTiers = [
   },
 ];
 
-// Scrollable storytelling content - Image Generation first
+// Scrollable storytelling content
 const storyContent = [
   {
     id: "image-generation",
     title: "Image Generation",
     subtitle: "Infinite Styles, Endless Possibilities",
-    description: "Generate concept art, characters, environments, and marketing visuals in any style. From photorealistic to stylized, our AI adapts to your creative vision.",
+    description: "Generate concept art, characters, environments, and marketing visuals in any style. From photorealistic renders to stylized illustrations, our AI adapts to your creative vision and brings ideas to life instantly.",
     image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop",
   },
   {
-    id: "text-to-image",
-    title: "Text-to-Image Editing",
-    subtitle: "Words Become Worlds",
-    description: "Describe your vision in natural language. Watch as AI transforms your words into stunning, high-fidelity images with incredible detail and precision.",
+    id: "image-editing",
+    title: "Image Editing",
+    subtitle: "Transform & Enhance",
+    description: "Edit images with precision using AI-powered tools. Remove backgrounds instantly, upscale to 4x resolution, enhance details, and apply visual effects — all with simple commands.",
     image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
   },
   {
     id: "3d-generation",
     title: "3D Model Generation & Optimization",
-    subtitle: "From Flat to Fully Realized",
-    description: "Convert 2D concepts into production-ready 3D models. Optimize topology, generate textures, and export for any game engine seamlessly.",
+    subtitle: "Production-Ready 3D Assets",
+    description: "Create and optimize 3D models for games and creative projects. Generate from text or images, optimize topology, create textures, and export production-ready assets for any game engine.",
     image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
   },
 ];
