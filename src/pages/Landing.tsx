@@ -270,16 +270,16 @@ const Landing = () => {
             className="grid md:grid-cols-2 gap-12 items-center"
           >
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl">
-              <AnimatePresence mode="wait">
+              <AnimatePresence initial={false}>
                 <motion.img
                   key={imageGenIndex}
                   src={imageGenerationImages[imageGenIndex]}
                   alt={storyContent[0].title}
-                  className="w-full h-full object-cover"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
+                  transition={{ duration: 1, ease: "easeInOut" }}
                 />
               </AnimatePresence>
               <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
@@ -309,16 +309,16 @@ const Landing = () => {
               <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[1].description}</p>
             </div>
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl order-1 md:order-2">
-              <AnimatePresence mode="wait">
+              <AnimatePresence initial={false}>
                 <motion.img
                   key={imageEditIndex}
                   src={imageEditingImages[imageEditIndex]}
                   alt={storyContent[1].title}
-                  className="w-full h-full object-cover"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
+                  transition={{ duration: 1, ease: "easeInOut" }}
                 />
               </AnimatePresence>
               <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
