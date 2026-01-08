@@ -233,7 +233,7 @@ const Landing = () => {
                 </span>
               </h1>
               <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="px-5 py-2.5 rounded-full bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 border border-primary/30 backdrop-blur-sm">
+                <div className="px-5 py-2.5 rounded-full bg-background/40 border border-primary/20 backdrop-blur-md shadow-lg">
                   <span className="text-lg md:text-xl font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent inline-flex items-center gap-2">
                     <Zap className="w-5 h-5 text-primary" />
                     Powered by The Agent Engine
