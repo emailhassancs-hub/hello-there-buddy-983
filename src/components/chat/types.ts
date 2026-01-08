@@ -14,8 +14,9 @@ export interface Message {
   status?: "awaiting_confirmation" | "complete" | "processing" | "listening" | "completed" | "COMPLETED" | "error" | "failed";
   interruptMessage?: string;
   imagePaths?: string[];
-  formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
+  formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline" | "optimized-model";
   formData?: unknown;
+  optimizedModelId?: number;
   jobId?: string;
   job_id?: string;
   // Image/model fields - these come from SSE updates, not from text

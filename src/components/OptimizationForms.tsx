@@ -275,3 +275,62 @@ export const OptimizationResultForm = ({ result, onDownload, onReset }: Optimiza
     </div>
   );
 };
+
+interface OptimizedModelCardProps {
+  preset_name: string;
+  optimization_status: string;
+  name: string;
+  downloads: {
+    glb?: string;
+    usdz?: string;
+    fbx?: string;
+  };
+}
+
+export const OptimizedModelCard = ({ preset_name, optimization_status, name, downloads }: OptimizedModelCardProps) => {
+  const handleDownload = (url: string, filename: string) => {
+    window.open(url, '_blank');
+  };
+
+  return (
+    <div className="p-3 bg-background border border-border rounded-lg space-y-3">
+      <h4 className="text-foreground font-medium text-sm">{preset_name}</h4>
+      <p className="text-muted-foreground text-xs">Status: {optimization_status}</p>
+      <div className="flex gap-2 flex-wrap">
+        {downloads.glb && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleDownload(downloads.glb!, `${name}.glb`)}
+            className="border-black/20 text-black hover:bg-black/10 bg-transparent"
+          >
+            <Download className="h-3 w-3 mr-1" />
+            GLB
+          </Button>
+        )}
+        {downloads.usdz && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleDownload(downloads.usdz!, `${name}.usdz`)}
+            className="border-black/20 text-black hover:bg-black/10 bg-transparent"
+          >
+            <Download className="h-3 w-3 mr-1" />
+            USDZ
+          </Button>
+        )}
+        {downloads.fbx && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleDownload(downloads.fbx!, `${name}.fbx`)}
+            className="border-black/20 text-black hover:bg-black/10 bg-transparent"
+          >
+            <Download className="h-3 w-3 mr-1" />
+            FBX
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};

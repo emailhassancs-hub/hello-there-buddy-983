@@ -47,6 +47,7 @@ const Index = () => {
   const [modelRefreshTrigger, setModelRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [activeJobIds, setActiveJobIds] = useState<string[]>([]);
+  const optimizationPollIntervalsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   
   // Workflow chain state
   const [workflowChain, setWorkflowChain] = useState<WorkflowChainData | null>(null);
@@ -525,19 +526,27 @@ const Index = () => {
                     toolContent.success === true && 
                     toolContent.status && 
                     activeStatuses.includes(toolContent.status)) {
-                  // Redirect to optimization tab immediately
-                  setActiveTab("optimization");
-                  
-                  // Dispatch event to trigger polling after 5 seconds (to allow job to be registered)
-                  setTimeout(() => {
-                    window.dispatchEvent(new CustomEvent('optimizationStartedFromChat', {
-                      detail: { 
-                        modelId: toolContent.model_id,
-                        presetId: toolContent.preset_id,
-                        status: toolContent.status
+                  // If optimized_model_id exists, add placeholder and start polling for the optimized model
+                  if (toolContent.optimized_model_id) {
+                    // Add placeholder message for optimized model
+                    const placeholderMessage: Message = {
+                      role: "assistant",
+                      text: "",
+                      formType: "optimized-model",
+                      status: "listening",
+                      optimizedModelId: toolContent.optimized_model_id,
+                      formData: {
+                        preset_name: "",
+                        optimization_status: "processing",
+                        name: "",
+                        downloads: {}
                       }
-                    }));
-                  }, 5000); // 5 second delay before starting polling to allow job registration
+                    };
+                    setMessages((prev) => [...prev, placeholderMessage]);
+                    
+                    // Start polling
+                    startPollingOptimizedModel(toolContent.optimized_model_id);
+                  }
                   
                   console.log("Model optimization started, redirecting to optimization tab and starting polling in 5 seconds", toolContent);
                   break; // Only handle the first optimization found
@@ -851,6 +860,95 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       });
     }
   }, [toast, handleImageGenerated, handleModelGenerated]);
+
+  // Poll optimized model status until it's done
+  const startPollingOptimizedModel = useCallback((optimizedModelId: number) => {
+    // Clear any existing polling for this model
+    const existingInterval = optimizationPollIntervalsRef.current.get(optimizedModelId);
+    if (existingInterval) {
+      clearInterval(existingInterval);
+    }
+    
+    const rapidModelsApiUrl = "https://games-ai-studio-be-feature-347148155332.us-central1.run.app";
+    let pollCount = 0;
+    const maxPolls = 120; // 10 minutes max (5 seconds * 120)
+    
+    const pollInterval = setInterval(async () => {
+      pollCount++;
+      
+      try {
+        const response = await fetch(`${rapidModelsApiUrl}/api/rapidmodels/${optimizedModelId}`);
+        
+        if (!response.ok) {
+          console.error("Failed to fetch optimized model status");
+          if (pollCount >= maxPolls) {
+            clearInterval(pollInterval);
+            optimizationPollIntervalsRef.current.delete(optimizedModelId);
+          }
+          return;
+        }
+        
+        const result = await response.json();
+        const modelData = result.data;
+        
+        if (modelData && modelData.optimization_status === "done") {
+          clearInterval(pollInterval);
+          optimizationPollIntervalsRef.current.delete(optimizedModelId);
+          
+          // Update placeholder message with actual optimized model data
+          setMessages((prev) => {
+            return prev.map((msg) => {
+              // Find the placeholder message for this optimized model
+              if (
+                msg.formType === "optimized-model" && 
+                msg.optimizedModelId === optimizedModelId &&
+                msg.status === "listening"
+              ) {
+                return {
+                  ...msg,
+                  status: "completed",
+                  formData: {
+                    preset_name: modelData.preset_name || "Optimized Model",
+                    optimization_status: modelData.optimization_status,
+                    name: modelData.name,
+                    downloads: modelData.downloads || {}
+                  }
+                };
+              }
+              return msg;
+            });
+          });
+          
+          toast({
+            title: "Optimization Complete",
+            description: "Your model has been optimized successfully!",
+          });
+        } else if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          optimizationPollIntervalsRef.current.delete(optimizedModelId);
+          console.error("Optimization polling timeout");
+        }
+      } catch (error) {
+        console.error("Error polling optimized model:", error);
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          optimizationPollIntervalsRef.current.delete(optimizedModelId);
+        }
+      }
+    }, 5000); // Poll every 5 seconds
+    
+    optimizationPollIntervalsRef.current.set(optimizedModelId, pollInterval);
+  }, [toast]);
+  
+  // Cleanup polling intervals on unmount
+  useEffect(() => {
+    return () => {
+      optimizationPollIntervalsRef.current.forEach((interval) => {
+        clearInterval(interval);
+      });
+      optimizationPollIntervalsRef.current.clear();
+    };
+  }, []);
 
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
     console.log("Optimization form submit:", type, data);

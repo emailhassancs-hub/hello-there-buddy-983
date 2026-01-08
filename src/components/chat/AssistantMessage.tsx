@@ -8,7 +8,8 @@ import { MessageImageRenderer } from "./MessageImageRenderer";
 import { 
   ModelSelectionForm, 
   OptimizationConfigForm, 
-  OptimizationResultForm, 
+  OptimizationResultForm,
+  OptimizedModelCard,
   type ModelInfo,
   type OptimizationPresets,
   type OptimizationResult
@@ -67,8 +68,8 @@ export const AssistantMessage = ({
   const shouldShowText = !isPlainImageUrl && !hasImageContent && !isListening && cleanedText.length > 0;
   
   // Show placeholder when status is listening and no actual content exists (generic placeholder)
-  // This works for both image and model generation
-  const shouldShowImagePlaceholder = isListening && !hasActualContent;
+  // This works for both image and model generation, but exclude optimized-model which has its own placeholder
+  const shouldShowImagePlaceholder = isListening && !hasActualContent && message.formType !== "optimized-model";
 
   return (
     <div className="flex justify-start">
@@ -290,6 +291,61 @@ const OptimizationForms = ({
         }}
       />
     );
+  }
+
+  if (message.formType === "optimized-model") {
+    const status = message.status?.toLowerCase();
+    const isOptimizing = status === "listening" || status === "processing";
+    
+    // Show placeholder while optimizing
+    if (isOptimizing) {
+      return (
+        <div className="mt-3">
+          <div className="p-3 bg-background border border-border rounded-lg space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+              <h4 className="text-foreground font-medium text-sm">Optimizing model...</h4>
+            </div>
+            <p className="text-muted-foreground text-xs">Status: processing</p>
+            <div className="flex gap-2 flex-wrap">
+              <div className="px-3 py-1.5 border border-border/50 rounded text-xs text-muted-foreground bg-muted/50">
+                GLB
+              </div>
+              <div className="px-3 py-1.5 border border-border/50 rounded text-xs text-muted-foreground bg-muted/50">
+                USDZ
+              </div>
+              <div className="px-3 py-1.5 border border-border/50 rounded text-xs text-muted-foreground bg-muted/50">
+                FBX
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // Show actual card when done
+    if (message.formData) {
+      const formData = message.formData as {
+        preset_name: string;
+        optimization_status: string;
+        name: string;
+        downloads: {
+          glb?: string;
+          usdz?: string;
+          fbx?: string;
+        };
+      };
+      return (
+        <div className="mt-3">
+          <OptimizedModelCard
+            preset_name={formData.preset_name}
+            optimization_status={formData.optimization_status}
+            name={formData.name}
+            downloads={formData.downloads}
+          />
+        </div>
+      );
+    }
   }
 
   return null;
