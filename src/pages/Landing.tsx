@@ -150,6 +150,7 @@ const Landing = () => {
   const [imageEditIndex, setImageEditIndex] = useState(0);
   const [isImageGenHovered, setIsImageGenHovered] = useState(false);
   const [isImageEditHovered, setIsImageEditHovered] = useState(false);
+  const [isCarouselHovered, setIsCarouselHovered] = useState(false);
 
   // Cycle through images only when hovering
   useEffect(() => {
@@ -377,17 +378,25 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
           </motion.div>
 
-          <div className="overflow-hidden">
+          <div 
+            className="overflow-hidden"
+            onMouseEnter={() => setIsCarouselHovered(true)}
+            onMouseLeave={() => setIsCarouselHovered(false)}
+          >
             <motion.div
               className="flex gap-4"
-              animate={{ x: ["0%", "-50%"] }}
+              animate={{ 
+                x: isCarouselHovered ? undefined : ["0%", "-50%"] 
+              }}
               transition={{
                 x: {
                   duration: 25,
                   repeat: Infinity,
                   ease: "linear",
+                  repeatType: "loop",
                 },
               }}
+              style={{ width: "fit-content" }}
             >
               {/* Duplicate items for seamless loop */}
               {[...workflowItems, ...workflowItems].map((item, index) => (
