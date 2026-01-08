@@ -383,20 +383,12 @@ const Landing = () => {
             onMouseEnter={() => setIsCarouselHovered(true)}
             onMouseLeave={() => setIsCarouselHovered(false)}
           >
-            <motion.div
-              className="flex gap-4"
-              animate={{ 
-                x: isCarouselHovered ? undefined : ["0%", "-50%"] 
+            <div
+              className="flex gap-4 animate-scroll-left"
+              style={{ 
+                width: "fit-content",
+                animationPlayState: isCarouselHovered ? "paused" : "running"
               }}
-              transition={{
-                x: {
-                  duration: 25,
-                  repeat: Infinity,
-                  ease: "linear",
-                  repeatType: "loop",
-                },
-              }}
-              style={{ width: "fit-content" }}
             >
               {/* Duplicate items for seamless loop */}
               {[...workflowItems, ...workflowItems].map((item, index) => (
@@ -416,7 +408,7 @@ const Landing = () => {
                   </div>
                 </div>
               ))}
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
