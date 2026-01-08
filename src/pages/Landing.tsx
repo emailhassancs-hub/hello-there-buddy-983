@@ -175,7 +175,7 @@ const Landing = () => {
       {/* Hero Section with Masonry Background */}
       <section className="relative min-h-screen pt-16 overflow-hidden">
         {/* Masonry Background */}
-        <div className="absolute inset-0 flex gap-3 px-3 opacity-35">
+        <div className="absolute inset-0 flex gap-3 px-3 opacity-[0.38]">
           {artworkColumns.map((column, colIndex) => (
             <div
               key={colIndex}
