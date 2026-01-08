@@ -280,19 +280,24 @@ const Landing = () => {
             onMouseLeave={() => setIsImageGenHovered(false)}
           >
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]">
-              <AnimatePresence initial={false} mode="sync">
+              <AnimatePresence initial={false} mode="popLayout">
                 <motion.img
                   key={imageGenIndex}
                   src={imageGenerationImages[imageGenIndex]}
                   alt={storyContent[0].title}
                   className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ opacity: 0, scale: 1.02 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ 
-                    duration: 1.2, 
-                    ease: [0.4, 0, 0.2, 1],
-                    opacity: { duration: 0.8 }
+                  initial={{ opacity: 0 }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: [1, 1.08],
+                    transition: {
+                      opacity: { duration: 0.6, ease: "easeOut" },
+                      scale: { duration: 2.5, ease: "linear" }
+                    }
+                  }}
+                  exit={{ 
+                    opacity: 0,
+                    transition: { duration: 0.6, ease: "easeIn" }
                   }}
                 />
               </AnimatePresence>
@@ -325,19 +330,24 @@ const Landing = () => {
               <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[1].description}</p>
             </div>
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] order-1 md:order-2">
-              <AnimatePresence initial={false} mode="sync">
+              <AnimatePresence initial={false} mode="popLayout">
                 <motion.img
                   key={imageEditIndex}
                   src={imageEditingImages[imageEditIndex]}
                   alt={storyContent[1].title}
                   className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ opacity: 0, scale: 1.02 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ 
-                    duration: 1.2, 
-                    ease: [0.4, 0, 0.2, 1],
-                    opacity: { duration: 0.8 }
+                  initial={{ opacity: 0 }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: [1, 1.08],
+                    transition: {
+                      opacity: { duration: 0.6, ease: "easeOut" },
+                      scale: { duration: 2.5, ease: "linear" }
+                    }
+                  }}
+                  exit={{ 
+                    opacity: 0,
+                    transition: { duration: 0.6, ease: "easeIn" }
                   }}
                 />
               </AnimatePresence>
