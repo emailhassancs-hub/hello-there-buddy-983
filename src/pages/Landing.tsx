@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
 import { 
   Sparkles, 
   Image, 
@@ -10,7 +10,8 @@ import {
   Box, 
   Settings2,
   ArrowRight,
-  Check
+  Check,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -21,13 +22,41 @@ import {
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 
-// Demo images for carousel
+// Demo images for hero carousel
 const carouselImages = [
   "https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?w=600&h=400&fit=crop",
   "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&h=400&fit=crop",
   "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=400&fit=crop",
   "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=600&h=400&fit=crop",
   "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=600&h=400&fit=crop",
+];
+
+// Workflow carousel items
+const workflowItems = [
+  {
+    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop",
+    label: "Image Generation",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
+    label: "Image Editing",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
+    label: "3D Creation",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&h=600&fit=crop",
+    label: "Asset Optimization",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?w=800&h=600&fit=crop",
+    label: "Concept Art",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&h=600&fit=crop",
+    label: "Background Removal",
+  },
 ];
 
 const tools = [
@@ -64,37 +93,56 @@ const pricingTiers = [
   },
 ];
 
-const featureSections = [
+// Scrollable storytelling content - Image Generation first
+const storyContent = [
   {
-    id: "brainstorm",
-    title: "Idea & Brainstorming",
-    subtitle: "Ignite Your Creative Vision",
-    description: "Transform rough concepts into polished ideas. Our AI understands your creative intent and generates inspiration that sparks innovation.",
-    image: "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800&h=600&fit=crop",
+    id: "image-generation",
+    title: "Image Generation",
+    subtitle: "Infinite Styles, Endless Possibilities",
+    description: "Generate concept art, characters, environments, and marketing visuals in any style. From photorealistic to stylized, our AI adapts to your creative vision.",
+    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop",
   },
   {
     id: "text-to-image",
     title: "Text-to-Image Editing",
     subtitle: "Words Become Worlds",
-    description: "Describe your vision in natural language. Watch as AI transforms your words into stunning, high-fidelity images with incredible detail.",
-    image: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=800&h=600&fit=crop",
+    description: "Describe your vision in natural language. Watch as AI transforms your words into stunning, high-fidelity images with incredible detail and precision.",
+    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
   },
   {
     id: "3d-generation",
-    title: "3D Model Generation",
+    title: "3D Model Generation & Optimization",
     subtitle: "From Flat to Fully Realized",
-    description: "Convert 2D concepts into production-ready 3D models. Optimize topology, generate textures, and export for any game engine.",
+    description: "Convert 2D concepts into production-ready 3D models. Optimize topology, generate textures, and export for any game engine seamlessly.",
     image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
   },
 ];
 
 const Landing = () => {
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: containerRef });
+  const storyRef = useRef<HTMLDivElement>(null);
+  const [activeStoryIndex, setActiveStoryIndex] = useState(0);
+  
+  const { scrollYProgress } = useScroll({
+    target: storyRef,
+    offset: ["start start", "end end"]
+  });
+
+  // Update active story based on scroll position
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.on("change", (value) => {
+      const sectionCount = storyContent.length;
+      const newIndex = Math.min(
+        Math.floor(value * sectionCount),
+        sectionCount - 1
+      );
+      setActiveStoryIndex(Math.max(0, newIndex));
+    });
+    return () => unsubscribe();
+  }, [scrollYProgress]);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Header */}
       <motion.header 
         initial={{ y: -100 }}
@@ -135,8 +183,16 @@ const Landing = () => {
                 Supercharged by AI
               </span>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              From stunning visuals to production-ready 3D models, our platform helps creative teams bring ideas to life faster than ever.
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-4">
+              Powered by{" "}
+              <span className="text-foreground font-semibold inline-flex items-center gap-1">
+                <Zap className="w-5 h-5 text-primary" />
+                The Agent Engine
+              </span>{" "}
+              — AI for production-ready visuals and 3D assets.
+            </p>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+              The core intelligence that powers every creative workflow in Game AI Studio.
             </p>
             <Button 
               size="lg" 
@@ -178,12 +234,119 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Feature Sections with Scroll Effects */}
-      <section className="py-20">
+      {/* Scrollable Storytelling Section */}
+      <section 
+        ref={storyRef} 
+        className="relative"
+        style={{ height: `${storyContent.length * 100}vh` }}
+      >
+        <div className="sticky top-16 h-[calc(100vh-4rem)] flex items-center">
+          <div className="max-w-7xl mx-auto px-6 w-full">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              {/* Fixed Image Frame */}
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-2xl">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={storyContent[activeStoryIndex].id}
+                    src={storyContent[activeStoryIndex].image}
+                    alt={storyContent[activeStoryIndex].title}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.5 }}
+                    className="w-full h-full object-cover"
+                  />
+                </AnimatePresence>
+                <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+                
+                {/* Progress indicators */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {storyContent.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        idx === activeStoryIndex 
+                          ? "bg-primary w-8" 
+                          : "bg-foreground/30"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Animated Text Content */}
+              <div className="text-center md:text-left">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={storyContent[activeStoryIndex].id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -30 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <span className="text-sm font-medium text-primary uppercase tracking-wider">
+                      {storyContent[activeStoryIndex].subtitle}
+                    </span>
+                    <h2 className="text-3xl md:text-5xl font-bold mt-2 mb-6">
+                      {storyContent[activeStoryIndex].title}
+                    </h2>
+                    <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
+                      {storyContent[activeStoryIndex].description}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Workflow Carousel Section */}
+      <section className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-6">
-          {featureSections.map((feature, index) => (
-            <FeatureSection key={feature.id} feature={feature} index={index} />
-          ))}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">Try Different Workflows</h2>
+            <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <Carousel
+              opts={{ align: "start", loop: true }}
+              plugins={[Autoplay({ delay: 2500, stopOnInteraction: false })]}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-4">
+                {workflowItems.map((item, index) => (
+                  <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
+                      <img 
+                        src={item.image} 
+                        alt={item.label}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <span className="inline-block px-3 py-1.5 bg-primary/90 text-primary-foreground text-sm font-medium rounded-full backdrop-blur-sm">
+                          {item.label}
+                        </span>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </motion.div>
         </div>
       </section>
 
@@ -303,60 +466,6 @@ const Landing = () => {
         </div>
       </footer>
     </div>
-  );
-};
-
-// Feature Section Component with scroll-triggered animations
-const FeatureSection = ({ feature, index }: { feature: typeof featureSections[0]; index: number }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"]
-  });
-
-  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
-  const y = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [100, 0, 0, -100]);
-  const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.8, 1, 1, 0.8]);
-
-  const isEven = index % 2 === 0;
-
-  return (
-    <motion.div
-      ref={ref}
-      style={{ opacity }}
-      className="py-16 md:py-24"
-    >
-      <div className={`flex flex-col ${isEven ? "md:flex-row" : "md:flex-row-reverse"} items-center gap-12`}>
-        <motion.div 
-          style={{ y, scale }}
-          className="flex-1"
-        >
-          <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-border bg-muted">
-            <img 
-              src={feature.image}
-              alt={feature.title}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
-          </div>
-        </motion.div>
-        
-        <motion.div 
-          style={{ y: useTransform(y, v => v * 0.5) }}
-          className="flex-1 text-center md:text-left"
-        >
-          <span className="text-sm font-medium text-primary uppercase tracking-wider">
-            {feature.subtitle}
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
-            {feature.title}
-          </h2>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            {feature.description}
-          </p>
-        </motion.div>
-      </div>
-    </motion.div>
   );
 };
 
