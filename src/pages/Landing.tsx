@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useRef } from "react";
 import { 
   Sparkles, 
   Image, 
@@ -120,36 +120,8 @@ const storyContent = [
 
 const Landing = () => {
   const navigate = useNavigate();
-  const storyRef = useRef<HTMLDivElement>(null);
-  const [activeStoryIndex, setActiveStoryIndex] = useState(0);
-
-  // Update active story based on scroll position within the section
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!storyRef.current) return;
-      
-      const rect = storyRef.current.getBoundingClientRect();
-      const sectionHeight = storyRef.current.offsetHeight;
-      const viewportTop = -rect.top;
-      const sectionCount = storyContent.length;
-      
-      // Calculate progress through the section (0 to 1)
-      const progress = Math.max(0, Math.min(1, viewportTop / (sectionHeight - window.innerHeight)));
-      
-      // Map progress to section index
-      const newIndex = Math.min(
-        Math.floor(progress * sectionCount),
-        sectionCount - 1
-      );
-      
-      setActiveStoryIndex(Math.max(0, newIndex));
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Initial call
-    
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const autoplayRef = useRef(Autoplay({ delay: 3000, stopOnInteraction: false }));
+  const workflowAutoplayRef = useRef(Autoplay({ delay: 2500, stopOnInteraction: false }));
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -244,70 +216,95 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Scrollable Storytelling Section */}
-      <section 
-        ref={storyRef} 
-        className="relative"
-        style={{ height: `${storyContent.length * 100}vh` }}
-      >
-        <div className="sticky top-16 h-[calc(100vh-4rem)] flex items-center">
-          <div className="max-w-7xl mx-auto px-6 w-full">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              {/* Fixed Image Frame */}
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-2xl">
-                <AnimatePresence mode="wait">
-                  <motion.img
-                    key={storyContent[activeStoryIndex].id}
-                    src={storyContent[activeStoryIndex].image}
-                    alt={storyContent[activeStoryIndex].title}
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.5 }}
-                    className="w-full h-full object-cover"
-                  />
-                </AnimatePresence>
-                <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
-                
-                {/* Progress indicators */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                  {storyContent.map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                        idx === activeStoryIndex 
-                          ? "bg-primary w-8" 
-                          : "bg-foreground/30"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Animated Text Content */}
-              <div className="text-center md:text-left">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={storyContent[activeStoryIndex].id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -30 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <span className="text-sm font-medium text-primary uppercase tracking-wider">
-                      {storyContent[activeStoryIndex].subtitle}
-                    </span>
-                    <h2 className="text-3xl md:text-5xl font-bold mt-2 mb-6">
-                      {storyContent[activeStoryIndex].title}
-                    </h2>
-                    <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-                      {storyContent[activeStoryIndex].description}
-                    </p>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+      {/* Feature Sections - Alternating Layout */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-6 space-y-24">
+          {/* Image Generation - Image Left, Text Right */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="grid md:grid-cols-2 gap-12 items-center"
+          >
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl">
+              <img
+                src={storyContent[0].image}
+                alt={storyContent[0].title}
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
             </div>
-          </div>
+            <div className="text-center md:text-left">
+              <span className="text-sm font-medium text-primary uppercase tracking-wider">
+                {storyContent[0].subtitle}
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
+                {storyContent[0].title}
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                {storyContent[0].description}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Image Editing - Text Left, Image Right */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="grid md:grid-cols-2 gap-12 items-center"
+          >
+            <div className="text-center md:text-left order-2 md:order-1">
+              <span className="text-sm font-medium text-primary uppercase tracking-wider">
+                {storyContent[1].subtitle}
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
+                {storyContent[1].title}
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                {storyContent[1].description}
+              </p>
+            </div>
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl order-1 md:order-2">
+              <img
+                src={storyContent[1].image}
+                alt={storyContent[1].title}
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
+            </div>
+          </motion.div>
+
+          {/* 3D Model Generation - Image Left, Text Right */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="grid md:grid-cols-2 gap-12 items-center"
+          >
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl">
+              <img
+                src={storyContent[2].image}
+                alt={storyContent[2].title}
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
+            </div>
+            <div className="text-center md:text-left">
+              <span className="text-sm font-medium text-primary uppercase tracking-wider">
+                {storyContent[2].subtitle}
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
+                {storyContent[2].title}
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                {storyContent[2].description}
+              </p>
+            </div>
+          </motion.div>
         </div>
       </section>
 
