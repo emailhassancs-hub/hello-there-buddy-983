@@ -175,7 +175,7 @@ const Landing = () => {
       {/* Hero Section with Masonry Background */}
       <section className="relative min-h-screen pt-16 overflow-hidden">
         {/* Masonry Background */}
-        <div className="absolute inset-0 flex gap-3 px-3 opacity-40">
+        <div className="absolute inset-0 flex gap-3 px-3">
           {artworkColumns.map((column, colIndex) => (
             <div
               key={colIndex}
@@ -198,7 +198,7 @@ const Landing = () => {
                 {[...column, ...column, ...column].map((src, imgIndex) => (
                   <div
                     key={imgIndex}
-                    className="relative rounded-xl overflow-hidden bg-muted"
+                    className="relative rounded-xl overflow-hidden bg-muted shadow-lg"
                   >
                     <img
                       src={src}
@@ -213,9 +213,9 @@ const Landing = () => {
           ))}
         </div>
 
-        {/* Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background pointer-events-none" />
+        {/* Gradient Overlays - lighter for more visibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/50 to-background/90 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-transparent to-background/70 pointer-events-none" />
 
         {/* Hero Content */}
         <div className="relative z-10 flex items-center justify-center min-h-screen px-6">
