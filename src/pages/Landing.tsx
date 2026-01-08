@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { 
   Sparkles, 
@@ -122,24 +122,34 @@ const Landing = () => {
   const navigate = useNavigate();
   const storyRef = useRef<HTMLDivElement>(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
-  
-  const { scrollYProgress } = useScroll({
-    target: storyRef,
-    offset: ["start start", "end end"]
-  });
 
-  // Update active story based on scroll position
+  // Update active story based on scroll position within the section
   useEffect(() => {
-    const unsubscribe = scrollYProgress.on("change", (value) => {
+    const handleScroll = () => {
+      if (!storyRef.current) return;
+      
+      const rect = storyRef.current.getBoundingClientRect();
+      const sectionHeight = storyRef.current.offsetHeight;
+      const viewportTop = -rect.top;
       const sectionCount = storyContent.length;
+      
+      // Calculate progress through the section (0 to 1)
+      const progress = Math.max(0, Math.min(1, viewportTop / (sectionHeight - window.innerHeight)));
+      
+      // Map progress to section index
       const newIndex = Math.min(
-        Math.floor(value * sectionCount),
+        Math.floor(progress * sectionCount),
         sectionCount - 1
       );
+      
       setActiveStoryIndex(Math.max(0, newIndex));
-    });
-    return () => unsubscribe();
-  }, [scrollYProgress]);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Initial call
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
