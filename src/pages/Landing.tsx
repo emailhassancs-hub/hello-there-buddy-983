@@ -159,7 +159,7 @@ const Landing = () => {
     setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
     const interval = setInterval(() => {
       setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
-    }, 1500);
+    }, 2500);
     return () => clearInterval(interval);
   }, [isImageGenHovered]);
 
@@ -169,7 +169,7 @@ const Landing = () => {
     setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
     const interval = setInterval(() => {
       setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
-    }, 1500);
+    }, 2500);
     return () => clearInterval(interval);
   }, [isImageEditHovered]);
 
