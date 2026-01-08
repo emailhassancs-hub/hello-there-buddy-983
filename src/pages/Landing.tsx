@@ -200,13 +200,12 @@ const Landing = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-center"
             >
-              <div className="relative inline-block px-8 py-6 rounded-2xl">
-                {/* Dark gradient background field */}
-                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/70 to-black/60 rounded-2xl" />
-                <h1 className="relative text-5xl md:text-7xl font-bold tracking-tight text-white">
-                  Your Imagination, Supercharged by AI
-                </h1>
-              </div>
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
+                Your Imagination,{" "}
+                <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  Supercharged by AI
+                </span>
+              </h1>
               <div className="flex items-center justify-center gap-3 mb-4">
                 <div className="px-5 py-2.5 rounded-full bg-background/40 border border-primary/20 backdrop-blur-md shadow-lg">
                   <span className="text-lg md:text-xl font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent inline-flex items-center gap-2">
