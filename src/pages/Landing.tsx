@@ -18,11 +18,8 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { useRef, useState } from "react";
 
 // Artwork images for masonry background - using diverse AI art styles
 const artworkColumns = [
@@ -144,69 +141,6 @@ const storyContent = [
     image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
   },
 ];
-
-// Workflow Carousel Component with continuous scroll and hover pause
-const WorkflowCarousel = () => {
-  const autoplayPlugin = useRef(
-    Autoplay({ delay: 0, stopOnInteraction: true, stopOnMouseEnter: true })
-  );
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <section className="py-20 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">Try Different Workflows</h2>
-          <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="relative"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          <Carousel
-            opts={{ align: "start", loop: true, dragFree: true }}
-            plugins={[autoplayPlugin.current]}
-            className="w-full"
-          >
-            <CarouselContent className="-ml-4">
-              {workflowItems.map((item, index) => (
-                <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
-                    <img 
-                      src={item.image} 
-                      alt={item.label}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent dark:from-black/60" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <span className="text-sm font-semibold text-foreground">
-                        {item.label}
-                      </span>
-                    </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="absolute -left-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background border-border shadow-lg" />
-            <CarouselNext className="absolute -right-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background border-border shadow-lg" />
-          </Carousel>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -415,7 +349,53 @@ const Landing = () => {
       </section>
 
       {/* Workflow Carousel Section */}
-      <WorkflowCarousel />
+      <section className="py-20 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">Try Different Workflows</h2>
+            <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <Carousel
+              opts={{ align: "start", loop: true }}
+              plugins={[Autoplay({ delay: 2500, stopOnInteraction: false })]}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-4">
+                {workflowItems.map((item, index) => (
+                  <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
+                      <img 
+                        src={item.image} 
+                        alt={item.label}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <span className="inline-block px-3 py-1.5 bg-primary/90 text-primary-foreground text-sm font-medium rounded-full backdrop-blur-sm">
+                          {item.label}
+                        </span>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Tools Section */}
       <section className="py-20 bg-muted/50">
