@@ -74,7 +74,7 @@ const tools = [
   { icon: Eraser, label: "Background Removal", description: "Clean, precise cutouts" },
   { icon: ZoomIn, label: "Image Upscaling", description: "Enhance resolution 4x" },
   { icon: Box, label: "3D Generation", description: "Text to 3D models" },
-  { icon: Settings2, label: "3D Optimization", description: "Production-ready assets" },
+  { icon: Settings2, label: "3D Optimization", description: "Production ready assets" },
 ];
 
 const pricingTiers = [
