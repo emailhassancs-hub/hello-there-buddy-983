@@ -264,7 +264,7 @@
 }
 
 .animate-scroll-left {
-  animation: scroll-left 25s linear infinite;
+  animation: scroll-left 40s linear infinite;
 }
 
 /* Hide scrollbar while maintaining scroll functionality */
