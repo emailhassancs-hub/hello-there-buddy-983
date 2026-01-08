@@ -279,7 +279,7 @@ const Landing = () => {
             onMouseEnter={() => setIsImageGenHovered(true)}
             onMouseLeave={() => setIsImageGenHovered(false)}
           >
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl">
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]">
               <AnimatePresence initial={false}>
                 <motion.img
                   key={imageGenIndex}
@@ -320,7 +320,7 @@ const Landing = () => {
               <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">{storyContent[1].title}</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[1].description}</p>
             </div>
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl order-1 md:order-2">
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] order-1 md:order-2">
               <AnimatePresence initial={false}>
                 <motion.img
                   key={imageEditIndex}
@@ -345,7 +345,7 @@ const Landing = () => {
             transition={{ duration: 0.6 }}
             className="grid md:grid-cols-2 gap-12 items-center"
           >
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl">
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]">
               <img
                 src={storyContent[2].image}
                 alt={storyContent[2].title}
