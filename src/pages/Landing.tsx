@@ -21,6 +21,40 @@ import {
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 
+// Artwork images for masonry background - using diverse AI art styles
+const artworkColumns = [
+  [
+    "https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=400&h=550&fit=crop",
+  ],
+  [
+    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=550&fit=crop",
+    "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=400&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=400&h=500&fit=crop",
+  ],
+  [
+    "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1604076913837-52ab5629fba9?w=400&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1549490349-8643362247b5?w=400&h=550&fit=crop",
+  ],
+  [
+    "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=400&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1573096108468-702f6014ef28?w=400&h=550&fit=crop",
+    "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1569172122301-bc5008bc09c5?w=400&h=600&fit=crop",
+  ],
+  [
+    "https://images.unsplash.com/photo-1482160549825-59d1b23cb208?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1634017839464-5c339bbe3c35?w=400&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=400&h=450&fit=crop",
+    "https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=400&h=550&fit=crop",
+  ],
+];
+
 // Workflow carousel items
 const workflowItems = [
   {
@@ -138,41 +172,87 @@ const Landing = () => {
         </div>
       </motion.header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-center mb-16"
-          >
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-              Your Imagination,{" "}
-              <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Supercharged by AI
-              </span>
-            </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-4">
-              Powered by{" "}
-              <span className="text-foreground font-semibold inline-flex items-center gap-1">
-                <Zap className="w-5 h-5 text-primary" />
-                The Agent Engine
-              </span>{" "}
-              — AI for production-ready visuals and 3D assets.
-            </p>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              The core intelligence that powers every creative workflow in Game AI Studio.
-            </p>
-            <Button 
-              size="lg" 
-              onClick={() => navigate("/app")}
-              className="text-lg px-8 py-6 gap-2"
+      {/* Hero Section with Masonry Background */}
+      <section className="relative min-h-screen pt-16 overflow-hidden">
+        {/* Masonry Background */}
+        <div className="absolute inset-0 flex gap-3 px-3 opacity-40">
+          {artworkColumns.map((column, colIndex) => (
+            <div
+              key={colIndex}
+              className="flex-1 flex flex-col gap-3"
             >
-              Start Creating
-              <Sparkles className="w-5 h-5" />
-            </Button>
-          </motion.div>
+              <motion.div
+                className="flex flex-col gap-3"
+                animate={{
+                  y: colIndex % 2 === 0 ? [0, -1000] : [-1000, 0],
+                }}
+                transition={{
+                  y: {
+                    duration: 30 + colIndex * 5,
+                    repeat: Infinity,
+                    ease: "linear",
+                  },
+                }}
+              >
+                {/* Duplicate images for seamless loop */}
+                {[...column, ...column, ...column].map((src, imgIndex) => (
+                  <div
+                    key={imgIndex}
+                    className="relative rounded-xl overflow-hidden bg-muted"
+                  >
+                    <img
+                      src={src}
+                      alt=""
+                      className="w-full h-auto object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+          ))}
+        </div>
+
+        {/* Gradient Overlays */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background pointer-events-none" />
+
+        {/* Hero Content */}
+        <div className="relative z-10 flex items-center justify-center min-h-screen px-6">
+          <div className="max-w-4xl mx-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-center"
+            >
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
+                Your Imagination,{" "}
+                <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  Supercharged by AI
+                </span>
+              </h1>
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-4">
+                Powered by{" "}
+                <span className="text-foreground font-semibold inline-flex items-center gap-1">
+                  <Zap className="w-5 h-5 text-primary" />
+                  The Agent Engine
+                </span>{" "}
+                — AI for production-ready visuals and 3D assets.
+              </p>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+                The core intelligence that powers every creative workflow in Game AI Studio.
+              </p>
+              <Button 
+                size="lg" 
+                onClick={() => navigate("/app")}
+                className="text-lg px-8 py-6 gap-2"
+              >
+                Start Creating
+                <Sparkles className="w-5 h-5" />
+              </Button>
+            </motion.div>
+          </div>
         </div>
       </section>
 
