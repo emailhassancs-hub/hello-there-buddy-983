@@ -123,9 +123,9 @@ const storyContent = [
   {
     id: "3d-generation",
     title: "3D Model Generation & Optimization",
-    subtitle: "Production-Ready 3D Assets",
+    subtitle: "Production Ready 3D Assets",
     description:
-      "Create and optimize 3D models for games and creative projects. Generate from text or images, optimize topology, and export production-ready assets for any game engine.",
+      "Create and optimize 3D models for games and creative projects. Generate from text or images, optimize topology, and export production ready assets for any game engine.",
     image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
   },
 ];
@@ -215,7 +215,7 @@ const Landing = () => {
                 </div>
               </div>
               <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
-                AI for production-ready visuals and 3D assets.
+                AI for production ready visuals and 3D assets.
               </p>
               <Button size="lg" onClick={() => navigate("/app")} className="text-lg px-8 py-6 gap-2">
                 Start Creating
