@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Check, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -148,22 +148,35 @@ const Landing = () => {
   const navigate = useNavigate();
   const [imageGenIndex, setImageGenIndex] = useState(0);
   const [imageEditIndex, setImageEditIndex] = useState(0);
+  
+  // Refs for tracking section visibility
+  const imageGenRef = useRef(null);
+  const imageEditRef = useRef(null);
+  
+  const isImageGenInView = useInView(imageGenRef, { margin: "-40% 0px -40% 0px" });
+  const isImageEditInView = useInView(imageEditRef, { margin: "-40% 0px -40% 0px" });
 
-  // Cycle through images every 3 seconds
+  // Cycle through Image Generation images only when in view
   useEffect(() => {
-    const imageGenInterval = setInterval(() => {
+    if (!isImageGenInView) return;
+    
+    const interval = setInterval(() => {
       setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
     }, 3000);
 
-    const imageEditInterval = setInterval(() => {
-      setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
-    }, 3500); // Slightly different timing to avoid sync
+    return () => clearInterval(interval);
+  }, [isImageGenInView]);
 
-    return () => {
-      clearInterval(imageGenInterval);
-      clearInterval(imageEditInterval);
-    };
-  }, []);
+  // Cycle through Image Editing images only when in view
+  useEffect(() => {
+    if (!isImageEditInView) return;
+    
+    const interval = setInterval(() => {
+      setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isImageEditInView]);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -263,6 +276,7 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-6 space-y-24">
           {/* Image Generation - Image Left, Text Right */}
           <motion.div
+            ref={imageGenRef}
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -295,6 +309,7 @@ const Landing = () => {
 
           {/* Image Editing - Text Left, Image Right */}
           <motion.div
+            ref={imageEditRef}
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
