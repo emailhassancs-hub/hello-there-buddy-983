@@ -148,22 +148,25 @@ const Landing = () => {
   const navigate = useNavigate();
   const [imageGenIndex, setImageGenIndex] = useState(0);
   const [imageEditIndex, setImageEditIndex] = useState(0);
+  const [isImageGenHovered, setIsImageGenHovered] = useState(false);
+  const [isImageEditHovered, setIsImageEditHovered] = useState(false);
 
-  // Cycle through images every 3 seconds
+  // Cycle through images only when hovering
   useEffect(() => {
-    const imageGenInterval = setInterval(() => {
+    if (!isImageGenHovered) return;
+    const interval = setInterval(() => {
       setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
-    }, 3000);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [isImageGenHovered]);
 
-    const imageEditInterval = setInterval(() => {
+  useEffect(() => {
+    if (!isImageEditHovered) return;
+    const interval = setInterval(() => {
       setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
-    }, 3500); // Slightly different timing to avoid sync
-
-    return () => {
-      clearInterval(imageGenInterval);
-      clearInterval(imageEditInterval);
-    };
-  }, []);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [isImageEditHovered]);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -268,6 +271,8 @@ const Landing = () => {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
             className="grid md:grid-cols-2 gap-12 items-center"
+            onMouseEnter={() => setIsImageGenHovered(true)}
+            onMouseLeave={() => setIsImageGenHovered(false)}
           >
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl">
               <AnimatePresence initial={false}>
@@ -300,6 +305,8 @@ const Landing = () => {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
             className="grid md:grid-cols-2 gap-12 items-center"
+            onMouseEnter={() => setIsImageEditHovered(true)}
+            onMouseLeave={() => setIsImageEditHovered(false)}
           >
             <div className="text-center md:text-left order-2 md:order-1">
               <span className="text-sm font-medium text-primary uppercase tracking-wider">
