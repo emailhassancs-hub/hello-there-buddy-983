@@ -778,7 +778,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
             ...msg,
             ...updatedText,
             role: 'assistant'
-          },'final objecttttttttttttttttttttttttttttttttttttttttttttttttttttttt')
+          },'final object====>>>>>')
           
           return {
             ...msg,
@@ -854,9 +854,14 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
 
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
     console.log("Optimization form submit:", type, data);
-    
+
     if (type === "model-selected") {
-      // Fetch presets before showing optimization config form
+      // Check if the last message is already an optimization-config form
+      const lastMessage = messages[messages.length - 1];
+      const isLastMessageConfigForm = lastMessage && 
+        lastMessage.formType === "optimization-config";
+      
+      // Fetch presets before showing/updating optimization config form
       try {
         // Get token from localStorage
         const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
@@ -873,10 +878,28 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         
         const presetsData = await response.json();
         
-        handleAddDirectMessage("assistant", "Model selected! Now configure your optimization settings:", "optimization-config", {
-          modelId: data.modelId,
-          presets: presetsData
-        });
+        // If last message is already a config form, update it instead of adding a new one
+        if (isLastMessageConfigForm) {
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              formData: {
+                modelId: data.modelId,
+                presets: presetsData,
+                isDisabled: false // Keep it enabled when updating
+              }
+            };
+            return updated;
+          });
+        } else {
+          // Otherwise, add a new message with the config form
+          handleAddDirectMessage("assistant", "Model selected! Now configure your optimization settings:", "optimization-config", {
+            modelId: data.modelId,
+            presets: presetsData,
+            isDisabled: false
+          });
+        }
       } catch (error) {
         console.error("Error fetching presets:", error);
         toast({
@@ -904,15 +927,9 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         role: 'system'
       };
       
-      // Display friendly message to user
-      handleAddDirectMessage("assistant", "Agent working on Optimization");
       
       // Send instruction to agent via normal chat flow (not displayed)
       const agentInstruction = `Invoke the tool 'optimize_single_model_tool' using the following parameters: ${JSON.stringify(payload)}`;
-      
-      // Show optimizing status
-      handleAddDirectMessage("assistant", "🔧 Optimizing your model...");
-      
       // Send to /ask endpoint through normal message handler
       await handleSendMessage(agentInstruction);
     } else if (type === "optimization-started") {
@@ -927,6 +944,22 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       // Reset workflow - user can start over
       handleAddDirectMessage("assistant", "Ready to optimize another model! Click the Model Optimization tab to begin.");
     } else if (type === "show-optimization-form") {
+      // When Model Optimization button is clicked, disable all previous optimization forms
+      setMessages((prev) => 
+        prev.map((msg) => {
+          if (msg.formType === "model-selection" || msg.formType === "optimization-config") {
+            return {
+              ...msg,
+              formData: {
+                ...(msg.formData as any || {}),
+                isDisabled: true
+              }
+            };
+          }
+          return msg;
+        })
+      );
+      
       // When Model Optimization button is clicked, fetch models and display them in chat
       handleAddDirectMessage("user", "Model optimization");
       
@@ -960,7 +993,8 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         }));
 
         handleAddDirectMessage("assistant", "Select a model to optimize:", "model-selection", {
-          models: models
+          models: models,
+          isDisabled: false
         });
       } catch (error) {
         console.error("Error fetching models:", error);

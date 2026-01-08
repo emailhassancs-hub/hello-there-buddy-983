@@ -213,12 +213,13 @@ const OptimizationForms = ({
   const authToken = (window as { authToken?: string }).authToken || null;
 
   if (message.formType === "model-selection" && message.formData) {
-    const formData = message.formData as { models: ModelInfo[]; isUploading?: boolean };
+    const formData = message.formData as { models: ModelInfo[]; isUploading?: boolean; isDisabled?: boolean };
     return (
       <div className="mt-3">
         <ModelSelectionForm
           models={formData.models}
           isUploading={formData.isUploading || false}
+          isDisabled={formData.isDisabled || false}
           onModelSelect={(modelId) => {
             onOptimizationFormSubmit?.("model-selected", { modelId });
           }}
@@ -234,6 +235,7 @@ const OptimizationForms = ({
     const formData = message.formData as {
       modelId: number;
       presets: OptimizationPresets;
+      isDisabled?: boolean;
     };
     return (
       <div className="mt-3">
@@ -251,6 +253,7 @@ const OptimizationForms = ({
           apiUrl={apiUrl}
           authToken={authToken}
           modelId={formData.modelId}
+          isDisabled={formData.isDisabled || false}
         />
       </div>
     );

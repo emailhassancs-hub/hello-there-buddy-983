@@ -57,7 +57,6 @@ export async function apiFetch<T>(
   }
 ): Promise<T> {
   const { method = 'GET', body, skipAuth = false, timeout, signal, headers } = options || {}
-    console.log(API_BASE_URL,'in api.ts=========>>>')
   // Build request config
   const config: AxiosRequestConfig = {
     url: path,

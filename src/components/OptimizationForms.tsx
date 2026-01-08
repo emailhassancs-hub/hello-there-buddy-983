@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Calendar, Upload, Download, CheckCircle, Loader2 } from "lucide-react";
 
 export interface ModelInfo {
@@ -34,19 +33,22 @@ interface ModelSelectionFormProps {
   onModelSelect: (modelId: number) => void;
   onUploadNew: () => void;
   isUploading?: boolean;
+  isDisabled?: boolean;
 }
 
-export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew, isUploading = false }: ModelSelectionFormProps) => {
+export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew, isUploading = false, isDisabled = false }: ModelSelectionFormProps) => {
   console.log(models,'models===');
   const [selectedModel, setSelectedModel] = useState<number | null>(null);
+  const [confirmedModelId, setConfirmedModelId] = useState<number | null>(null);
 
   const handleConfirm = () => {
     console.log("Confirm button clicked, selectedModel:", selectedModel);
-    if (selectedModel) {
+    if (selectedModel && confirmedModelId !== selectedModel) {
       console.log("Calling onModelSelect with modelId:", selectedModel);
+      setConfirmedModelId(selectedModel);
       onModelSelect(selectedModel);
     } else {
-      console.log("No model selected");
+      console.log("No model selected or already confirmed");
     }
   };
 
@@ -57,12 +59,16 @@ export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew, isUploa
         {models.map((model) => (
           <Card
             key={model.id}
-            className={`cursor-pointer transition-all ${
+            className={`transition-all ${
+              isDisabled 
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer"
+            } ${
               selectedModel === model.id
                 ? "border-primary bg-primary/10"
                 : "border-border hover:border-primary/50"
             }`}
-            onClick={() => setSelectedModel(model.id)}
+            onClick={() => !isDisabled && setSelectedModel(model.id)}
           >
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
@@ -87,15 +93,15 @@ export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew, isUploa
       <div className="flex gap-2">
         <Button
           onClick={handleConfirm}
-          disabled={!selectedModel || isUploading}
+          disabled={!selectedModel || isUploading || confirmedModelId === selectedModel || isDisabled}
           className="flex-1"
         >
-          Confirm Selection
+          {confirmedModelId === selectedModel ? "Confirmed Model" : "Confirm Selection"}
         </Button>
         <Button
           onClick={onUploadNew}
           variant="outline"
-          disabled={isUploading}
+          disabled={isUploading || isDisabled}
           className="flex-1"
         >
           {isUploading ? (
@@ -115,12 +121,6 @@ export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew, isUploa
   );
 };
 
-interface RunningJob {
-  optimize_id: number;
-  asset_id: number | null;
-  preset_id: number | null;
-}
-
 interface OptimizationConfigFormProps {
   presets: OptimizationPresets;
   onSubmit: (type: string, strength: string) => void;
@@ -128,90 +128,20 @@ interface OptimizationConfigFormProps {
   apiUrl?: string;
   authToken?: string | null;
   modelId?: number;
+  isDisabled?: boolean;
 }
 
-export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, authToken, modelId }: OptimizationConfigFormProps) => {
+export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, authToken, modelId, isDisabled = false }: OptimizationConfigFormProps) => {
   const [optimizationType, setOptimizationType] = useState("");
   const [optimizationStrength, setOptimizationStrength] = useState("");
-  const [pollingStatus, setPollingStatus] = useState<string>("");
-  const [isPolling, setIsPolling] = useState(false);
 
-  const fetchRunningJobs = async (): Promise<RunningJob[]> => {
-    if (!apiUrl || !authToken) return [];
-    
-    try {
-      const response = await fetch(`${apiUrl}/api/model-optimization/jobs/running`, {
-        headers: {
-          "Authorization": `Bearer ${authToken}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch running jobs");
-      const data = await response.json();
-      return data.jobs || [];
-    } catch (error) {
-      console.error("Error fetching running jobs:", error);
-      return [];
-    }
-  };
-
-  const pollUntilComplete = async (
-    assetId: number,
-    presetId: number,
-    pollIntervalSeconds: number = 5,
-    timeoutSeconds: number = 1800
-  ): Promise<void> => {
-    const deadline = Date.now() + timeoutSeconds * 1000;
-
-    while (Date.now() < deadline) {
-      setPollingStatus("🔍 Checking optimization status...");
-      
-      const jobs = await fetchRunningJobs();
-      let found = false;
-
-      for (const job of jobs) {
-        if (job.asset_id === assetId && job.preset_id === presetId) {
-          found = true;
-          setPollingStatus(`⚙️ Optimizing model... (Job ID: ${job.optimize_id})`);
-          break;
-        }
-      }
-
-      if (!found) {
-        setPollingStatus("✅ Optimization complete!");
-        return;
-      }
-
-      await new Promise(resolve => setTimeout(resolve, pollIntervalSeconds * 1000));
-    }
-
-    throw new Error("Optimization timed out");
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (optimizationType && optimizationStrength) {
-      setIsPolling(true);
-      setPollingStatus("🚀 Starting optimization...");
-      
       onSubmit(optimizationType, optimizationStrength);
-      
-      // Start polling if we have the necessary data
-      if (apiUrl && modelId) {
-        try {
-          await pollUntilComplete(modelId, parseInt(optimizationStrength));
-        } catch (error) {
-          console.error("Polling error:", error);
-          setPollingStatus("❌ Optimization failed");
-        } finally {
-          setIsPolling(false);
-          setTimeout(() => setPollingStatus(""), 3000);
-        }
-      }
     }
   };
 
-  const isFormDisabled = !optimizationType || !optimizationStrength || isLoading || isPolling;
+  const isFormDisabled = !optimizationType || !optimizationStrength || isLoading;
 
   return (
     <div className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-border">
@@ -225,8 +155,8 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, a
             onValueChange={(value) => {
               setOptimizationType(value);
               setOptimizationStrength(""); // reset strength when type changes
-            }} 
-            disabled={isPolling}
+            }}
+            disabled={isDisabled}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select type" />
@@ -246,7 +176,7 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, a
           <Select 
             value={optimizationStrength} 
             onValueChange={setOptimizationStrength}
-            disabled={!optimizationType || isPolling}
+            disabled={!optimizationType || isDisabled}
           >
             <SelectTrigger>
               <SelectValue placeholder={
@@ -266,23 +196,12 @@ export const OptimizationConfigForm = ({ presets, onSubmit, isLoading, apiUrl, a
         </div>
       </div>
 
-      {pollingStatus && (
-        <Alert className="bg-primary/10 border-primary/20">
-          <div className="flex items-center gap-2">
-            {isPolling && <Loader2 className="h-4 w-4 animate-spin" />}
-            <AlertDescription className="text-sm">
-              {pollingStatus}
-            </AlertDescription>
-          </div>
-        </Alert>
-      )}
-
       <Button
         onClick={handleSubmit}
-        disabled={isFormDisabled}
+        disabled={isFormDisabled || isDisabled}
         className="w-full"
       >
-        {isLoading || isPolling ? (
+        {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Optimizing Model...
