@@ -155,8 +155,6 @@ const Landing = () => {
   // Cycle through images only when hovering
   useEffect(() => {
     if (!isImageGenHovered) return;
-    // Immediately switch on hover start
-    setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
     const interval = setInterval(() => {
       setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
     }, 2500);
@@ -165,8 +163,6 @@ const Landing = () => {
 
   useEffect(() => {
     if (!isImageEditHovered) return;
-    // Immediately switch on hover start
-    setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
     const interval = setInterval(() => {
       setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
     }, 2500);
