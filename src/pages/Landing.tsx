@@ -382,9 +382,9 @@ const Landing = () => {
                         alt={item.label}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
                       <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <span className="inline-block px-3 py-1.5 bg-primary/90 text-primary-foreground text-sm font-medium rounded-full backdrop-blur-sm">
+                        <span className="inline-block px-4 py-2 bg-background/50 border border-primary/20 text-foreground text-sm font-medium rounded-full backdrop-blur-md shadow-lg">
                           {item.label}
                         </span>
                       </div>
