@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useRef } from "react";
 import { 
   Sparkles, 
   Image, 
@@ -21,15 +20,6 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-
-// Demo images for hero carousel
-const carouselImages = [
-  "https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=600&h=400&fit=crop",
-];
 
 // Workflow carousel items
 const workflowItems = [
@@ -120,8 +110,6 @@ const storyContent = [
 
 const Landing = () => {
   const navigate = useNavigate();
-  const autoplayRef = useRef(Autoplay({ delay: 3000, stopOnInteraction: false }));
-  const workflowAutoplayRef = useRef(Autoplay({ delay: 2500, stopOnInteraction: false }));
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -184,34 +172,6 @@ const Landing = () => {
               Start Creating
               <Sparkles className="w-5 h-5" />
             </Button>
-          </motion.div>
-
-          {/* Auto-playing Carousel */}
-          <motion.div
-            initial={{ opacity: 0, y: 60 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            <Carousel
-              opts={{ align: "start", loop: true }}
-              plugins={[Autoplay({ delay: 3000, stopOnInteraction: false })]}
-              className="w-full"
-            >
-              <CarouselContent className="-ml-4">
-                {carouselImages.map((src, index) => (
-                  <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                    <div className="relative aspect-[3/2] overflow-hidden rounded-2xl border border-border bg-muted">
-                      <img 
-                        src={src} 
-                        alt={`AI Generated ${index + 1}`}
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
           </motion.div>
         </div>
       </section>
