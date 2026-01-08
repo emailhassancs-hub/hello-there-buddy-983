@@ -152,12 +152,12 @@ const Landing = () => {
   const [isImageEditHovered, setIsImageEditHovered] = useState(false);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
 
-  // Cycle through images only when hovering - 1 second delay before each switch
+  // Cycle through images only when hovering - first image waits 3 seconds before switching
   useEffect(() => {
     if (!isImageGenHovered) return;
     const timeout = setTimeout(() => {
       setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
-    }, 1000);
+    }, 3000);
     return () => clearTimeout(timeout);
   }, [isImageGenHovered, imageGenIndex]);
 
@@ -165,7 +165,7 @@ const Landing = () => {
     if (!isImageEditHovered) return;
     const timeout = setTimeout(() => {
       setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
-    }, 1000);
+    }, 3000);
     return () => clearTimeout(timeout);
   }, [isImageEditHovered, imageEditIndex]);
 
