@@ -292,7 +292,7 @@ const Landing = () => {
                     scale: [1, 1.08],
                     transition: {
                       opacity: { duration: 0.6, ease: "easeOut" },
-                      scale: { duration: 2.5, ease: "linear" }
+                      scale: { duration: 4, ease: "linear" }
                     }
                   }}
                   exit={{ 
@@ -342,7 +342,7 @@ const Landing = () => {
                     scale: [1, 1.08],
                     transition: {
                       opacity: { duration: 0.6, ease: "easeOut" },
-                      scale: { duration: 2.5, ease: "linear" }
+                      scale: { duration: 4, ease: "linear" }
                     }
                   }}
                   exit={{ 
