@@ -137,7 +137,7 @@ const storyContent = [
     id: "3d-generation",
     title: "3D Model Generation & Optimization",
     subtitle: "Production-Ready 3D Assets",
-    description: "Create and optimize 3D models for games and creative projects. Generate from text or images, optimize topology, create textures, and export production-ready assets for any game engine.",
+    description: "Create and optimize 3D models for games and creative projects. Generate from text or images, optimize topology, and export production-ready assets for any game engine.",
     image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
   },
 ];
