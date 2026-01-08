@@ -287,13 +287,13 @@ const Landing = () => {
                     opacity: 1, 
                     scale: 1.08,
                     transition: {
-                      opacity: { duration: 0.3, ease: "easeOut" },
-                      scale: { duration: 1.5, ease: "linear" }
+                      opacity: { duration: 0.6, ease: "easeOut" },
+                      scale: { duration: 4, ease: "linear" }
                     }
                   }}
                   exit={{ 
                     opacity: 0,
-                    transition: { duration: 0.3, ease: "easeIn" }
+                    transition: { duration: 0.6, ease: "easeIn" }
                   }}
                 />
               </AnimatePresence>
@@ -337,13 +337,13 @@ const Landing = () => {
                     opacity: 1, 
                     scale: 1.08,
                     transition: {
-                      opacity: { duration: 0.3, ease: "easeOut" },
-                      scale: { duration: 1.5, ease: "linear" }
+                      opacity: { duration: 0.6, ease: "easeOut" },
+                      scale: { duration: 4, ease: "linear" }
                     }
                   }}
                   exit={{ 
                     opacity: 0,
-                    transition: { duration: 0.3, ease: "easeIn" }
+                    transition: { duration: 0.6, ease: "easeIn" }
                   }}
                 />
               </AnimatePresence>
