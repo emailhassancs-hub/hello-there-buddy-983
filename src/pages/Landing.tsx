@@ -160,7 +160,7 @@ const Landing = () => {
       {/* Hero Section with Masonry Background */}
       <section className="relative min-h-screen pt-16 overflow-hidden">
         {/* Masonry Background */}
-        <div className="absolute inset-0 flex gap-3 px-3 opacity-[0.38]">
+        <div className="absolute inset-0 flex gap-3 px-3 opacity-40">
           {artworkColumns.map((column, colIndex) => (
             <div key={colIndex} className="flex-1 flex flex-col gap-3">
               <motion.div
