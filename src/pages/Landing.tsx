@@ -276,16 +276,16 @@ const Landing = () => {
             onMouseLeave={() => setIsImageGenHovered(false)}
           >
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]">
-              <AnimatePresence initial={false} mode="popLayout">
+              <AnimatePresence mode="popLayout">
                 <motion.img
                   key={imageGenIndex}
                   src={imageGenerationImages[imageGenIndex]}
                   alt={storyContent[0].title}
                   className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ opacity: 0 }}
+                  initial={{ opacity: 0, scale: 1 }}
                   animate={{ 
                     opacity: 1, 
-                    scale: [1, 1.08],
+                    scale: 1.08,
                     transition: {
                       opacity: { duration: 0.6, ease: "easeOut" },
                       scale: { duration: 4, ease: "linear" }
@@ -326,16 +326,16 @@ const Landing = () => {
               <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[1].description}</p>
             </div>
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] order-1 md:order-2">
-              <AnimatePresence initial={false} mode="popLayout">
+              <AnimatePresence mode="popLayout">
                 <motion.img
                   key={imageEditIndex}
                   src={imageEditingImages[imageEditIndex]}
                   alt={storyContent[1].title}
                   className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ opacity: 0 }}
+                  initial={{ opacity: 0, scale: 1 }}
                   animate={{ 
                     opacity: 1, 
-                    scale: [1, 1.08],
+                    scale: 1.08,
                     transition: {
                       opacity: { duration: 0.6, ease: "easeOut" },
                       scale: { duration: 4, ease: "linear" }
