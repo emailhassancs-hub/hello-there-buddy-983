@@ -1,24 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Sparkles, 
-  Image, 
-  Wand2, 
-  Eraser, 
-  ZoomIn, 
-  Box, 
-  Settings2,
-  ArrowRight,
-  Check,
-  Zap
-} from "lucide-react";
+import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Check, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 
 // Artwork images for masonry background - using diverse AI art styles
@@ -123,21 +108,24 @@ const storyContent = [
     id: "image-generation",
     title: "Image Generation",
     subtitle: "Infinite Styles, Endless Possibilities",
-    description: "Generate concept art, characters, environments, and marketing visuals in any style. From photorealistic renders to stylized illustrations, our AI adapts to your creative vision and brings ideas to life instantly.",
+    description:
+      "Generate concept art, characters, environments, and marketing visuals in any style. From photorealistic renders to stylized illustrations, our AI adapts to your creative vision and brings ideas to life instantly.",
     image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop",
   },
   {
     id: "image-editing",
     title: "Image Editing",
     subtitle: "Transform & Enhance",
-    description: "Edit images with precision using AI-powered tools. Remove backgrounds instantly, upscale to 4x resolution, enhance details, and apply visual effects — all with simple commands.",
+    description:
+      "Edit images with precision using AI-powered tools. Remove backgrounds instantly, upscale to 4x resolution, enhance details, and apply visual effects — all with simple commands.",
     image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
   },
   {
     id: "3d-generation",
     title: "3D Model Generation & Optimization",
     subtitle: "Production-Ready 3D Assets",
-    description: "Create and optimize 3D models for games and creative projects. Generate from text or images, optimize topology, and export production-ready assets for any game engine.",
+    description:
+      "Create and optimize 3D models for games and creative projects. Generate from text or images, optimize topology, and export production-ready assets for any game engine.",
     image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
   },
 ];
@@ -148,7 +136,7 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Header */}
-      <motion.header 
+      <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
@@ -161,10 +149,7 @@ const Landing = () => {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button 
-              onClick={() => navigate("/app")}
-              className="gap-2"
-            >
+            <Button onClick={() => navigate("/app")} className="gap-2">
               Get Started
               <ArrowRight className="w-4 h-4" />
             </Button>
@@ -177,10 +162,7 @@ const Landing = () => {
         {/* Masonry Background */}
         <div className="absolute inset-0 flex gap-3 px-3 opacity-[0.38]">
           {artworkColumns.map((column, colIndex) => (
-            <div
-              key={colIndex}
-              className="flex-1 flex flex-col gap-3"
-            >
+            <div key={colIndex} className="flex-1 flex flex-col gap-3">
               <motion.div
                 className="flex flex-col gap-3"
                 animate={{
@@ -196,16 +178,8 @@ const Landing = () => {
               >
                 {/* Duplicate images for seamless loop */}
                 {[...column, ...column, ...column].map((src, imgIndex) => (
-                  <div
-                    key={imgIndex}
-                    className="relative rounded-xl overflow-hidden bg-muted shadow-lg"
-                  >
-                    <img
-                      src={src}
-                      alt=""
-                      className="w-full h-auto object-cover"
-                      loading="lazy"
-                    />
+                  <div key={imgIndex} className="relative rounded-xl overflow-hidden bg-muted shadow-lg">
+                    <img src={src} alt="" className="w-full h-auto object-cover" loading="lazy" />
                   </div>
                 ))}
               </motion.div>
@@ -220,7 +194,7 @@ const Landing = () => {
         {/* Hero Content */}
         <div className="relative z-10 flex items-center justify-center min-h-screen px-6">
           <div className="max-w-4xl mx-auto">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -243,11 +217,7 @@ const Landing = () => {
               <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
                 AI for production-ready visuals and 3D assets.
               </p>
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/app")}
-                className="text-lg px-8 py-6 gap-2"
-              >
+              <Button size="lg" onClick={() => navigate("/app")} className="text-lg px-8 py-6 gap-2">
                 Start Creating
                 <Sparkles className="w-5 h-5" />
               </Button>
@@ -279,12 +249,8 @@ const Landing = () => {
               <span className="text-sm font-medium text-primary uppercase tracking-wider">
                 {storyContent[0].subtitle}
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
-                {storyContent[0].title}
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {storyContent[0].description}
-              </p>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">{storyContent[0].title}</h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[0].description}</p>
             </div>
           </motion.div>
 
@@ -300,12 +266,8 @@ const Landing = () => {
               <span className="text-sm font-medium text-primary uppercase tracking-wider">
                 {storyContent[1].subtitle}
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
-                {storyContent[1].title}
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {storyContent[1].description}
-              </p>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">{storyContent[1].title}</h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[1].description}</p>
             </div>
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-xl order-1 md:order-2">
               <img
@@ -337,12 +299,8 @@ const Landing = () => {
               <span className="text-sm font-medium text-primary uppercase tracking-wider">
                 {storyContent[2].subtitle}
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
-                {storyContent[2].title}
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {storyContent[2].description}
-              </p>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">{storyContent[2].title}</h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[2].description}</p>
             </div>
           </motion.div>
         </div>
@@ -377,8 +335,8 @@ const Landing = () => {
                 {workflowItems.map((item, index) => (
                   <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
                     <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
-                      <img 
-                        src={item.image} 
+                      <img
+                        src={item.image}
                         alt={item.label}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
@@ -400,7 +358,7 @@ const Landing = () => {
       {/* Tools Section */}
       <section className="py-20 bg-muted/50">
         <div className="max-w-7xl mx-auto px-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -435,7 +393,7 @@ const Landing = () => {
       {/* Pricing Section */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -455,8 +413,8 @@ const Landing = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className={`relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-xl ${
-                  tier.popular 
-                    ? "bg-primary text-primary-foreground border-primary scale-105" 
+                  tier.popular
+                    ? "bg-primary text-primary-foreground border-primary scale-105"
                     : "bg-background border-border hover:border-primary/50"
                 }`}
               >
@@ -485,7 +443,7 @@ const Landing = () => {
                     </li>
                   ))}
                 </ul>
-                <Button 
+                <Button
                   onClick={() => navigate("/app")}
                   variant={tier.popular ? "secondary" : "default"}
                   className="w-full"
@@ -506,9 +464,7 @@ const Landing = () => {
               <Sparkles className="w-5 h-5 text-primary" />
               <span className="font-semibold">Game AI Studio</span>
             </div>
-            <p className="text-muted-foreground text-sm">
-              © 2024 Game AI Studio. All rights reserved.
-            </p>
+            <p className="text-muted-foreground text-sm">© 2025 Game AI Studio. All rights reserved.</p>
           </div>
         </div>
       </footer>
