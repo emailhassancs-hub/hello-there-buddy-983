@@ -36,7 +36,7 @@ npm i
 # Copy .env.example to .env and update the values if needed
 
 # Step 5: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm run dev   
 ```
 
 **Edit a file directly in GitHub**
