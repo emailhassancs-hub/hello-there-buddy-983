@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Image as ImageIcon, Box, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ui/error-boundary";
+import { apiFetch } from "@/lib/api";
 
 // Helper function to extract email from JWT token
 const extractEmailFromToken = (token: string | null): string | null => {
@@ -869,7 +870,6 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       clearInterval(existingInterval);
     }
     
-    const rapidModelsApiUrl = "https://games-ai-studio-be-feature-347148155332.us-central1.run.app";
     let pollCount = 0;
     const maxPolls = 120; // 10 minutes max (5 seconds * 120)
     
@@ -877,18 +877,13 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       pollCount++;
       
       try {
-        const response = await fetch(`${rapidModelsApiUrl}/api/rapidmodels/${optimizedModelId}`);
-        
-        if (!response.ok) {
-          console.error("Failed to fetch optimized model status");
-          if (pollCount >= maxPolls) {
-            clearInterval(pollInterval);
-            optimizationPollIntervalsRef.current.delete(optimizedModelId);
+        const result = await apiFetch<{ data: any }>(
+          `/api/model-optimization/rapidmodels/${optimizedModelId}`,
+          {
+            method: 'GET',
           }
-          return;
-        }
+        );
         
-        const result = await response.json();
         const modelData = result.data;
         
         if (modelData && modelData.optimization_status === "done") {
