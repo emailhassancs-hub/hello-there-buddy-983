@@ -368,18 +368,17 @@ const Landing = () => {
             </div>
           </motion.div>
 
-          {/* 3D Model Generation - Image Left, Text Right */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
             className="grid md:grid-cols-2 gap-12 items-center"
+            onMouseEnter={() => setIsModel3DHovered(true)}
+            onMouseLeave={() => setIsModel3DHovered(false)}
           >
             <div 
               className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]"
-              onMouseEnter={() => setIsModel3DHovered(true)}
-              onMouseLeave={() => setIsModel3DHovered(false)}
             >
               <AnimatePresence mode="popLayout">
                 <motion.img
