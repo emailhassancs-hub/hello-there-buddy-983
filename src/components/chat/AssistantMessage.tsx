@@ -307,17 +307,6 @@ const OptimizationForms = ({
               <h4 className="text-foreground font-medium text-sm">Optimizing model...</h4>
             </div>
             <p className="text-muted-foreground text-xs">Status: processing</p>
-            <div className="flex gap-2 flex-wrap">
-              <div className="px-3 py-1.5 border border-border/50 rounded text-xs text-muted-foreground bg-muted/50">
-                GLB
-              </div>
-              <div className="px-3 py-1.5 border border-border/50 rounded text-xs text-muted-foreground bg-muted/50">
-                USDZ
-              </div>
-              <div className="px-3 py-1.5 border border-border/50 rounded text-xs text-muted-foreground bg-muted/50">
-                FBX
-              </div>
-            </div>
           </div>
         </div>
       );

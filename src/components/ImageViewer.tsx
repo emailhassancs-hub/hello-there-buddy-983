@@ -585,11 +585,11 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                     <ScrollArea className="flex-1 min-h-0">
                       <div className="space-y-3 pr-4">
                         {selectedEditedImage.inputImage1Path && (
-                          <div className="rounded-lg overflow-hidden border border-border/50 w-full h-64 flex-shrink-0">
+                          <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
                             <img
                               src={selectedEditedImage.inputImage1Path}
                               alt="Original input 1"
-                              className="w-full h-full object-cover"
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
                               onError={(e) => {
                                 e.currentTarget.src = "/placeholder.svg";
                               }}
@@ -597,11 +597,11 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                           </div>
                         )}
                         {selectedEditedImage.inputImage2Path && (
-                          <div className="rounded-lg overflow-hidden border border-border/50 w-full h-64 flex-shrink-0">
+                          <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
                             <img
                               src={selectedEditedImage.inputImage2Path}
                               alt="Original input 2"
-                              className="w-full h-full object-cover"
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
                               onError={(e) => {
                                 e.currentTarget.src = "/placeholder.svg";
                               }}
@@ -609,11 +609,11 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                           </div>
                         )}
                         {selectedEditedImage.inputImage3Path && (
-                          <div className="rounded-lg overflow-hidden border border-border/50 w-full h-64 flex-shrink-0">
+                          <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
                             <img
                               src={selectedEditedImage.inputImage3Path}
                               alt="Original input 3"
-                              className="w-full h-full object-cover"
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
                               onError={(e) => {
                                 e.currentTarget.src = "/placeholder.svg";
                               }}
@@ -621,11 +621,11 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                           </div>
                         )}
                         {selectedEditedImage.inputImage4Path && (
-                          <div className="rounded-lg overflow-hidden border border-border/50 w-full h-64 flex-shrink-0">
+                          <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
                             <img
                               src={selectedEditedImage.inputImage4Path}
                               alt="Original input 4"
-                              className="w-full h-full object-cover"
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
                               onError={(e) => {
                                 e.currentTarget.src = "/placeholder.svg";
                               }}
@@ -639,11 +639,11 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                   {/* Output Image Section */}
                   <div className="flex flex-col space-y-3 h-full min-h-0">
                     <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex-shrink-0">Edited Result</h4>
-                    <div className="rounded-lg overflow-hidden border border-border/50 w-full h-64 flex-shrink-0">
+                    <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
                       <img
                         src={selectedEditedImage.outputImagePath}
                         alt="Edited output"
-                        className="w-full h-full object-cover"
+                        className="max-w-full max-h-full w-auto h-auto object-contain"
                         onError={(e) => {
                           e.currentTarget.src = "/placeholder.svg";
                         }}
