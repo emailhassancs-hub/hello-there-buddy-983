@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const VIDEO_BASE_URL = "http://35.209.183.202:8000";
+const VIDEO_BASE_URL = import.meta.env.VITE_VIDEO_STREAM_URL || "http://35.209.183.202:8000";
 
 interface VideoPlayerModalProps {
   video: {

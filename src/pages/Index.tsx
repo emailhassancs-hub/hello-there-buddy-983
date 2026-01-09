@@ -1,49 +1,30 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
 import ModelOptimization from "@/components/ModelOptimization";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChatSidebar } from "@/components/ChatSidebar";
-import { ModelUploader } from "@/components/ModelUploader";
-import ModelGallery from "@/pages/ModelGallery";
-import { apiFetch } from "@/lib/api";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { useMultiJobSSE } from "@/hooks/useMultiJobSSE";
-import { GenerationIndicatorFloating, ProcessingMessage, GeneratedImage, GenerationError } from "@/components/GenerationStatusIndicator";
+import { LocalStorageKeys } from "@/enums/localstorage";
+import { SSEStatusListener } from "@/components/SSEStatusListener";
+import { SSEStatusUpdate } from "@/hooks/useSSE";
+import { extractImageUrls } from "@/components/chat/utils";
+import { Message } from "@/components/chat/types";
+import { WorkflowProgressDisplay } from "@/components/WorkflowProgressDisplay";
+import { WorkflowChainResults } from "@/components/WorkflowChainResults";
+import {
+  createChainSSEConnection,
+  WorkflowChainData,
+  ChainResults,
+} from "@/utils/workflowChainHandler";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon, BookOpen, Box, Settings, Video, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Image as ImageIcon, Box, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import ErrorBoundary from "@/components/ui/error-boundary";
-
-interface ToolCall {
-  id: string;
-  name: string;
-  args: Record<string, any>;
-}
-
-interface Message {
-  role: "user" | "assistant" | "system";
-  text: string;
-  timestamp?: Date;
-  toolCalls?: ToolCall[];
-  conversationId?: string;
-  toolName?: string;
-  status?: "awaiting_confirmation" | "complete";
-  interruptMessage?: string;
-  formType?: "model-selection" | "optimization-config" | "optimization-result" | "optimization-inline";
-  formData?: any;
-  // SSE generation tracking
-  messageType?: "processing" | "image" | "error" | "debug";
-  jobId?: string;
-  imageUrl?: string;
-  errorMessage?: string;
-}
+import { apiFetch } from "@/lib/api";
 
 // Helper function to extract email from JWT token
 const extractEmailFromToken = (token: string | null): string | null => {
@@ -57,228 +38,43 @@ const extractEmailFromToken = (token: string | null): string | null => {
 };
 
 const Index = () => {
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const hasAutoLoadedRef = useRef(false);
   const [activeTab, setActiveTab] = useState("images");
   const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [imageRefreshTrigger, setImageRefreshTrigger] = useState(0);
+  const [modelRefreshTrigger, setModelRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
-  const [uploadedBlobPaths, setUploadedBlobPaths] = useState<string[]>([]);
+  const [activeJobIds, setActiveJobIds] = useState<string[]>([]);
+  const optimizationPollIntervalsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  
+  // Workflow chain state
+  const [workflowChain, setWorkflowChain] = useState<WorkflowChainData | null>(null);
+  const [workflowProgress, setWorkflowProgress] = useState({ current: 0, total: 0 });
+  const [workflowStatus, setWorkflowStatus] = useState<string>("");
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
+  const [workflowResults, setWorkflowResults] = useState<ChainResults | null>(null);
+  const [isWorkflowLoading, setIsWorkflowLoading] = useState(false);
+  const chainSSERef = useRef<EventSource | null>(null);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
+
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+
+  //const apiUrl = "http://localhost:8080";
+  const API = apiUrl;
  
-   //const apiUrl = "http://localhost:8000";
-   const apiUrl = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app"
-
-   const API = apiUrl;
- 
-   // User email for SSE and /ask payloads (fallback to token if profile is unavailable)
-   const sseEmail = useMemo(() => {
-     const profileEmail = userProfile?.email;
-     const tokenEmail = extractEmailFromToken(authToken);
-     const finalEmail = profileEmail || tokenEmail || "";
-     console.log("📧 Resolved SSE email:", finalEmail, { profileEmail, tokenEmail });
-     return finalEmail;
-   }, [userProfile, authToken]);
-
-  // Handle job completion - update message in chat
-  const handleJobComplete = useCallback((jobId: string, imageUrl: string | null) => {
-    console.log(`✅ Job ${jobId} completed with image:`, imageUrl);
-    
-    setMessages(prev => prev.map(msg => {
-      if (msg.jobId === jobId && msg.messageType === "processing") {
-        if (imageUrl) {
-          return {
-            ...msg,
-            messageType: "image" as const,
-            imageUrl,
-            text: "Image generated successfully!",
-          };
-        } else {
-          return {
-            ...msg,
-            messageType: "error" as const,
-            errorMessage: "Generation completed but no image URL returned",
-            text: "Generation completed but no image was returned.",
-          };
-        }
-      }
-      return msg;
-    }));
-
-    // Trigger image gallery refresh
-    setImageRefreshTrigger(prev => prev + 1);
-    
-    // Refresh user credits
-    queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-  }, [queryClient]);
-
-  // Handle job error - update message in chat
-  const handleJobError = useCallback((jobId: string, error: string) => {
-    console.error(`❌ Job ${jobId} failed:`, error);
-    
-    setMessages(prev => prev.map(msg => {
-      if (msg.jobId === jobId && msg.messageType === "processing") {
-        return {
-          ...msg,
-          messageType: "error" as const,
-          errorMessage: error,
-          text: `Generation failed: ${error}`,
-        };
-      }
-      return msg;
-    }));
-
-    toast({
-      title: "Generation Failed",
-      description: error,
-      variant: "destructive",
-    });
-  }, [toast]);
-
-  // Handle raw SSE messages for debugging
-  const handleRawMessage = useCallback((jobId: string, rawData: string, parsedData: any) => {
-    console.log(`🔍 RAW SSE DEBUG for ${jobId}:`, rawData);
-    
-    // Add debug message to chat
-    const debugMessage: Message = {
-      role: "system",
-      text: `🔍 RAW SSE MESSAGE (Job: ${jobId.substring(0, 12)}...):\n\`\`\`json\n${rawData}\n\`\`\``,
-      timestamp: new Date(),
-      messageType: "debug",
-      jobId,
-    };
-    setMessages(prev => [...prev, debugMessage]);
-
-    // If completed, add parsed info
-    if (parsedData?.status?.toLowerCase() === 'completed') {
-      const imageUrl = parsedData?.data?.image_path || parsedData?.data?.imageUrl;
-      const parsedDebug: Message = {
-        role: "system",
-        text: `✅ PARSED: Status=${parsedData.status}, Image URL=${imageUrl || 'NOT FOUND'}`,
-        timestamp: new Date(),
-        messageType: "debug",
-        jobId,
-      };
-      setMessages(prev => [...prev, parsedDebug]);
-    }
-  }, []);
-
-  // Multi-job SSE hook
-  const { 
-    processingJobs, 
-    startMonitoring,
-    isProcessing 
-  } = useMultiJobSSE({
-    email: sseEmail,
-    apiUrl,
-    onJobComplete: handleJobComplete,
-    onJobError: handleJobError,
-    onRawMessage: handleRawMessage,
-  });
-
-  // Start monitoring jobs and add processing messages to chat
-  const startMonitoringJob = useCallback((jobId: string) => {
-    console.log('🎯 Starting to monitor job:', jobId);
-    
-    // Add processing message to chat
-    const processingMessage: Message = {
-      role: "assistant",
-      text: "Generating image...",
-      timestamp: new Date(),
-      messageType: "processing",
-      jobId,
-    };
-    setMessages(prev => [...prev, processingMessage]);
-    
-    // Start SSE monitoring
-    startMonitoring(jobId);
-  }, [startMonitoring]);
-
-  // Helper to extract URLs from tool response
-  const extractUrlsFromResponse = (data: any): string[] => {
-    const urls: string[] = [];
-    const urlRegex = /https?:\/\/[^\s"'<>]+/g;
-    
-    if (typeof data === 'string') {
-      const matches = data.match(urlRegex);
-      if (matches) urls.push(...matches);
-    } else if (data && typeof data === 'object') {
-      const jsonStr = JSON.stringify(data);
-      const matches = jsonStr.match(urlRegex);
-      if (matches) urls.push(...matches);
-    }
-    
-    return [...new Set(urls)]; // Remove duplicates
-  };
-
-  // Helper to extract image URL from Pub/Sub data
-  const extractImageUrl = (data: any): string | null => {
-    // Check common field names for image URLs
-    if (data?.imageUrl) return data.imageUrl;
-    if (data?.image_url) return data.image_url;
-    if (data?.resultUrl) return data.resultUrl;
-    if (data?.result_url) return data.result_url;
-    if (data?.url) return data.url;
-    
-    // Try to extract URL from string content
-    if (typeof data === 'string') {
-      const urlMatch = data.match(/https?:\/\/[^\s]+\.(png|jpg|jpeg|webp)/);
-      if (urlMatch) return urlMatch[0];
-    }
-    
-    // Check if URL is nested in data object
-    if (data?.data && typeof data.data === 'object') {
-      return extractImageUrl(data.data);
-    }
-    
-    return null;
-  };
-
-  // Helper to get file type from URL
-  const getFileType = (url: string): string => {
-    if (url.match(/\.(png|jpg|jpeg|webp|gif)$/i)) return 'image';
-    if (url.match(/\.(glb|gltf|fbx|obj)$/i)) return '3D model';
-    if (url.match(/\.(mp4|avi|mov)$/i)) return 'video';
-    return 'file';
-  };
- 
-  // Token capture from URL
+  // Load token from localStorage only
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    if (token) {
-      console.log("🔑 Token captured from URL:", token);
-      setAuthToken(token);
-      // Store globally for child components and API calls
-      (window as any).authToken = token;
-      localStorage.setItem("auth_token", token);
-      
-      fetch(`${apiUrl}/store-token`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ token }),
-      })
-        .then(res => res.json())
-        .then(data => console.log("✅ Token stored successfully on backend:", data))
-        .catch(err => console.error("❌ Error storing token on backend:", err));
-    } else {
-      // Try to load from localStorage or window as fallback
-      const storedToken = localStorage.getItem("auth_token") || (window as any).authToken;
-      if (storedToken) {
-        console.log("🔑 Token loaded from storage:", storedToken);
-        setAuthToken(storedToken);
-        (window as any).authToken = storedToken;
-      } else {
-        console.warn("⚠️ No token found in URL or storage");
-      }
+    const storedToken = localStorage.getItem(LocalStorageKeys.AccessToken);
+    if (storedToken) {
+      setAuthToken(storedToken);
     }
   }, []);
 
@@ -290,14 +86,69 @@ const Index = () => {
     }
   }, []);
 
+  // Cleanup workflow SSE on unmount
+  useEffect(() => {
+    return () => {
+      if (chainSSERef.current) {
+        chainSSERef.current.close();
+      }
+    };
+  }, []);
+
+  // Listen for model selection form refresh event
+  useEffect(() => {
+    const handleRefreshModelSelection = async () => {
+      try {
+        const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
+        const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
+        
+        const response = await fetch(`${backendUrl}/api/model-optimization/models`, {
+          headers: {
+            "Authorization": currentToken ? `Bearer ${currentToken}` : "",
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const modelsArray = data.models || data || [];
+          
+          const updatedModels: any[] = modelsArray.map((model: any) => ({
+            id: model.assetId,
+            name: model.name || model.filename || model.fileName || `Model ${model.id || model.asset_id || model.assetId}`,
+            image: model.thumbnail_url || model.thumbnailUrl || model.image || "/placeholder.svg",
+            creationDate: model.created_at || model.createdAt 
+              ? new Date(model.created_at || model.createdAt).toLocaleDateString() 
+              : new Date().toLocaleDateString()
+          }));
+
+          // Update all messages with model-selection form type, preserving isUploading state
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                ? {
+                    ...msg,
+                    formData: {
+                      models: updatedModels,
+                      isUploading: (msg.formData as Record<string, any>).isUploading || false,
+                    },
+                  }
+                : msg
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error refreshing model selection form:", error);
+      }
+    };
+
+    window.addEventListener('refreshModelSelectionForm', handleRefreshModelSelection);
+    return () => window.removeEventListener('refreshModelSelectionForm', handleRefreshModelSelection);
+  }, [authToken, apiUrl]);
+
   const updateSessionId = (newSessionId: string) => {
     setSessionId(newSessionId);
     localStorage.setItem("mcp_session_id", newSessionId);
-  };
-
-
-  const addMessage = (role: "user" | "assistant", text: string, toolName?: string) => {
-    setMessages((prev) => [...prev, { role, text, timestamp: new Date(), toolName }]);
   };
 
   const handleAddDirectMessage = (role: "user" | "assistant", text: string, formType?: string, formData?: any) => {
@@ -314,47 +165,17 @@ const Index = () => {
     );
   }, []);
 
-  const refreshImageUrl = async (blobPath: string): Promise<string | null> => {
-    try {
-      const response = await fetch(`${apiUrl}/images/refresh-url`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": authToken ? `Bearer ${authToken}` : "",
-        },
-        body: JSON.stringify({
-          email: userProfile?.email,
-          blob_path: blobPath
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to refresh URL");
-      }
-
-      const data = await response.json();
-      return data.url;
-    } catch (error) {
-      console.error("Error refreshing image URL:", error);
-      toast({
-        title: "Error",
-        description: "Failed to refresh image URL",
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
-
   const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
+
+    const previousMessageCount = messages.length;
+    const currentHasImages = !!(imageUrls && imageUrls.length > 0);
 
     // Store uploaded image URLs and blob paths in session state for agent reuse
     if (imageUrls && imageUrls.length > 0) {
       setUploadedImageUrls(imageUrls);
     }
-    if (blobPaths && blobPaths.length > 0) {
-      setUploadedBlobPaths(blobPaths);
-    }
+   
 
     // Update session ID if provided from upload
     if (uploadSessionId) {
@@ -366,6 +187,7 @@ const Index = () => {
       const userMessage: Message = {
         role: "user",
         text: text,
+        imagePaths: imageUrls, // Include uploaded image URLs
       };
       const assistantMessage: Message = {
         role: "assistant",
@@ -378,6 +200,7 @@ const Index = () => {
     const userMessage: Message = {
       role: "user",
       text: text,
+      imagePaths: imageUrls, // Include uploaded image URLs
     };
 
     // Do not show raw tool invocation messages in chat
@@ -428,66 +251,72 @@ const Index = () => {
 
       const data = await response.json();
 
+      // ===== ADD THIS DEBUG =====
+      console.log('=== /ask RESPONSE DEBUG ===');
+      console.log('workflow_chain exists:', !!data.workflow_chain);
+      console.log('workflow_chain:', JSON.stringify(data.workflow_chain, null, 2));
+      console.log('pending_jobs:', data.pending_jobs);
+      console.log('stream_urls:', data.stream_urls);
+      console.log('===========================');
+      // ===== END DEBUG =====
+
+    // console.log(data,'here is data response getting from backend==>>')
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
-        
-        // Generate chat title for first message in new chat
-        const isFirstMessage = messages.length === 0 || (!sessionId && data.session_id);
-        if (isFirstMessage) {
-          try {
-            const titleResponse = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-chat-title`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-                },
-                body: JSON.stringify({ message: text }),
-              }
-            );
+        const nowIso = new Date().toISOString();
 
-            if (titleResponse.ok) {
-              const { title } = await titleResponse.json();
-              if (title) {
-                // Save the generated title to localStorage
-                const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
-                chatNames[data.session_id] = title;
-                localStorage.setItem("chatNames", JSON.stringify(chatNames));
-                
-                // Wait a brief moment to ensure the title is saved, then refresh
-                setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('refreshChatSidebar'));
-                }, 100);
-              }
-            }
-          } catch (titleError) {
-            console.error("Failed to generate chat title:", titleError);
-            // Fallback to default title format - already handled by ChatSidebar
-          }
-        }
+        // Optimistically update sidebar without triggering full reload
+        window.dispatchEvent(
+          new CustomEvent("refreshChatSidebar", {
+            detail: {
+              session: {
+                session_id: data.session_id,
+                created_at: nowIso,
+                updated_at: nowIso,
+                message_count: previousMessageCount + 1, // user message just sent
+              },
+            },
+          })
+        );
       }
 
-      // Check if there are pending jobs to track via SSE
-      if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
-        console.log('🎯 Starting to track jobs:', data.pending_jobs);
-        
-        // Start monitoring each job with SSE
-        data.pending_jobs.forEach((jobId: string) => {
-          startMonitoringJob(jobId);
-        });
+      // ============================================
+      // CHECK: Is this a Workflow Chain?
+      // ============================================
+      if (data.workflow_chain) {
+        console.log('🔗 Workflow Chain Detected!', data.workflow_chain);
+        handleWorkflowChain(data.workflow_chain);
+        setIsGenerating(false);
+        return;
       }
 
-      // Append any messages from the backend - filter out system messages only
+      // ============================================
+      // ELSE: Single Job or Regular Response
+      // ============================================
       if (data.messages && Array.isArray(data.messages)) {
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
-          .map((msg: any) => ({
-            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
-            text: msg.content || "",
-            toolName: msg.type === "tool" ? msg.name : undefined,
-          }))
+          .map((msg: any) => {
+            const content = msg.content || "";
+            const role = msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user";
+            
+            // Extract image URLs from content for user messages
+            let imagePaths: string[] | undefined;
+            if (role === "user" && content) {
+              const extractedUrls = extractImageUrls(content);
+              if (extractedUrls.length > 0) {
+                imagePaths = extractedUrls;
+              }
+            }
+            
+            return {
+              role,
+              text: content,
+              toolName: msg.type === "tool" ? msg.name : undefined,
+              imagePaths,
+            };
+          })
           .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
         setMessages((prev) => [...prev, ...newMessages]);
       }
@@ -571,33 +400,165 @@ const Index = () => {
       });
 
       const data = await response.json();
+       console.log(data,'data after tool invoke===============>>>>')
+       console.log(messages,'here is before messages==>>>')
 
       // Update session ID if provided
       if (data.session_id) {
         updateSessionId(data.session_id);
       }
 
-      // Check if there are pending jobs to track via SSE
-      if (data.pending_jobs && Array.isArray(data.pending_jobs) && data.pending_jobs.length > 0) {
-        console.log('🎯 Starting to track jobs from tool confirmation:', data.pending_jobs);
+      // ============================================
+      // ✅ CHECK FOR WORKFLOW CHAIN FIRST!
+      // ============================================
+      if (data.workflow_chain) {
+        console.log('🔗 [CONFIRMATION] Workflow Chain Detected!', data.workflow_chain);
         
-        // Start monitoring each job with SSE
-        data.pending_jobs.forEach((jobId: string) => {
-          startMonitoringJob(jobId);
-        });
+        // Add the messages to chat first
+        if (data.messages && Array.isArray(data.messages)) {
+          const newMessages = data.messages
+            .filter((msg: any) => msg.type !== "system")
+            .map((msg: any) => {
+              const content = msg.content || "";
+              const role = msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user";
+              
+              let imagePaths: string[] | undefined;
+              if (role === "user" && content) {
+                const extractedUrls = extractImageUrls(content);
+                if (extractedUrls.length > 0) {
+                  imagePaths = extractedUrls;
+                }
+              }
+              
+              return {
+                role,
+                text: content,
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                imagePaths,
+              };
+            })
+            .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+          setMessages((prev) => [...prev, ...newMessages]);
+        }
+        
+        // Then start the workflow chain handler
+        handleWorkflowChain(data.workflow_chain);
+        setIsGenerating(false);
+        return;  // ✅ IMPORTANT: Exit here, don't continue
       }
 
-      // Append any messages from the backend - filter out system messages only
+      // ============================================
+      // ELSE: Normal tool confirmation response
+      // ============================================
       if (data.messages && Array.isArray(data.messages)) {
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
-          .map((msg: any) => ({
-            role: msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user",
-            text: msg.content || "",
-            toolName: msg.type === "tool" ? msg.name : undefined,
-          }))
-          .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+          .map((msg: any) => {
+            let jobId: string | undefined;
+            let contentParsed: any = undefined;
+            let isJSONParsed = false;
+            try {
+              if (msg.content) {
+                contentParsed = JSON.parse(msg.content);
+                isJSONParsed = true;
+                if (contentParsed && typeof contentParsed === 'object' && contentParsed.job_id) {
+                  jobId = contentParsed.job_id;
+                }
+              }
+            } catch {
+              // Not JSON, ignore
+            }
+
+            const role = msg.type === "ai" || msg.type === "tool" ? "assistant" : "user";
+            const content = msg.content || "";
+            
+            // Extract image URLs from content for user messages
+            let imagePaths: string[] | undefined;
+            if (role === "user" && content) {
+              const extractedUrls = extractImageUrls(content);
+              if (extractedUrls.length > 0) {
+                imagePaths = extractedUrls;
+              }
+            }
+            
+             if (isJSONParsed && typeof contentParsed === 'object' && contentParsed !== null) {
+              return {
+                role,
+                ...contentParsed,
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                jobId,
+                imagePaths,
+              };
+            } else {
+              return {
+                role,
+                text: content,
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                jobId,
+                imagePaths,
+              };
+            }
+          })
+          .filter((m: any) => (typeof m.text === "string" ? !isToolInvocation(m.text) : true));
+        console.log(newMessages, 'new messages==>>>')
         setMessages((prev) => [...prev, ...newMessages]);
+        const jobIds = newMessages
+          .map((m: any) => m.jobId)
+          .filter((id: string | undefined): id is string => !!id);
+        
+        if (jobIds.length > 0) {
+          setActiveJobIds((prev) => {
+            const combined = [...prev, ...jobIds];
+            return Array.from(new Set(combined)); // Remove duplicates
+          });
+        }
+
+        // console.log(jobIds,'here is main job ids i am getting====>>>>')
+
+        // Check if any message is a successful model optimization
+        if (data.messages && Array.isArray(data.messages)) {
+          for (const msg of data.messages) {
+            if (msg.type === "tool" && 
+                (msg.name === "optimize_single_model_tool" || msg.name === "optimize_multiple_models_tool")) {
+              try {
+                const toolContent = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content;
+                // Check for success and any status that indicates optimization has started
+                const activeStatuses = ["running", "PENDING", "pending", "processing", "PROCESSING", "queued", "QUEUED"];
+                if (toolContent && 
+                    toolContent.success === true && 
+                    toolContent.status && 
+                    activeStatuses.includes(toolContent.status)) {
+                  // If optimized_model_id exists, add placeholder and start polling for the optimized model
+                  if (toolContent.optimized_model_id) {
+                    // Add placeholder message for optimized model
+                    const placeholderMessage: Message = {
+                      role: "assistant",
+                      text: "",
+                      formType: "optimized-model",
+                      status: "listening",
+                      optimizedModelId: toolContent.optimized_model_id,
+                      formData: {
+                        preset_name: "",
+                        optimization_status: "processing",
+                        name: "",
+                        downloads: {}
+                      }
+                    };
+                    setMessages((prev) => [...prev, placeholderMessage]);
+                    
+                    // Start polling
+                    startPollingOptimizedModel(toolContent.optimized_model_id);
+                  }
+                  
+                  console.log("Model optimization started, redirecting to optimization tab and starting polling in 5 seconds", toolContent);
+                  break; // Only handle the first optimization found
+                }
+              } catch (error) {
+                console.error("Error parsing optimization tool content:", error);
+              }
+            }
+          }
+        }
       }
 
       if (data.status === "awaiting_confirmation") {
@@ -642,22 +603,365 @@ const Index = () => {
   };
 
 
+  
   const handleImageGenerated = useCallback(() => {
     setImageRefreshTrigger(prev => prev + 1);
     queryClient.invalidateQueries({ queryKey: ['user-profile'] });
   }, [queryClient]);
+  
+  // ============================================
+  // WORKFLOW CHAIN HANDLER
+  // ============================================
+const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
+  console.log(`🔗 Starting workflow chain: ${chain.chain_id}`);
+  
+  setWorkflowChain(chain);
+  setWorkflowProgress({ current: 0, total: chain.total_tasks });
+  setWorkflowStatus("🔗 Starting workflow with " + chain.total_tasks + " tasks...");
+  setWorkflowError(null);
+  setWorkflowResults(null);
+  setIsWorkflowLoading(true);
+
+  // Add placeholder for first task
+  const firstTaskPlaceholder: Message = {
+    role: "assistant",
+    text: `🔗 Starting task 1/${chain.total_tasks}...`,
+    job_id: `chain_task_1_${chain.chain_id}`,
+    status: "listening",
+    generation_type: "image_generation",
+    chainId: chain.chain_id,
+    taskNumber: 1,
+  };
+  setMessages((prev) => [...prev, firstTaskPlaceholder]);
+
+  if (chainSSERef.current) {
+    chainSSERef.current.close();
+  }
+
+  const userEmail = userProfile?.email || extractEmailFromToken(authToken);
+  const streamUrl = `${API}/generation-status/${chain.chain_id}/stream?email=${encodeURIComponent(userEmail || "")}`;
+  console.log(`🔗 Opening SSE connection to: ${streamUrl}`);
+
+  const taskPlaceholdersAdded = new Set<number>([1]);
+
+  const eventSource = createChainSSEConnection(
+    streamUrl,
+    chain.total_tasks,
+    {
+      onTaskStarting: (event) => {
+        setWorkflowStatus(`⚡ Task ${event.task_number}/${event.total_tasks}: ${event.prompt || event.task_type}`);
+        
+        if (!taskPlaceholdersAdded.has(event.task_number)) {
+          taskPlaceholdersAdded.add(event.task_number);
+          const taskPlaceholder: Message = {
+            role: "assistant",
+            text: `⚡ Starting task ${event.task_number}/${event.total_tasks}...`,
+            job_id: `chain_task_${event.task_number}_${event.chain_id}`,
+            status: "listening",
+            generation_type: event.task_type === "image_editing" ? "image_editing" : "image_generation",
+            chainId: event.chain_id,
+            taskNumber: event.task_number,
+          };
+          setMessages((prev) => [...prev, taskPlaceholder]);
+        }
+      },
+      
+      onTaskStarted: (event) => {
+        setWorkflowStatus(`🎧 Processing task ${event.task_number}/${event.total_tasks}...`);
+        setMessages((prev) =>
+          prev.map((msg: any) => {
+            if (msg.chainId === event.chain_id && msg.taskNumber === event.task_number) {
+              return { ...msg, job_id: event.job_id, text: `🎧 Processing task ${event.task_number}/${event.total_tasks}...` };
+            }
+            return msg;
+          })
+        );
+      },
+      
+      onTaskCompleted: (event) => {
+        setWorkflowProgress({ current: event.task_number || 0, total: chain.total_tasks });
+        setWorkflowStatus(`✅ Task ${event.task_number}/${event.total_tasks} completed!`);
+        
+        const imagePath = event.image_path || event.output?.image_path;
+        if (imagePath) {
+          setMessages((prev) =>
+            prev.map((msg: any) => {
+              if (msg.job_id === event.job_id || (msg.chainId === event.chain_id && msg.taskNumber === event.task_number)) {
+                return { ...msg, status: "COMPLETED", image_path: imagePath, text: `✅ Task ${event.task_number}/${event.total_tasks} completed` };
+              }
+              return msg;
+            })
+          );
+        }
+      },
+      
+      onChainCompleted: (event) => {
+        const results: ChainResults = {
+          images: event.outputs?.images || [],
+          models: event.outputs?.models || [],
+          allOutputs: event.outputs || {},
+        };
+        setWorkflowResults(results);
+        setWorkflowProgress({ current: chain.total_tasks, total: chain.total_tasks });
+        setWorkflowStatus(`🎉 All ${chain.total_tasks} tasks completed successfully!`);
+        setIsWorkflowLoading(false);
+
+        if (event.outputs) {
+          const outputKeys = Object.keys(event.outputs).filter(k => k.startsWith('output_'));
+          setMessages((prev) => {
+            let updatedMessages = [...prev];
+            outputKeys.forEach((key, index) => {
+              const output = event.outputs[key];
+              if (output && output.image_path) {
+                const alreadyHasImage = updatedMessages.some((msg: any) => msg.image_path === output.image_path);
+                if (!alreadyHasImage) {
+                  const taskNumber = index + 1;
+                  const placeholderIndex = updatedMessages.findIndex(
+                    (msg: any) => msg.chainId === event.chain_id && msg.taskNumber === taskNumber && !msg.image_path
+                  );
+                  if (placeholderIndex !== -1) {
+                    updatedMessages[placeholderIndex] = { ...updatedMessages[placeholderIndex], status: "COMPLETED", image_path: output.image_path, text: `✅ Result ${taskNumber}/${outputKeys.length}` };
+                  } else {
+                    updatedMessages.push({ role: "assistant", text: `✅ Result ${taskNumber}/${outputKeys.length}`, status: "COMPLETED", image_path: output.image_path, generation_type: output.type || "image_generation", job_id: output.job_id });
+                  }
+                }
+              }
+            });
+            return updatedMessages;
+          });
+        }
+
+        toast({ title: "Workflow Complete", description: `Generated ${results.images.length} images and ${results.models.length} models` });
+        handleImageGenerated();
+      },
+      
+      onTaskFailed: (event) => {
+        setWorkflowError(`Task ${event.task_number} failed: ${event.error || "Unknown error"}`);
+        setIsWorkflowLoading(false);
+        setMessages((prev) =>
+          prev.map((msg: any) => {
+            if (msg.chainId === event.chain_id && msg.taskNumber === event.task_number) {
+              return { ...msg, status: "error", text: `❌ Task ${event.task_number} failed: ${event.error || "Unknown error"}` };
+            }
+            return msg;
+          })
+        );
+        toast({ title: "Workflow Error", description: `Task ${event.task_number} failed: ${event.error}`, variant: "destructive" });
+      },
+      
+      onStatusUpdate: (message) => setWorkflowStatus(message),
+      onProgressUpdate: (current, total) => setWorkflowProgress({ current, total }),
+      onError: (error) => {
+        setWorkflowError(error);
+        setIsWorkflowLoading(false);
+        toast({ title: "Connection Error", description: error, variant: "destructive" });
+      },
+      onLoaderToggle: (show) => setIsWorkflowLoading(show),
+    }
+  );
+
+  chainSSERef.current = eventSource;
+}, [toast, handleImageGenerated, API, authToken, userProfile?.email]);
+
+
+  const handleModelGenerated = useCallback(() => {
+    setModelRefreshTrigger(prev => prev + 1);
+    queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+  }, [queryClient]);
+
+  // Handle SSE status updates
+  const handleSSEStatusUpdate = useCallback((jobId: string, update: SSEStatusUpdate) => {
+    console.log(`[SSE] Status update for job ${jobId}:`, update);
+    
+    // Update the message that contains this job ID
+    setMessages((prev: Message[]) =>
+      prev.map((msg: any) => {
+        if ((msg as any).jobId === jobId) {
+          let updatedText: any ={}
+          
+              updatedText ={
+                ...msg,
+                ...update.data,
+                status: update.status
+              };
+
+          console.log({
+            ...msg,
+            ...updatedText,
+            role: 'assistant'
+          },'final object====>>>>>')
+          
+          return {
+            ...msg,
+            ...updatedText,
+            role: 'assistant',
+            status: update.status || 'listening'
+          }
+        }
+        return msg;
+      })
+    );
+    
+
+  }, [toast]);
+
+  // Handle SSE job completion
+  const handleSSEJobComplete = useCallback((jobId: string, finalStatus: SSEStatusUpdate) => {
+    console.log(`[SSE] Job ${jobId} completed:`, finalStatus);
+    
+    // Remove from active jobs
+    setActiveJobIds((prev) => prev.filter((id) => id !== jobId));
+    
+    // Update message with final status
+    console.log(messages,'here is prev message before update')
+    setMessages((prev: Message[]) =>
+      prev.map((msg: any) => {
+        if ((msg as any).jobId === jobId) {
+          let updatedText: any ={}
+          
+              updatedText ={
+                ...msg,
+                ...finalStatus.data,
+                status: finalStatus.status
+              };
+
+          console.log({
+            ...msg,
+            ...updatedText,
+            role: 'assistant'
+          },'final objecttttttttttttttttttttttttttttttttttttttttttttttttttttttt')
+          
+          return {
+            ...msg,
+            ...updatedText,
+            role: 'assistant',
+            status: finalStatus.status || 'COMPLETED'
+          }
+        }
+        return msg;
+      })
+    );
+    
+    // Show completion toast
+    if (finalStatus.status.toLocaleLowerCase() === 'completed') {
+      toast({
+        title: "Completed",
+        description: finalStatus.message || "Your request has been completed!",
+      });
+      // Refresh images when job completes
+      handleImageGenerated();
+      // Also refresh models if this is a model generation job
+      if (finalStatus.data?.model_url) {
+        handleModelGenerated();
+      }
+    } else if (finalStatus.status.toLocaleLowerCase() === 'error' || finalStatus.status.toLocaleLowerCase() === 'failed') {
+      toast({
+        title: "Error",
+        description: finalStatus.message || "An error occurred processing your request.",
+        variant: "destructive",
+      });
+    }
+  }, [toast, handleImageGenerated, handleModelGenerated]);
+
+  // Poll optimized model status until it's done
+  const startPollingOptimizedModel = useCallback((optimizedModelId: number) => {
+    // Clear any existing polling for this model
+    const existingInterval = optimizationPollIntervalsRef.current.get(optimizedModelId);
+    if (existingInterval) {
+      clearInterval(existingInterval);
+    }
+    
+    let pollCount = 0;
+    const maxPolls = 120; // 10 minutes max (5 seconds * 120)
+    
+    const pollInterval = setInterval(async () => {
+      pollCount++;
+      
+      try {
+        const result = await apiFetch<{ data: any }>(
+          `/api/model-optimization/rapidmodels/${optimizedModelId}`,
+          {
+            method: 'GET',
+          }
+        );
+        
+        const modelData = result.data;
+        
+        if (modelData && modelData.optimization_status === "done") {
+          clearInterval(pollInterval);
+          optimizationPollIntervalsRef.current.delete(optimizedModelId);
+          
+          // Update placeholder message with actual optimized model data
+          setMessages((prev) => {
+            return prev.map((msg) => {
+              // Find the placeholder message for this optimized model
+              if (
+                msg.formType === "optimized-model" && 
+                msg.optimizedModelId === optimizedModelId &&
+                msg.status === "listening"
+              ) {
+                return {
+                  ...msg,
+                  status: "completed",
+                  formData: {
+                    preset_name: modelData.preset_name || "Optimized Model",
+                    optimization_status: modelData.optimization_status,
+                    name: modelData.name,
+                    downloads: modelData.downloads || {}
+                  }
+                };
+              }
+              return msg;
+            });
+          });
+          
+          toast({
+            title: "Optimization Complete",
+            description: "Your model has been optimized successfully!",
+          });
+        } else if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          optimizationPollIntervalsRef.current.delete(optimizedModelId);
+          console.error("Optimization polling timeout");
+        }
+      } catch (error) {
+        console.error("Error polling optimized model:", error);
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          optimizationPollIntervalsRef.current.delete(optimizedModelId);
+        }
+      }
+    }, 5000); // Poll every 5 seconds
+    
+    optimizationPollIntervalsRef.current.set(optimizedModelId, pollInterval);
+  }, [toast]);
+  
+  // Cleanup polling intervals on unmount
+  useEffect(() => {
+    return () => {
+      optimizationPollIntervalsRef.current.forEach((interval) => {
+        clearInterval(interval);
+      });
+      optimizationPollIntervalsRef.current.clear();
+    };
+  }, []);
 
   const handleOptimizationFormSubmit = async (type: string, data: any) => {
     console.log("Optimization form submit:", type, data);
-    
+
     if (type === "model-selected") {
-      // Fetch presets before showing optimization config form
+      // Check if the last message is already an optimization-config form
+      const lastMessage = messages[messages.length - 1];
+      const isLastMessageConfigForm = lastMessage && 
+        lastMessage.formType === "optimization-config";
+      
+      // Fetch presets before showing/updating optimization config form
       try {
-        // Get the latest token from URL, window, or localStorage
-        const params = new URLSearchParams(window.location.search);
-        const currentToken = params.get("token") || authToken || (window as any).authToken || localStorage.getItem("auth_token");
+        // Get token from localStorage
+        const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
         
-        const response = await fetch(`https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/model-optimization/presets`, {
+        const backendUrl = import.meta.env.VITE_API_BACKEND_URL;
+        const response = await fetch(`${backendUrl}/api/model-optimization/presets`, {
           headers: {
             "Authorization": currentToken ? `Bearer ${currentToken}` : "",
             "Content-Type": "application/json"
@@ -668,10 +972,28 @@ const Index = () => {
         
         const presetsData = await response.json();
         
-        handleAddDirectMessage("assistant", "Model selected! Now configure your optimization settings:", "optimization-config", {
-          modelId: data.modelId,
-          presets: presetsData
-        });
+        // If last message is already a config form, update it instead of adding a new one
+        if (isLastMessageConfigForm) {
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              formData: {
+                modelId: data.modelId,
+                presets: presetsData,
+                isDisabled: false // Keep it enabled when updating
+              }
+            };
+            return updated;
+          });
+        } else {
+          // Otherwise, add a new message with the config form
+          handleAddDirectMessage("assistant", "Model selected! Now configure your optimization settings:", "optimization-config", {
+            modelId: data.modelId,
+            presets: presetsData,
+            isDisabled: false
+          });
+        }
       } catch (error) {
         console.error("Error fetching presets:", error);
         toast({
@@ -687,28 +1009,21 @@ const Index = () => {
       // Find the preset text for the selected strength
       const presetText = presets?.presets?.[optType]?.find((p: any) => p.id === strength)?.text || strength;
       
-      // Extract the ACCESS_TOKEN from URL, window, or localStorage
-      const params = new URLSearchParams(window.location.search);
-      const accessToken = params.get("token") || authToken || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get ACCESS_TOKEN from localStorage
+      const accessToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
       
       // Build the payload with ACCESS_TOKEN
       const payload = {
-        ACCESS_TOKEN: accessToken,
         optimization_type: optType,
         presetId: strength,
         reduction_strength: presetText,
-        modelId: modelId
+        modelId: modelId,
+        role: 'system'
       };
       
-      // Display friendly message to user
-      handleAddDirectMessage("assistant", "Agent working on Optimization");
       
       // Send instruction to agent via normal chat flow (not displayed)
       const agentInstruction = `Invoke the tool 'optimize_single_model_tool' using the following parameters: ${JSON.stringify(payload)}`;
-      
-      // Show optimizing status
-      handleAddDirectMessage("assistant", "🔧 Optimizing your model...");
-      
       // Send to /ask endpoint through normal message handler
       await handleSendMessage(agentInstruction);
     } else if (type === "optimization-started") {
@@ -722,84 +1037,71 @@ const Index = () => {
     } else if (type === "reset") {
       // Reset workflow - user can start over
       handleAddDirectMessage("assistant", "Ready to optimize another model! Click the Model Optimization tab to begin.");
-    } else if (type === "model-optimization-clicked") {
-      // When Model Optimization button is clicked
-      // Send system prompt silently to /ask endpoint
-      const systemPrompt = `You are a 3D model optimization assistant. When a user requests model optimization, explain the following:
-
-Available optimization categories:
-- **Simple**: General purpose optimization for most 3D models
-- **Batch**: Optimize multiple models at once with consistent settings
-- **Hard Surface**: Specialized for mechanical, architectural, or man-made objects
-- **Foliage**: Optimized for plants, trees, and organic vegetation
-- **Animated**: Preserve animation data while reducing polygon count
-
-Optimization strength levels:
-- **10-30%**: Light optimization, preserves most detail
-- **35-60%**: Moderate optimization, balanced quality/performance
-- **70-95%**: Aggressive optimization, maximum performance
-
-The process:
-1. Select a model from your library or upload a new one
-2. Choose the optimization type that matches your model
-3. Select the reduction strength based on your needs
-4. Download optimized files in GLB, USDZ, or FBX formats`;
-
-      // Show simple user message first
-      handleAddDirectMessage("user", "Model optimization invoked.");
+    } else if (type === "show-optimization-form") {
+      // When Model Optimization button is clicked, disable all previous optimization forms
+      setMessages((prev) => 
+        prev.map((msg) => {
+          if (msg.formType === "model-selection" || msg.formType === "optimization-config") {
+            return {
+              ...msg,
+              formData: {
+                ...(msg.formData as any || {}),
+                isDisabled: true
+              }
+            };
+          }
+          return msg;
+        })
+      );
       
-      // Send system prompt to backend and get response
+      // When Model Optimization button is clicked, fetch models and display them in chat
+      handleAddDirectMessage("user", "Model optimization");
+      
+      // Fetch models from API
       try {
-        const payload: any = {
-          query: systemPrompt,
-        };
+        const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
+        const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
         
-        if (sessionId) {
-          payload.session_id = sessionId;
-        }
-
-        if (userProfile?.email) {
-          payload.email = userProfile.email;
-        }
-
-        const headers: HeadersInit = {
-          "Content-Type": "application/json",
-        };
-        
-        if (authToken) {
-          headers["Authorization"] = `Bearer ${authToken}`;
-        }
-
-        const response = await fetch(`${API}/ask`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
+        const response = await fetch(`${backendUrl}/api/model-optimization/models`, {
+          headers: {
+            "Authorization": currentToken ? `Bearer ${currentToken}` : "",
+            "Content-Type": "application/json"
+          }
         });
 
+        if (!response.ok) throw new Error("Failed to fetch models");
+
         const data = await response.json();
+        
+        // Handle different API response formats
+        const modelsArray = data.models || data || [];
+        
+        // Convert API models to ModelInfo format
+        const models: any[] = modelsArray.map((model: any) => ({
+          id: model.assetId,
+          name: model.name || model.filename || model.fileName || `Model ${model.id || model.asset_id || model.assetId}`,
+          image: model.thumbnail_url || model.thumbnailUrl || model.image || "/placeholder.svg",
+          creationDate: model.created_at || model.createdAt 
+            ? new Date(model.created_at || model.createdAt).toLocaleDateString() 
+            : new Date().toLocaleDateString()
+        }));
 
-        // Update session ID if provided
-        if (data.session_id) {
-          updateSessionId(data.session_id);
-        }
-
-        // Show agent's response
-        if (data.messages && Array.isArray(data.messages)) {
-          const assistantMessages = data.messages.filter((msg: any) => msg.type === "ai");
-          if (assistantMessages.length > 0) {
-            const lastAssistantMsg = assistantMessages[assistantMessages.length - 1];
-            handleAddDirectMessage("assistant", lastAssistantMsg.content || "", "optimization-inline");
-          }
-        } else if (data.response) {
-          handleAddDirectMessage("assistant", data.response, "optimization-inline");
-        } else {
-          // Fallback if no response from backend
-          handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
-        }
+        handleAddDirectMessage("assistant", "Select a model to optimize:", "model-selection", {
+          models: models,
+          isDisabled: false
+        });
       } catch (error) {
-        console.error("Error fetching optimization guide:", error);
-        handleAddDirectMessage("assistant", "Ready to optimize your 3D models! Please select your options below.", "optimization-inline");
+        console.error("Error fetching models:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load models. Please try again.",
+          variant: "destructive"
+        });
+        handleAddDirectMessage("assistant", "Failed to load models. Please try again.");
       }
+    } else if (type === "upload-new") {
+      // When user clicks "Upload New" button in model selection form
+      document.getElementById('model-file-input')?.click();
     }
   };
 
@@ -808,7 +1110,7 @@ The process:
     setActiveTab("models");
   };
 
-  const handleLoadSession = async (sessionId: string) => {
+  const handleLoadSession = useCallback(async (sessionId: string) => {
     try {
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -841,12 +1143,28 @@ The process:
       // Filter out system messages only
       const loadedMessages: Message[] = data.messages
         .filter((msg: any) => msg.type !== "system")
-        .map((msg: any) => ({
-          role: msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant",
-          text: msg.content || "",
-          timestamp: new Date(),
-          toolName: msg.type === "tool" ? msg.name : undefined,
-        }));
+        .map((msg: any) => {
+          const content = msg.content || "";
+          const role = msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant";
+          
+          // Extract image URLs from content for user messages
+          let imagePaths: string[] | undefined;
+          if (role === "user" && content) {
+            const extractedUrls = extractImageUrls(content);
+            if (extractedUrls.length > 0) {
+              imagePaths = extractedUrls;
+            }
+          }
+          
+          return {
+            ...msg,
+            role,
+            text: content,
+            timestamp: new Date(),
+            toolName: msg.type === "tool" ? msg.name : undefined,
+            imagePaths,
+          };
+        });
       
       setMessages(loadedMessages);
       
@@ -862,12 +1180,37 @@ The process:
         variant: "destructive",
       });
     }
-  };
+  }, [authToken, userProfile?.email, API, toast]);
+
+  // Handle when sessions are loaded from sidebar
+  const handleSessionsLoaded = useCallback((sessions: Array<{ session_id: string }>) => {
+    // Auto-load first session if:
+    // 1. We haven't auto-loaded yet
+    // 2. There are sessions available
+    // 3. No session is currently selected OR current session doesn't exist in the list
+    // 4. No messages are loaded (meaning no chat is currently open)
+    if (!hasAutoLoadedRef.current && sessions.length > 0) {
+      const currentSessionExists = sessionId 
+        ? sessions.some(s => s.session_id === sessionId)
+        : false;
+      
+      // If no session is selected, or current session doesn't exist, or no messages loaded
+      if ((!sessionId || !currentSessionExists || messages.length === 0)) {
+        const firstSession = sessions[0];
+        hasAutoLoadedRef.current = true;
+        // Load the first session
+        handleLoadSession(firstSession.session_id);
+      } else {
+        hasAutoLoadedRef.current = true;
+      }
+    }
+  }, [sessionId, messages.length, handleLoadSession]);
 
   const handleNewChat = () => {
     setSessionId(null);
     localStorage.removeItem("mcp_session_id");
     setMessages([]);
+    hasAutoLoadedRef.current = false; // Reset so we can auto-load again if needed
     toast({
       title: "New Chat Started",
       description: "You can now start a fresh conversation.",
@@ -876,6 +1219,15 @@ The process:
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
+      {/* SSE Status Listener - listens for real-time updates */}
+      <SSEStatusListener
+        apiUrl={apiUrl}
+        email={userProfile?.email || extractEmailFromToken(authToken) || undefined}
+        activeJobIds={activeJobIds}
+        onStatusUpdate={handleSSEStatusUpdate}
+        onJobComplete={handleSSEJobComplete}
+      />
+      
       {/* Hidden file input for model uploads */}
       <input
         id="model-file-input"
@@ -885,12 +1237,150 @@ The process:
         onChange={async (e) => {
           const file = e.target.files?.[0];
           if (file) {
-            // Handle model upload here if needed
-            console.log("Model file selected:", file.name);
-            toast({
-              title: "Upload not implemented",
-              description: "Model upload from optimization form is not yet implemented",
-            });
+            // Set loading state on model selection form
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                  ? {
+                      ...msg,
+                      formData: {
+                        ...(msg.formData as Record<string, any>),
+                        isUploading: true,
+                      },
+                    }
+                  : msg
+              )
+            );
+
+            try {
+              const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
+              
+              if (!currentToken) {
+                // Reset loading state on error
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                      ? {
+                          ...msg,
+                          formData: {
+                            ...(msg.formData as Record<string, any>),
+                            isUploading: false,
+                          },
+                        }
+                      : msg
+                  )
+                );
+                toast({
+                  title: "Authentication required",
+                  description: "Please authenticate first to upload models.",
+                  variant: "destructive",
+                });
+                return;
+              }
+
+              toast({
+                title: "Preparing upload...",
+                description: "Getting upload credentials",
+              });
+
+              const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
+              const signedUrlResponse = await fetch(`${backendUrl}/api/model-optimization/get-signed-url`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${currentToken}`
+                },
+                body: JSON.stringify({
+                  model_name: file.name,
+                  filename: file.name,
+                }),
+              });
+
+              if (!signedUrlResponse.ok) {
+                throw new Error(`Request failed with status ${signedUrlResponse.status}`);
+              }
+
+              const { s3_upload_url, asset_id } = await signedUrlResponse.json();
+
+              toast({
+                title: "Uploading...",
+                description: "Uploading your model to storage",
+              });
+
+              const uploadResponse = await fetch(s3_upload_url, {
+                method: "PUT",
+                headers: { "Content-Type": "application/octet-stream" },
+                body: file,
+              });
+
+              if (!uploadResponse.ok) {
+                throw new Error("Failed to upload model to S3");
+              }
+
+              toast({
+                title: "Registering...",
+                description: "Registering your model for optimization",
+              });
+
+              const completeResponse = await fetch(`${backendUrl}/api/model-optimization/complete-upload/${asset_id}`, {
+                method: "GET",
+                headers: {
+                  "Authorization": `Bearer ${currentToken}`,
+                  "Content-Type": "application/json",
+                },
+              });
+
+              if (!completeResponse.ok) {
+                throw new Error("Model registration failed");
+              }
+
+              toast({
+                title: "Success!",
+                description: "Your model has been uploaded and registered for optimization.",
+              });
+
+              // Reset loading state after successful upload
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                    ? {
+                        ...msg,
+                        formData: {
+                          ...(msg.formData as Record<string, any>),
+                          isUploading: false,
+                        },
+                      }
+                    : msg
+                )
+              );
+
+              // Trigger refresh of optimization form models
+              window.dispatchEvent(new CustomEvent("refreshOptimizationModels"));
+              
+              // Trigger refresh of model selection form in chat
+              window.dispatchEvent(new CustomEvent("refreshModelSelectionForm"));
+            } catch (error) {
+              console.error("Model upload error:", error);
+              // Reset loading state on error
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.formType === "model-selection" && msg.formData && typeof msg.formData === "object"
+                    ? {
+                        ...msg,
+                        formData: {
+                          ...(msg.formData as Record<string, any>),
+                          isUploading: false,
+                        },
+                      }
+                    : msg
+                )
+              );
+              toast({
+                title: "Upload failed",
+                description: error instanceof Error ? error.message : "Failed to upload model",
+                variant: "destructive",
+              });
+            }
           }
           e.target.value = '';
         }}
@@ -902,6 +1392,7 @@ The process:
         onSelectSession={handleLoadSession}
         onNewChat={handleNewChat}
         apiUrl={apiUrl}
+        onSessionsLoaded={handleSessionsLoaded}
       />
       
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
@@ -916,6 +1407,7 @@ The process:
               apiUrl={apiUrl}
               onModelSelect={handleModelSelect}
               onImageGenerated={handleImageGenerated}
+              onModelGenerated={handleModelGenerated}
               onOptimizationFormSubmit={handleOptimizationFormSubmit}
               userEmail={userProfile?.email || extractEmailFromToken(authToken)}
               sessionId={sessionId || undefined}
@@ -955,16 +1447,7 @@ The process:
                     <Settings className="w-4 h-4" />
                     Model Optimization
                   </TabsTrigger>
-                  <TabsTrigger value="videos" className="gap-2 relative" disabled>
-                    <Video className="w-4 h-4" />
-                    Video Gallery
-                    <span className="text-[10px] italic ml-1 text-muted-foreground">Coming Soon</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="game-design-pro" className="gap-2 relative" disabled>
-                    <Sparkles className="w-4 h-4" />
-                    Game Design Pro
-                    <span className="text-[10px] italic ml-1 text-muted-foreground">Coming Soon</span>
-                  </TabsTrigger>
+                 
                 </TabsList>
                 
                 <button
@@ -978,6 +1461,35 @@ The process:
                 </button>
               </div>
               
+              {/* Workflow Chain Progress/Results */}
+              {workflowChain && (
+                <div className="border-b p-4 bg-muted/20">
+                  {workflowResults ? (
+                    <WorkflowChainResults
+                      chainId={workflowChain.chain_id}
+                      images={workflowResults.images}
+                      models={workflowResults.models}
+                      totalTasks={workflowChain.total_tasks}
+                      onClose={() => {
+                        setWorkflowChain(null);
+                        setWorkflowResults(null);
+                        setWorkflowProgress({ current: 0, total: 0 });
+                        setWorkflowStatus("");
+                      }}
+                    />
+                  ) : (
+                    <WorkflowProgressDisplay
+                      chainId={workflowChain.chain_id}
+                      totalTasks={workflowChain.total_tasks}
+                      currentTask={workflowProgress.current}
+                      currentStatus={workflowStatus}
+                      isLoading={isWorkflowLoading}
+                      error={workflowError}
+                    />
+                  )}
+                </div>
+              )}
+              
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
                 <ImageViewer apiUrl={apiUrl} refreshTrigger={imageRefreshTrigger} />
               </TabsContent>
@@ -986,7 +1498,7 @@ The process:
                 <div className="h-full flex flex-col">
                   <div className="p-4 border-b flex justify-between items-center">
                     <h3 className="text-lg font-semibold">3D Models</h3>
-                    <ModelUploader 
+                    {/* <ModelUploader 
                       apiUrl={apiUrl} 
                       authToken={authToken || ''} 
                       onUploadComplete={(assetId) => {
@@ -996,10 +1508,10 @@ The process:
                           description: "Model uploaded and registered successfully!",
                         });
                       }}
-                    />
+                    /> */}
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <ModelViewer apiUrl={apiUrl} selectedModel={selectedModel} />
+                    <ModelViewer apiUrl={apiUrl} selectedModel={selectedModel} refreshTrigger={modelRefreshTrigger} />
                   </div>
                 </div>
               </TabsContent>
@@ -1023,12 +1535,6 @@ The process:
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
-      
-      {/* Floating generation status indicator */}
-      <GenerationIndicatorFloating 
-        count={processingJobs.length} 
-        status={processingJobs[0]?.status} 
-      />
     </div>
   );
 };

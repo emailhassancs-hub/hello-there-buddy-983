@@ -2,9 +2,11 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { apiFetch } from "@/lib/api"
 import { useUserProfile } from "@/hooks/use-user-profile"
+import { LocalStorageKeys } from "@/enums/localstorage"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -20,6 +22,8 @@ import {
   CheckCircle,
   AlertCircle,
   RefreshCw,
+  Play,
+  Clock,
 } from "lucide-react"
 
 // API types
@@ -72,6 +76,32 @@ interface OptimizationRequest {
   presetId: string
 }
 
+interface RunningTask {
+  id: string
+  modelName: string
+  optimizationType: string
+  strength: string
+  status: "queued" | "processing" | "completed" | "failed"
+  progress?: number
+  startTime: Date
+}
+
+interface OptimizationJob {
+  asset_id?: number
+  model_name?: string
+  status?: string
+  progress?: number
+  started_at?: string
+  preset?: Record<string, any>
+  task_type: string
+}
+
+interface RunningJobsResponse {
+  status: string
+  jobs: OptimizationJob[]
+  total_count: number
+}
+
 // API functions
 async function fetchModels(page: number = 1, perPage: number = 10): Promise<ModelsResponse> {
   return apiFetch<ModelsResponse>(`/api/model-optimization/models?page=${page}&per_page=${perPage}`)
@@ -114,6 +144,9 @@ async function optimizeMultipleModels(optimizations: OptimizationRequest[]): Pro
 }
 
 async function uploadModel(file: File, modelName: string): Promise<any> {
+
+
+  console.log("file", file, "modelName", modelName)
   try {
     const res = await apiFetch<any>(`/api/model-optimization/get-signed-url`, {
       method: "POST",
@@ -153,6 +186,10 @@ async function uploadModel(file: File, modelName: string): Promise<any> {
   }
 }
 
+async function fetchRunningJobs(): Promise<RunningJobsResponse> {
+  return apiFetch<RunningJobsResponse>(`/api/model-optimization/running-jobs`)
+}
+
 function convertApiModelToComponentModel(apiModel: ModelInfo, associatedModels: AssociatedModelInfo[] = []) {
   return {
     id: parseInt(apiModel.assetId),
@@ -176,10 +213,14 @@ interface ModelOptimizationProps {
 
 export default function ModelOptimization({ isActive = false, onSendMessage, onAddDirectMessage }: ModelOptimizationProps) {
   const { data: userProfile } = useUserProfile();
+  const { toast } = useToast();
+  const prevRunningTasksLengthRef = useRef(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedModel, setSelectedModel] = useState<number | null>(null)
   const [optimizationType, setOptimizationType] = useState("")
   const [optimizationStrength, setOptimizationStrength] = useState("")
   const [optimizationRequests, setOptimizationRequests] = useState<OptimizationRequest[]>([])
+  const [runningTasks, setRunningTasks] = useState<RunningTask[]>([])
   const [isOptimizing, setIsOptimizing] = useState(false)
 
   // API data states
@@ -207,6 +248,63 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
     fetchModelsData()
   }, [])
 
+  // Listen for model refresh events (from uploads)
+  useEffect(() => {
+    const handleRefresh = () => {
+      refreshModelsData()
+    }
+    window.addEventListener('refreshOptimizationModels', handleRefresh)
+    return () => window.removeEventListener('refreshOptimizationModels', handleRefresh)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Listen for optimization started from chat
+  useEffect(() => {
+    const handleOptimizationStarted = async (event: CustomEvent) => {
+      console.log("Optimization started from chat, checking for running jobs...", event.detail)
+      
+      try {
+        const response = await fetchRunningJobs()
+        const runningJobs = response.jobs
+
+        console.log("Found running jobs after chat optimization:", runningJobs)
+
+        if (runningJobs.length > 0) {
+          // Convert running jobs to tasks
+          const newTasks: RunningTask[] = runningJobs.map((job) => ({
+            id: `task-${Date.now()}-${Math.random()}`,
+            modelName: job.model_name || "Unknown Model",
+            optimizationType: job.preset?.name || "Optimization",
+            strength: "Standard",
+            status: "processing" as const,
+            startTime: new Date(),
+          }))
+
+          console.log("Creating tasks from chat optimization:", newTasks)
+          setRunningTasks((prevTasks) => {
+            // Merge with existing tasks, avoiding duplicates by model name
+            // If we have asset_id from event detail, we can use it for better matching
+            const existingModelNames = new Set(prevTasks.map(t => t.modelName))
+            const uniqueNewTasks = newTasks.filter(t => !existingModelNames.has(t.modelName))
+            
+            if (uniqueNewTasks.length > 0) {
+              console.log(`Added ${uniqueNewTasks.length} new tasks from chat optimization`)
+            }
+            
+            return [...prevTasks, ...uniqueNewTasks]
+          })
+        } else {
+          console.log("No running jobs found yet, will retry on next poll")
+        }
+      } catch (error) {
+        console.error("Error checking running jobs after chat optimization:", error)
+      }
+    }
+
+    window.addEventListener('optimizationStartedFromChat', handleOptimizationStarted as EventListener)
+    return () => window.removeEventListener('optimizationStartedFromChat', handleOptimizationStarted as EventListener)
+  }, [])
+
   // Fetch associated models when selected model changes
   useEffect(() => {
     if (selectedModel) {
@@ -221,12 +319,174 @@ export default function ModelOptimization({ isActive = false, onSendMessage, onA
     fetchOptimizationPresetsData()
   }, [])
 
-  // Send system prompt to /ask endpoint when component is active
+  // Initial polling check when component becomes active
   useEffect(() => {
-    if (isActive && optimizationPresets && models.length > 0) {
-      sendSystemPromptToAgent()
+    const runInitialPolling = async () => {
+      try {
+        console.log("Running initial polling check...")
+        const response = await fetchRunningJobs()
+        const runningJobs = response.jobs
+
+        console.log("Initial polling found jobs:", runningJobs)
+
+        if (runningJobs.length === 0) {
+          console.log("No running jobs found in initial check, stopping polling")
+          return
+        }
+
+        // Convert running jobs to tasks if we have any
+        const newTasks: RunningTask[] = runningJobs.map((job) => ({
+          id: `task-${Date.now()}-${Math.random()}`,
+          modelName: job.model_name || "Unknown Model",
+          optimizationType: job.preset?.name || "Optimization",
+          strength: "Standard",
+          status: "processing" as const,
+          startTime: new Date(),
+        }))
+
+        console.log("Creating tasks from initial polling:", newTasks)
+        setRunningTasks(newTasks)
+      } catch (error) {
+        console.error("Error in initial polling:", error)
+      }
     }
-  }, [isActive, optimizationPresets, models])
+
+    // Only run initial polling when component is active
+    if (isActive) {
+      runInitialPolling()
+    }
+  }, [isActive])
+
+  // Real polling for optimization status
+  useEffect(() => {
+    if (runningTasks.length === 0) {
+      return
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetchRunningJobs()
+        const runningJobs = response.jobs
+
+        console.log("Polling running jobs:", runningJobs)
+
+        if (runningJobs.length === 0) {
+          console.log("No running jobs found, stopping polling")
+          if (selectedModel) {
+            refreshAssociatedModelsData(selectedModel.toString())
+          }
+          // Mark all remaining tasks as completed and stop polling
+          setRunningTasks((prevTasks) => {
+            const completedTasks = prevTasks.map(task => ({
+              ...task,
+              status: "completed" as const
+            }))
+            console.log(`Marked ${completedTasks.length} tasks as completed`)
+            return []
+          })
+          return
+        }
+
+        // Update tasks based on running jobs
+        setRunningTasks((prevTasks) => {
+          const updatedTasks = prevTasks.map((task) => {
+            // Find matching job by model name
+            const matchingJob = runningJobs.find(job => job.model_name === task.modelName)
+            
+            if (matchingJob) {
+              // Job is still running
+              let newStatus: "queued" | "processing" | "completed" | "failed"
+              
+              if (matchingJob.status === "finished") {
+                newStatus = "completed"
+              } else if (matchingJob.status === "failed") {
+                newStatus = "failed"
+              } else if (["executing", "processing", "running", "in_progress"].includes(matchingJob.status || "")) {
+                newStatus = "processing"
+              } else {
+                newStatus = "queued"
+              }
+              
+              console.log(`Task ${task.modelName} still running with status: ${newStatus}`)
+              
+              return {
+                ...task,
+                status: newStatus,
+                progress: matchingJob.progress
+              }
+            } else {
+              // Job not found in running jobs - mark as completed
+              console.log(`Task ${task.modelName} not found in running jobs, marking as completed`)
+              return {
+                ...task,
+                status: "completed" as const
+              }
+            }
+          })
+          
+          // Remove completed and failed tasks from the list
+          const activeTasks = updatedTasks.filter(task => 
+            task.status !== "completed" && task.status !== "failed"
+          )
+          
+          console.log(`Removed ${updatedTasks.length - activeTasks.length} completed/failed tasks`)
+          
+          return activeTasks
+        })
+      } catch (error) {
+        console.error("Error polling running jobs:", error)
+      }
+    }, 5000) // Poll every 5 seconds
+
+    return () => clearInterval(pollInterval)
+  }, [runningTasks.length, selectedModel])
+
+  // Toast notifications for optimization start and completion
+  useEffect(() => {
+    const currentLength = runningTasks.length;
+    const prevLength = prevRunningTasksLengthRef.current;
+
+    // Optimization started: runningTasks went from 0 to > 0
+    if (prevLength === 0 && currentLength > 0) {
+      toast({
+        title: "Optimization Started",
+        description: "Your model optimization is being started. You will be notified once optimization is completed.",
+        duration: 5000,
+      });
+      
+      // Scroll to bottom of container to show running tasks section when it first appears
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          const container = scrollContainerRef.current;
+          // Scroll to the bottom of the container
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 300); // Delay to ensure DOM is fully updated and section is rendered
+    }
+
+    // Optimization completed: runningTasks went from > 0 to 0
+    if (prevLength > 0 && currentLength === 0) {
+      toast({
+        title: "Optimization Completed",
+        description: "Your model optimization has been completed successfully!",
+        duration: 5000,
+      });
+    }
+
+    // Update ref for next comparison
+    prevRunningTasksLengthRef.current = currentLength;
+  }, [runningTasks.length, toast]);
+
+  // Send system prompt to /ask endpoint when component is active
+  // DISABLED: Removed automatic /ask call on tab click or refresh
+  // useEffect(() => {
+  //   if (isActive && optimizationPresets && models.length > 0) {
+  //     sendSystemPromptToAgent()
+  //   }
+  // }, [isActive, optimizationPresets, models])
 
   const sendSystemPromptToAgent = async () => {
     const systemPrompt = `User ka model upload ho gaya!
@@ -279,11 +539,9 @@ Be friendly and instructive. Use short explanations and examples where needed.`
 
     // Step 2: Send the actual system prompt to backend silently
     try {
-      //const API_URL = "http://localhost:8000";
-      const API_URL = "https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app".replace(/\/+$/, "");
-      // Get access token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      const API_URL = import.meta.env.VITE_API_BASE_URL;
+      // Get access token from localStorage
+      const authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
       
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -533,31 +791,59 @@ Be friendly and instructive. Use short explanations and examples where needed.`
     setIsOptimizing(true)
 
     try {
+      // Convert optimization requests to running tasks
+      const newTasks: RunningTask[] = optimizationRequests.map((request) => ({
+        id: `task-${Date.now()}-${Math.random()}`,
+        modelName: request.modelName,
+        optimizationType: request.optimizationType,
+        strength: request.strength,
+        status: "processing" as const, // Start as processing instead of queued
+        startTime: new Date(),
+      }))
+
+      console.log("Creating new tasks:", newTasks)
+      setRunningTasks((prevTasks) => [...prevTasks, ...newTasks])
+
+      // Call the optimization API
       if (optimizationRequests.length === 1) {
         const request = optimizationRequests[0]
-        await optimizeModel(request.modelId, request.presetId, request.modelName)
+        console.log("Submitting single optimization request...")
+        
+        try {
+          const result = await optimizeModel(request.modelId, request.presetId, request.modelName)
+          console.log("Single optimization result:", result)
+          
+          if (result.success) {
+            console.log("Optimization submitted successfully")
+          } else {
+            console.log("Optimization API returned failure, but letting polling handle status")
+          }
+        } catch (error) {
+          console.error("Optimization API error:", error)
+          console.log("API call failed, but letting polling handle status")
+        }
       } else {
-        await optimizeMultipleModels(optimizationRequests)
+        console.log("Submitting multiple optimization requests...")
+        
+        try {
+          const result = await optimizeMultipleModels(optimizationRequests)
+          console.log("Multiple optimization result:", result)
+          
+          if (result.success) {
+            console.log("Multiple optimizations submitted successfully")
+          } else {
+            console.log("Multiple optimizations API returned failure, but letting polling handle status")
+          }
+        } catch (error) {
+          console.error("Multiple optimization API error:", error)
+          console.log("API call failed, but letting polling handle status")
+        }
       }
 
-      setOptimizationRequests([])
-      
-      setSuccessMessage({
-        title: "Optimization Submitted!",
-        description: "Your optimization request has been submitted successfully."
-      })
-      setShowSuccessNotification(true)
-      setTimeout(() => {
-        setShowSuccessNotification(false)
-      }, 5000)
-      
-      if (selectedModel) {
-        setTimeout(() => {
-          refreshAssociatedModelsData(selectedModel.toString())
-        }, 2000)
-      }
+      setOptimizationRequests([]) // Clear the requests after submitting
     } catch (error) {
       console.error("Optimization failed:", error)
+      console.log("Error occurred, but letting polling handle task status")
     } finally {
       setIsOptimizing(false)
     }
@@ -619,10 +905,49 @@ Be friendly and instructive. Use short explanations and examples where needed.`
     setOptimizationRequests(optimizationRequests.filter((req) => req.id !== id))
   }
 
+  const getStatusIcon = (status: RunningTask["status"]) => {
+    switch (status) {
+      case "queued":
+        return <Clock className="h-4 w-4 text-yellow-500" />
+      case "processing":
+        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+      case "completed":
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case "failed":
+        return <AlertCircle className="h-4 w-4 text-red-500" />
+    }
+  }
+
+  const getStatusText = (status: RunningTask["status"]) => {
+    switch (status) {
+      case "queued":
+        return "Queued"
+      case "processing":
+        return "Processing"
+      case "completed":
+        return "Completed"
+      case "failed":
+        return "Failed"
+    }
+  }
+
+  const getStatusColor = (status: RunningTask["status"]) => {
+    switch (status) {
+      case "queued":
+        return "text-yellow-500"
+      case "processing":
+        return "text-blue-500"
+      case "completed":
+        return "text-green-500"
+      case "failed":
+        return "text-red-500"
+    }
+  }
+
   const selectedModelData = models.find((m) => m.id === selectedModel)
 
   return (
-    <div className="h-full bg-white text-black p-6 overflow-y-auto hide-scrollbar">
+    <div ref={scrollContainerRef} className="h-full bg-white text-black p-6 overflow-y-auto hide-scrollbar">
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
@@ -664,20 +989,31 @@ Be friendly and instructive. Use short explanations and examples where needed.`
                 <span className="text-black font-semibold">Model Optimization</span>
               </div>
               <Button
-                onClick={() => document.getElementById('model-file-input')?.click()}
+                type="button"
+                disabled={isOptimizing}
+                onClick={() => {
+                  const fileInput = document.getElementById("model-file") as HTMLInputElement
+                  if (fileInput) {
+                    fileInput.click()
+                  }
+                }}
                 className="bg-black text-white hover:bg-black/90"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Upload Model
+                Upload Models
               </Button>
               <input
-                id="model-file-input"
+                id="model-file"
                 type="file"
                 accept=".glb,.gltf,.fbx,.obj"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0]
-                  if (file) handleModelUpload(file)
+                  if (file) {
+                    handleModelUpload(file)
+                    // Reset the input so the same file can be selected again
+                    e.target.value = ""
+                  }
                 }}
               />
             </div>
@@ -946,6 +1282,41 @@ Be friendly and instructive. Use short explanations and examples where needed.`
                 )}
               </Button>
             </form>
+
+            {/* Running Tasks Section */}
+            {runningTasks.length > 0 && (
+              <div className="space-y-4 pt-6 border-t border-black/10 mt-6">
+                <div className="flex items-center gap-2">
+                  <Play className="h-5 w-5 text-black" />
+                  <Label className="text-black text-lg font-medium">Running Tasks</Label>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-3 p-2 bg-black/5 rounded-lg border border-black/10 hide-scrollbar">
+                  {runningTasks
+                    .slice()
+                    .reverse()
+                    .map((task) => (
+                      <Card key={task.id} className="border-black/10 bg-black/5">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className="text-black font-medium">{task.modelName}</h4>
+                              <p className="text-black/60 text-sm">
+                                {task.optimizationType} - {task.strength}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(task.status)}
+                              <span className={`text-sm font-medium ${getStatusColor(task.status)}`}>
+                                {getStatusText(task.status)}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,7 +1,18 @@
+import * as React from "react";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { Coins } from "lucide-react";
+import { useUser } from "@/hooks/use-user";
+import { Coins, MoreVertical, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LocalStorageKeys } from "@/enums/localstorage";
+import { ProfileModal } from "@/components/ProfileModal";
 
 interface UserInfoProps {
   className?: string;
@@ -9,6 +20,21 @@ interface UserInfoProps {
 
 export const UserInfo = ({ className }: UserInfoProps) => {
   const { data: userProfile, isLoading } = useUserProfile();
+  const { clearUser } = useUser();
+  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem(LocalStorageKeys.AccessToken);
+      localStorage.removeItem(LocalStorageKeys.User);
+      clearUser();
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -33,15 +59,15 @@ export const UserInfo = ({ className }: UserInfoProps) => {
     : "U";
 
   return (
-    <div className={cn("p-2 border-t border-border space-y-2", className)}>
-      <div className="flex items-center justify-center gap-2 px-2 py-1.5 bg-black rounded-md border border-border">
+    <div className={cn("p-2 border-t border-border space-y-2 relative", className)}>
+      <div className="flex items-center justify-center gap-2 px-2 py-1.5 bg-black rounded-md border border-border relative z-0">
         <Coins className="h-3.5 w-3.5 text-yellow-400" />
         <span className="text-xs font-medium text-white">
           {userProfile.credits?.toLocaleString() || 0} Credits
         </span>
       </div>
       
-      <div className="flex items-center gap-2 px-2 py-1.5">
+      <div className="flex items-center gap-2 px-2 py-1.5 relative z-10">
         <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
           <span className="text-[10px] font-medium text-foreground">{initials}</span>
         </div>
@@ -71,6 +97,44 @@ export const UserInfo = ({ className }: UserInfoProps) => {
             </div>
           )}
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6 text-muted-foreground hover:text-foreground relative z-20"
+            >
+              <MoreVertical className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align="end" 
+            className="w-40 !z-[9999] bg-white ml-2"
+            side="top"
+            sideOffset={5}
+          >
+            <DropdownMenuItem 
+              onClick={() => setIsProfileModalOpen(true)}
+              className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={handleLogout}
+              className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Profile Modal */}
+        <ProfileModal 
+          isOpen={isProfileModalOpen} 
+          onClose={() => setIsProfileModalOpen(false)} 
+        />
       </div>
     </div>
   );

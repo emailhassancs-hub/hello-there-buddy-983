@@ -1,37 +1,43 @@
-# ------------------------
-# Stage 1: Build with Yarn
-# ------------------------
-FROM node:18-alpine AS build
-WORKDIR /app
-
-# Copy only package files first
-COPY package.json yarn.lock ./
-
-
-ENV YARN_IGNORE_ENGINES=true
-RUN yarn config set ignore-engines true
-RUN yarn install --frozen-lockfile
-
-# Now copy source
-COPY . .
-RUN yarn build
-
-
-# ------------------------
-# Stage 2: Serve via nginx
-# ------------------------
-FROM nginx:alpine
-
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
-
-# Copy static build files
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Cloud Run requires the app to listen on port 8080
-EXPOSE 8080
-
-CMD ["nginx", "-g", "daemon off;"]
+# -------- Stage 1: Build --------
+    FROM node:20-alpine AS build
+    WORKDIR /app
+    
+    # Install dependencies
+    COPY package.json package-lock.json ./
+    RUN npm ci --legacy-peer-deps
+    
+    # Copy source
+    COPY . .
+    
+    # Set build-time env variables (Vite needs these at build time)
+    ENV VITE_API_BACKEND_URL=https://games-ai-studio-be-nest-347148155332.us-central1.run.app
+    ENV VITE_API_BASE_URL=https://games-ai-studio-middleware-agentic-dev-347148155332.us-central1.run.app
+    ENV VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51SDMyCRodhwKeNjpeBuwyEZfZezdXCUVGlLNM3BIAdnHXtRbXCEJjaRG44G0UlFZ5qLQPfXYfGy0kYXCqBpZkbEF00UFc5pWQM
+    # Build
+    RUN npm run build
+    
+    # -------- Stage 2: Serve --------
+    FROM nginx:alpine
+    
+    # Install gettext for envsubst
+    RUN apk add --no-cache gettext
+    
+    # Copy built files
+    COPY --from=build /app/dist /usr/share/nginx/html
+    
+    # Copy nginx configuration template
+    COPY nginx.conf /etc/nginx/templates/default.conf.template
+    
+    # Copy custom entrypoint script
+    COPY docker-entrypoint.sh /docker-entrypoint-custom.sh
+    RUN chmod +x /docker-entrypoint-custom.sh
+    
+    # Set default PORT (Cloud Run will override this)
+    ENV PORT=7071
+    
+    # Expose Cloud Run port
+    EXPOSE 7071
+    
+    ENTRYPOINT ["/docker-entrypoint-custom.sh"]
+    CMD ["nginx", "-g", "daemon off;"]
+    

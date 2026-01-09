@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
-import { Image as ImageIcon, RefreshCw, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Image as ImageIcon, RefreshCw, X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { LocalStorageKeys } from "@/enums/localstorage";
 
 interface ImageItem {
   name: string;
@@ -36,17 +37,31 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
   const [editedImages, setEditedImages] = useState<EditedImageItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingEdited, setIsLoadingEdited] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoadingMoreEdited, setIsLoadingMoreEdited] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImageItem | null>(null);
   const [selectedEditedImage, setSelectedEditedImage] = useState<EditedImageItem | null>(null);
   const [activeTab, setActiveTab] = useState("generation");
+  
+  // Pagination state
+  const [offset, setOffset] = useState(0);
+  const [offsetEdited, setOffsetEdited] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [hasMoreEdited, setHasMoreEdited] = useState(true);
+  const LIMIT = 20;
+  
   const { toast } = useToast();
 
-  const fetchImages = async () => {
-    setIsLoading(true);
+  const fetchImages = async (append = false) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+    
     try {
-      // Resolve auth token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      let authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get auth token from localStorage
+      let authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
 
       if (!authToken) {
         console.warn("No auth token available for image history request");
@@ -57,14 +72,17 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
         });
         setImages([]);
         setIsLoading(false);
+        setIsLoadingMore(false);
         return;
       }
 
       // Cache globally for other components
       (window as any).authToken = authToken;
 
+      const currentOffset = append ? offset : 0;
+      const backendUrl = import.meta.env.VITE_API_BACKEND_URL;
       const response = await fetch(
-        "https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-generation/history?limit=50&offset=0",
+        `${backendUrl}/api/image-generation/history?limit=${LIMIT}&offset=${currentOffset}`,
         {
           method: "GET",
           headers: {
@@ -83,6 +101,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       // Extract images from the nested data property
       const imageList = data.data || [];
       
+      // Use hasMore from API response instead of calculating from filtered length
+      const apiHasMore = data.hasMore === true;
+      
       // Map the response to ImageItem format
       const mapped: ImageItem[] = imageList.map((item: any) => ({
         name: item.prompt || item.id || 'generated-image.png',
@@ -97,7 +118,15 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
         return timeB - timeA;
       });
 
-      setImages(sorted);
+      if (append) {
+        setImages(prev => [...prev, ...sorted]);
+        setOffset(prev => prev + LIMIT);
+        setHasMore(apiHasMore);
+      } else {
+        setImages(sorted);
+        setOffset(LIMIT);
+        setHasMore(apiHasMore);
+      }
     } catch (error) {
       toast({
         title: "Failed to load images",
@@ -107,15 +136,21 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       console.error("Error fetching images:", error);
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
-  const fetchEditedImages = async () => {
-    setIsLoadingEdited(true);
+
+  const fetchEditedImages = async (append = false) => {
+    if (append) {
+      setIsLoadingMoreEdited(true);
+    } else {
+      setIsLoadingEdited(true);
+    }
+    
     try {
-      // Resolve auth token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      let authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get auth token from localStorage
+      let authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
 
       if (!authToken) {
         console.warn("No auth token available for edited image history request");
@@ -126,14 +161,17 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
         });
         setEditedImages([]);
         setIsLoadingEdited(false);
+        setIsLoadingMoreEdited(false);
         return;
       }
 
       // Cache globally for other components
       (window as any).authToken = authToken;
 
+      const currentOffset = append ? offsetEdited : 0;
+      const backendUrl = import.meta.env.VITE_API_BACKEND_URL || "http://localhost:8000";
       const response = await fetch(
-        "https://games-ai-studio-be-nest-347148155332.us-central1.run.app/api/image-editing/history?limit=50&offset=0",
+        `${backendUrl}/api/image-editing/history?limit=${LIMIT}&offset=${currentOffset}`,
         {
           method: "GET",
           headers: {
@@ -151,6 +189,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       
       // Extract images from the nested data property
       const imageList = data.data || [];
+      
+      // Use hasMore from API response instead of calculating from filtered length
+      const apiHasMore = data.hasMore === true;
       
       // Map the response to EditedImageItem format - only COMPLETED items
       const mapped: EditedImageItem[] = imageList
@@ -177,7 +218,15 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
         return timeB - timeA;
       });
 
-      setEditedImages(sorted);
+      if (append) {
+        setEditedImages(prev => [...prev, ...sorted]);
+        setOffsetEdited(prev => prev + LIMIT);
+        setHasMoreEdited(apiHasMore);
+      } else {
+        setEditedImages(sorted);
+        setOffsetEdited(LIMIT);
+        setHasMoreEdited(apiHasMore);
+      }
     } catch (error) {
       toast({
         title: "Failed to load edited images",
@@ -187,23 +236,77 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
       console.error("Error fetching edited images:", error);
     } finally {
       setIsLoadingEdited(false);
+      setIsLoadingMoreEdited(false);
+    }
+  };
+
+
+
+  const handleDownloadImage = async (imageUrl: string, modelName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Fetch the image as a blob
+      const response = await fetch(imageUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const filename = `${modelName}_${timestamp}.png`;
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download started",
+        description: "Image download has started",
+      });
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      toast({
+        title: "Download failed",
+        description: error instanceof Error ? error.message : "Failed to download image. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   // Fetch on mount and when refreshTrigger changes
   useEffect(() => {
-    fetchImages();
-    fetchEditedImages();
+    setOffset(0);
+    setOffsetEdited(0);
+    setHasMore(true);
+    setHasMoreEdited(true);
+    fetchImages(false);
+    fetchEditedImages(false);
   }, [refreshTrigger]);
 
   // Auto-refresh every 30 seconds (but not on initial mount)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchImages();
-      fetchEditedImages();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setOffset(0);
+  //     setOffsetEdited(0);
+  //     setHasMore(true);
+  //     setHasMoreEdited(true);
+  //     fetchImages(false);
+  //     fetchEditedImages(false);
+  //   }, 30000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
@@ -222,14 +325,18 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
           variant="black"
           size="sm"
           onClick={() => {
-            fetchImages();
-            fetchEditedImages();
+            setOffset(0);
+            setOffsetEdited(0);
+            setHasMore(true);
+            setHasMoreEdited(true);
+            fetchImages(false);
+            fetchEditedImages(false);
           }}
           disabled={isLoading || isLoadingEdited}
           className="gap-2"
         >
           <RefreshCw className={`w-4 h-4 ${(isLoading || isLoadingEdited) ? "animate-spin" : ""}`} />
-          Refresh
+          Refresh Images
         </Button>
       </div>
 
@@ -268,31 +375,64 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {images.map((image, index) => (
-                    <div
-                      key={index}
-                      className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => setSelectedImage(image)}
-                    >
-                      <div className="aspect-square overflow-hidden bg-muted/20">
-                        <img
-                          src={image.url}
-                          alt={image.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.currentTarget.src = "/placeholder.svg";
-                          }}
-                        />
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {images.map((image, index) => (
+                      <div
+                        key={index}
+                        className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => setSelectedImage(image)}
+                      >
+                        <div className="aspect-square overflow-hidden bg-muted/20 relative">
+                          <img
+                            src={image.url}
+                            alt={image.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.svg";
+                            }}
+                          />
+                          {/* Download button - prominent on hover */}
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 gap-2 font-medium"
+                              onClick={(e) => handleDownloadImage(image.url, 'generated_image',e)}
+                            >
+                              <Download className="h-4 w-4" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="p-3 border-t border-border/50">
+                          <p className="text-sm font-medium text-foreground line-clamp-2" title={image.name}>
+                            {image.name}
+                          </p>
+                        </div>
                       </div>
-                      <div className="p-3 border-t border-border/50">
-                        <p className="text-sm font-medium text-foreground line-clamp-2" title={image.name}>
-                          {image.name}
-                        </p>
-                      </div>
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <div className="flex justify-center mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => fetchImages(true)}
+                        disabled={isLoadingMore}
+                        className="gap-2"
+                      >
+                        {isLoadingMore ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          "Load More"
+                        )}
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </ScrollArea>
@@ -324,36 +464,69 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {editedImages.map((image, index) => (
-                    <div
-                      key={index}
-                      className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => setSelectedEditedImage(image)}
-                    >
-                      <div className="aspect-square overflow-hidden bg-muted/20">
-                        <img
-                          src={image.outputImagePath}
-                          alt="Edited image"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.currentTarget.src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
-                      <div className="p-3 border-t border-border/50">
-                        <p className="text-sm font-medium text-foreground line-clamp-2" title={image.prompt}>
-                          {image.prompt}
-                        </p>
-                        {image.technique && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {image.technique}
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {editedImages.map((image, index) => (
+                      <div
+                        key={index}
+                        className="group relative rounded-lg overflow-hidden border border-border/50 bg-card hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => setSelectedEditedImage(image)}
+                      >
+                        <div className="aspect-square overflow-hidden bg-muted/20 relative">
+                          <img
+                            src={image.outputImagePath}
+                            alt="Edited image"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.svg";
+                            }}
+                          />
+                          {/* Download button - prominent on hover */}
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 gap-2 font-medium"
+                              onClick={(e) => handleDownloadImage(image.outputImagePath, `edited_image`,e)}
+                            >
+                              <Download className="h-4 w-4" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="p-3 border-t border-border/50">
+                          <p className="text-sm font-medium text-foreground line-clamp-2" title={image.prompt}>
+                            {image.prompt}
                           </p>
-                        )}
+                          {image.technique && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {image.technique}
+                            </p>
+                          )}
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                  {hasMoreEdited && (
+                    <div className="flex justify-center mt-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => fetchEditedImages(true)}
+                        disabled={isLoadingMoreEdited}
+                        className="gap-2"
+                      >
+                        {isLoadingMoreEdited ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          "Load More"
+                        )}
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </ScrollArea>
@@ -403,72 +576,74 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
             <span className="sr-only">Close</span>
           </DialogClose>
           {selectedEditedImage && (
-            <div className="flex flex-col">
-               <div className="relative bg-muted/20 p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col h-full max-h-[80vh]">
+               <div className="relative bg-muted/20 p-8 flex-1 min-h-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
                   {/* Input Image(s) Section */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Original</h4>
-                    <div className="space-y-3">
-                      {selectedEditedImage.inputImage1Path && (
-                        <div className="rounded-lg overflow-hidden border border-border/50">
-                          <img
-                            src={selectedEditedImage.inputImage1Path}
-                            alt="Original input 1"
-                            className="w-full h-auto object-contain"
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder.svg";
-                            }}
-                          />
-                        </div>
-                      )}
-                      {selectedEditedImage.inputImage2Path && (
-                        <div className="rounded-lg overflow-hidden border border-border/50">
-                          <img
-                            src={selectedEditedImage.inputImage2Path}
-                            alt="Original input 2"
-                            className="w-full h-auto object-contain"
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder.svg";
-                            }}
-                          />
-                        </div>
-                      )}
-                      {selectedEditedImage.inputImage3Path && (
-                        <div className="rounded-lg overflow-hidden border border-border/50">
-                          <img
-                            src={selectedEditedImage.inputImage3Path}
-                            alt="Original input 3"
-                            className="w-full h-auto object-contain"
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder.svg";
-                            }}
-                          />
-                        </div>
-                      )}
-                      {selectedEditedImage.inputImage4Path && (
-                        <div className="rounded-lg overflow-hidden border border-border/50">
-                          <img
-                            src={selectedEditedImage.inputImage4Path}
-                            alt="Original input 4"
-                            className="w-full h-auto object-contain"
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder.svg";
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex flex-col space-y-3 h-full min-h-0">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex-shrink-0">Original</h4>
+                    <ScrollArea className="flex-1 min-h-0">
+                      <div className="space-y-3 pr-4">
+                        {selectedEditedImage.inputImage1Path && (
+                          <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
+                            <img
+                              src={selectedEditedImage.inputImage1Path}
+                              alt="Original input 1"
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder.svg";
+                              }}
+                            />
+                          </div>
+                        )}
+                        {selectedEditedImage.inputImage2Path && (
+                          <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
+                            <img
+                              src={selectedEditedImage.inputImage2Path}
+                              alt="Original input 2"
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder.svg";
+                              }}
+                            />
+                          </div>
+                        )}
+                        {selectedEditedImage.inputImage3Path && (
+                          <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
+                            <img
+                              src={selectedEditedImage.inputImage3Path}
+                              alt="Original input 3"
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder.svg";
+                              }}
+                            />
+                          </div>
+                        )}
+                        {selectedEditedImage.inputImage4Path && (
+                          <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
+                            <img
+                              src={selectedEditedImage.inputImage4Path}
+                              alt="Original input 4"
+                              className="max-w-full max-h-full w-auto h-auto object-contain"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder.svg";
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
                   </div>
                   
                   {/* Output Image Section */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Edited Result</h4>
-                    <div className="rounded-lg overflow-hidden border border-border/50">
+                  <div className="flex flex-col space-y-3 h-full min-h-0">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex-shrink-0">Edited Result</h4>
+                    <div className="rounded-lg overflow-hidden border border-border/50 w-full aspect-square flex-shrink-0 bg-muted/10 flex items-center justify-center">
                       <img
                         src={selectedEditedImage.outputImagePath}
                         alt="Edited output"
-                        className="w-full h-auto object-contain"
+                        className="max-w-full max-h-full w-auto h-auto object-contain"
                         onError={(e) => {
                           e.currentTarget.src = "/placeholder.svg";
                         }}

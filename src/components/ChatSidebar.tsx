@@ -8,12 +8,15 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { UserInfo } from "@/components/UserInfo";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { LocalStorageKeys } from "@/enums/localstorage";
 
 interface Session {
   session_id: string;
   created_at: string;
   updated_at: string;
-  message_count: number;
+  message_count?: number;
+  total_messages?: number;
+  title?: string;
 }
 
 interface ChatSidebarProps {
@@ -21,9 +24,10 @@ interface ChatSidebarProps {
   onSelectSession: (sessionId: string) => void;
   onNewChat: () => void;
   apiUrl: string;
+  onSessionsLoaded?: (sessions: Session[]) => void;
 }
 
-export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiUrl }: ChatSidebarProps) => {
+export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiUrl, onSessionsLoaded }: ChatSidebarProps) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -40,14 +44,42 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     }
   }, [userProfile?.email]);
 
+
   // Listen for refresh events (e.g., after title generation)
   useEffect(() => {
-    const handleRefresh = async () => {
-      if (userProfile?.email) {
-        setIsRefreshing(true);
-        await fetchSessions();
-        setIsRefreshing(false);
+    const handleRefresh = async (event: Event) => {
+      if (!userProfile?.email) return;
+      
+      const customEvent = event as CustomEvent;
+      const sessionDetail = customEvent?.detail?.session;
+      
+      // If a specific session is provided, update it optimistically without full reload
+      if (sessionDetail) {
+        setSessions((prev) => {
+          const existingIndex = prev.findIndex((s) => s.session_id === sessionDetail.session_id);
+          
+          if (existingIndex >= 0) {
+            // Update existing session
+            const updated = [...prev];
+            updated[existingIndex] = {
+              ...updated[existingIndex],
+              ...sessionDetail,
+              // Keep the original created_at if not provided
+              created_at: sessionDetail.created_at || updated[existingIndex].created_at,
+            };
+            return updated;
+          } else {
+            // Add new session to the beginning of the list
+            return [sessionDetail, ...prev];
+          }
+        });
+        return; // Don't do full fetch for optimistic updates
       }
+      
+      // Only do full fetch if no session detail provided (for other refresh scenarios)
+      setIsRefreshing(true);
+      await fetchSessions();
+      setIsRefreshing(false);
     };
 
     window.addEventListener('refreshChatSidebar', handleRefresh);
@@ -58,9 +90,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     const loadingState = !isRefreshing; // Only set main loading if not refreshing
     if (loadingState) setIsLoading(true);
     try {
-      // Get access token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get access token from localStorage
+      const authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
       
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -80,7 +111,13 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         throw new Error("Failed to fetch sessions");
       }
       const data = await response.json();
-      setSessions(data.sessions || []);
+      const loadedSessions = data.sessions || [];
+      setSessions(loadedSessions);
+      
+      // Notify parent that sessions are loaded
+      if (onSessionsLoaded) {
+        onSessionsLoaded(loadedSessions);
+      }
     } catch (error) {
       console.error("Error fetching sessions:", error);
       toast({
@@ -93,9 +130,21 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     }
   };
 
-  const getChatName = (sessionId: string, createdAt: string): string => {
+  const getChatName = (session: Session): string => {
     const chatNames = JSON.parse(localStorage.getItem("chatNames") || "{}");
-    return chatNames[sessionId] || `Chat - ${new Date(createdAt).toLocaleDateString()}`;
+    
+    // If there's a saved custom name, use it
+    if (chatNames[session.session_id]) {
+      return chatNames[session.session_id];
+    }
+    
+    // Use title from session if available
+    if (session.title) {
+      return session.title;
+    }
+    
+    // Fallback to date-based name
+    return `Chat - ${new Date(session.created_at).toLocaleDateString()}`;
   };
 
   const saveChatName = (sessionId: string, name: string) => {
@@ -104,9 +153,9 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     localStorage.setItem("chatNames", JSON.stringify(chatNames));
   };
 
-  const handleRename = (sessionId: string) => {
-    const currentName = getChatName(sessionId, "");
-    setEditingSessionId(sessionId);
+  const handleRename = (session: Session) => {
+    const currentName = getChatName(session);
+    setEditingSessionId(session.session_id);
     setEditingName(currentName);
   };
 
@@ -131,9 +180,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     }
 
     try {
-      // Get access token from URL first, then window, then localStorage
-      const params = new URLSearchParams(window.location.search);
-      const authToken = params.get("token") || (window as any).authToken || localStorage.getItem("auth_token");
+      // Get access token from localStorage
+      const authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
       
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -270,12 +318,12 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                 ) : (
                   <>
                     <div className="flex items-start justify-between gap-1">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-xs truncate dark:text-white">
-                          {getChatName(session.session_id, session.created_at)}
+                      <div className="flex-1 min-w-0 pr-6">
+                        <h3 className="font-medium text-xs truncate dark:text-white leading-tight mb-0.5">
+                          {getChatName(session)}
                         </h3>
-                        <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-muted-foreground">
-                          <span>{session.message_count}</span>
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <span>{session.message_count ?? session.total_messages ?? 0}</span>
                           <span>•</span>
                           <span className="truncate">{formatTimestamp(session.updated_at)}</span>
                         </div>
@@ -285,7 +333,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                       )}
                     </div>
                     <div
-                      className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-background/80 rounded"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Button
@@ -294,7 +342,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                         className="h-6 w-6 dark:text-white dark:hover:bg-muted"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleRename(session.session_id);
+                          handleRename(session);
                         }}
                       >
                         <Edit2 className="w-3 h-3" />
