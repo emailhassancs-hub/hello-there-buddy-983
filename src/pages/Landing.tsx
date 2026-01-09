@@ -199,6 +199,9 @@ const Landing = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-primary" />
             <span className="font-bold text-xl">Game AI Studio</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-primary/10 text-primary border border-primary/20">
+              Beta
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
