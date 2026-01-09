@@ -118,6 +118,13 @@ const imageEditingImages = [
   "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800&h=600&fit=crop",
 ];
 
+const model3DImages = [
+  "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1604076913837-52ab5629fba9?w=800&h=600&fit=crop",
+];
+
 // Scrollable storytelling content
 const storyContent = [
   {
@@ -148,8 +155,10 @@ const Landing = () => {
   const navigate = useNavigate();
   const [imageGenIndex, setImageGenIndex] = useState(0);
   const [imageEditIndex, setImageEditIndex] = useState(0);
+  const [model3DIndex, setModel3DIndex] = useState(0);
   const [isImageGenHovered, setIsImageGenHovered] = useState(false);
   const [isImageEditHovered, setIsImageEditHovered] = useState(false);
+  const [isModel3DHovered, setIsModel3DHovered] = useState(false);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
 
   // Cycle through images only when hovering - first image waits 3 seconds before switching
@@ -168,6 +177,14 @@ const Landing = () => {
     }, 3000);
     return () => clearTimeout(timeout);
   }, [isImageEditHovered, imageEditIndex]);
+
+  useEffect(() => {
+    if (!isModel3DHovered) return;
+    const timeout = setTimeout(() => {
+      setModel3DIndex((prev) => (prev + 1) % model3DImages.length);
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, [isModel3DHovered, model3DIndex]);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -359,13 +376,33 @@ const Landing = () => {
             transition={{ duration: 0.6 }}
             className="grid md:grid-cols-2 gap-12 items-center"
           >
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]">
-              <img
-                src={storyContent[2].image}
-                alt={storyContent[2].title}
-                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent" />
+            <div 
+              className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]"
+              onMouseEnter={() => setIsModel3DHovered(true)}
+              onMouseLeave={() => setIsModel3DHovered(false)}
+            >
+              <AnimatePresence mode="popLayout">
+                <motion.img
+                  key={model3DIndex}
+                  src={model3DImages[model3DIndex]}
+                  alt={storyContent[2].title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  initial={{ opacity: 0, scale: 1 }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: 1.08,
+                    transition: {
+                      opacity: { duration: 0.6, ease: "easeOut" },
+                      scale: { duration: 4, ease: "linear" }
+                    }
+                  }}
+                  exit={{ 
+                    opacity: 0,
+                    transition: { duration: 0.6, ease: "easeIn" }
+                  }}
+                />
+              </AnimatePresence>
+              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
             </div>
             <div className="text-center md:text-left">
               <span className="text-sm font-medium text-primary uppercase tracking-wider">
