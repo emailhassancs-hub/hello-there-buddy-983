@@ -198,11 +198,9 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-primary" />
-            <span className="font-bold text-xl relative">
-              Game AI Studio
-              <span className="absolute -top-2 -right-8 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-gradient-to-r from-primary to-primary/70 text-primary-foreground shadow-[0_0_10px_rgba(var(--primary),0.3)] animate-pulse">
-                β
-              </span>
+            <span className="font-bold text-xl">Game AI Studio</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-primary/10 text-primary border border-primary/20">
+              Beta
             </span>
           </div>
           <div className="flex items-center gap-4">
