@@ -41,6 +41,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const hasAutoLoadedRef = useRef(false);
   const [activeTab, setActiveTab] = useState("images");
   const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -1109,7 +1110,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
     setActiveTab("models");
   };
 
-  const handleLoadSession = async (sessionId: string) => {
+  const handleLoadSession = useCallback(async (sessionId: string) => {
     try {
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -1179,12 +1180,37 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         variant: "destructive",
       });
     }
-  };
+  }, [authToken, userProfile?.email, API, toast]);
+
+  // Handle when sessions are loaded from sidebar
+  const handleSessionsLoaded = useCallback((sessions: Array<{ session_id: string }>) => {
+    // Auto-load first session if:
+    // 1. We haven't auto-loaded yet
+    // 2. There are sessions available
+    // 3. No session is currently selected OR current session doesn't exist in the list
+    // 4. No messages are loaded (meaning no chat is currently open)
+    if (!hasAutoLoadedRef.current && sessions.length > 0) {
+      const currentSessionExists = sessionId 
+        ? sessions.some(s => s.session_id === sessionId)
+        : false;
+      
+      // If no session is selected, or current session doesn't exist, or no messages loaded
+      if ((!sessionId || !currentSessionExists || messages.length === 0)) {
+        const firstSession = sessions[0];
+        hasAutoLoadedRef.current = true;
+        // Load the first session
+        handleLoadSession(firstSession.session_id);
+      } else {
+        hasAutoLoadedRef.current = true;
+      }
+    }
+  }, [sessionId, messages.length, handleLoadSession]);
 
   const handleNewChat = () => {
     setSessionId(null);
     localStorage.removeItem("mcp_session_id");
     setMessages([]);
+    hasAutoLoadedRef.current = false; // Reset so we can auto-load again if needed
     toast({
       title: "New Chat Started",
       description: "You can now start a fresh conversation.",
@@ -1366,6 +1392,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         onSelectSession={handleLoadSession}
         onNewChat={handleNewChat}
         apiUrl={apiUrl}
+        onSessionsLoaded={handleSessionsLoaded}
       />
       
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
