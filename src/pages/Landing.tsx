@@ -450,15 +450,15 @@ const Landing = () => {
 
             <div
               ref={carouselRef}
-              className="overflow-hidden flex-1"
+              className="overflow-x-auto flex-1 scrollbar-hide"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               onMouseEnter={() => setIsCarouselHovered(true)}
               onMouseLeave={() => setIsCarouselHovered(false)}
             >
               <div
-                className="flex gap-4 animate-scroll-left"
+                className={`flex gap-4 ${!isCarouselHovered ? 'animate-scroll-left' : ''}`}
                 style={{
                   width: "fit-content",
-                  animationPlayState: isCarouselHovered ? "paused" : "running",
                 }}
               >
                 {/* Duplicate items for seamless loop */}
