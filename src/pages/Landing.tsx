@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Check, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 
 // Artwork images for masonry background - using diverse AI art styles
@@ -163,10 +163,8 @@ const Landing = () => {
   const [isImageEditHovered, setIsImageEditHovered] = useState(false);
   const [isModel3DHovered, setIsModel3DHovered] = useState(false);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
-  const [workflowCarouselApi, setWorkflowCarouselApi] = useState<CarouselApi | null>(null);
-  const workflowAutoplay = useRef(
-    Autoplay({ delay: 2500, stopOnInteraction: false, stopOnMouseEnter: false })
-  );
+  const carouselRef = useRef<HTMLDivElement>(null);
+
   // Cycle through images only when hovering - first image waits 3 seconds before switching
   useEffect(() => {
     if (!isImageGenHovered) return;
@@ -435,50 +433,49 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
           </motion.div>
 
-          <div
-            className="flex items-center gap-4"
-            onMouseEnter={() => {
-              setIsCarouselHovered(true);
-              // pause autoplay while user interacts
-              // (plugin exposes stop/play/reset methods)
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (workflowAutoplay.current as any)?.stop?.();
-            }}
-            onMouseLeave={() => {
-              setIsCarouselHovered(false);
-              // resume autoplay when user leaves
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (workflowAutoplay.current as any)?.reset?.();
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (workflowAutoplay.current as any)?.play?.();
-            }}
-          >
+          <div className="flex items-center gap-4">
             {/* Left Arrow */}
             <button
-              onClick={() => workflowCarouselApi?.scrollPrev()}
+              onClick={() => {
+                if (carouselRef.current) {
+                  const container = carouselRef.current;
+                  const scrollWidth = container.scrollWidth;
+                  const halfWidth = scrollWidth / 2;
+                  
+                  // If near the start, jump to the duplicate set first
+                  if (container.scrollLeft <= 350) {
+                    container.scrollLeft = halfWidth + container.scrollLeft;
+                  }
+                  container.scrollBy({ left: -350, behavior: 'smooth' });
+                }
+              }}
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
               className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg hover:bg-background hover:scale-110 transition-all duration-200"
-              aria-label="Previous"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
 
-            <Carousel
-              className="flex-1"
-              opts={{ align: "start", loop: true }}
-              plugins={[workflowAutoplay.current]}
-              setApi={setWorkflowCarouselApi}
+            <div
+              ref={carouselRef}
+              className="overflow-hidden flex-1"
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
             >
-              <CarouselContent className="-ml-4">
-                {workflowItems.map((item) => (
-                  <CarouselItem
-                    key={item.label}
-                    className="basis-[280px] md:basis-[320px] lg:basis-[350px]"
-                  >
+              <div
+                className="flex gap-4 animate-scroll-left"
+                style={{
+                  width: "fit-content",
+                  animationPlayState: isCarouselHovered ? "paused" : "running",
+                }}
+              >
+                {/* Duplicate items for seamless loop */}
+                {[...workflowItems, ...workflowItems].map((item, index) => (
+                  <div key={index} className="flex-shrink-0 w-[280px] md:w-[320px] lg:w-[350px]">
                     <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
                       <img
                         src={item.image}
                         alt={item.label}
-                        loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
@@ -488,16 +485,30 @@ const Landing = () => {
                         </span>
                       </div>
                     </div>
-                  </CarouselItem>
+                  </div>
                 ))}
-              </CarouselContent>
-            </Carousel>
+              </div>
+            </div>
 
             {/* Right Arrow */}
             <button
-              onClick={() => workflowCarouselApi?.scrollNext()}
+              onClick={() => {
+                if (carouselRef.current) {
+                  const container = carouselRef.current;
+                  const scrollWidth = container.scrollWidth;
+                  const clientWidth = container.clientWidth;
+                  const halfWidth = scrollWidth / 2;
+                  
+                  // If near the end, jump back to the first set
+                  if (container.scrollLeft >= halfWidth - clientWidth) {
+                    container.scrollLeft = container.scrollLeft - halfWidth;
+                  }
+                  container.scrollBy({ left: 350, behavior: 'smooth' });
+                }
+              }}
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
               className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg hover:bg-background hover:scale-110 transition-all duration-200"
-              aria-label="Next"
             >
               <ChevronRight className="w-6 h-6" />
             </button>
