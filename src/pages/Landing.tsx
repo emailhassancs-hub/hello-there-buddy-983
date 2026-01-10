@@ -433,7 +433,7 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
           </motion.div>
 
-          <div className="flex items-center gap-4">
+          <div className="relative">
             {/* Left Arrow */}
             <button
               onClick={() => {
@@ -443,14 +443,28 @@ const Landing = () => {
               }}
               onMouseEnter={() => setIsCarouselHovered(true)}
               onMouseLeave={() => setIsCarouselHovered(false)}
-              className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg hover:bg-background hover:scale-110 transition-all duration-200"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg hover:bg-background hover:scale-110 transition-all duration-200"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
 
+            {/* Right Arrow */}
+            <button
+              onClick={() => {
+                if (carouselRef.current) {
+                  carouselRef.current.scrollBy({ left: 350, behavior: 'smooth' });
+                }
+              }}
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg hover:bg-background hover:scale-110 transition-all duration-200"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+
             <div
               ref={carouselRef}
-              className="overflow-hidden flex-1"
+              className="overflow-hidden px-14"
               onMouseEnter={() => setIsCarouselHovered(true)}
               onMouseLeave={() => setIsCarouselHovered(false)}
             >
@@ -481,20 +495,6 @@ const Landing = () => {
                 ))}
               </div>
             </div>
-
-            {/* Right Arrow */}
-            <button
-              onClick={() => {
-                if (carouselRef.current) {
-                  carouselRef.current.scrollBy({ left: 350, behavior: 'smooth' });
-                }
-              }}
-              onMouseEnter={() => setIsCarouselHovered(true)}
-              onMouseLeave={() => setIsCarouselHovered(false)}
-              className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg hover:bg-background hover:scale-110 transition-all duration-200"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
           </div>
         </div>
       </section>
