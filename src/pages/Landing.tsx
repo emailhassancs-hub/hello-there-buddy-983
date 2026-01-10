@@ -53,7 +53,7 @@ const workflowItems = [
   },
   {
     image:
-      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768052088_nano_banana_1768052059_edit_20260110_183420_b3439db5_.png?w=800&h=600&fit=crop",
+      "ttps://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/flux_kotext_output_1768052818_flux_kontext_1768052812_edit_20260110_184652_cdf71fbe.png",
     label: "3D Creation",
   },
   {
