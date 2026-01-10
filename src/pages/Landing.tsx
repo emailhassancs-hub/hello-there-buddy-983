@@ -109,8 +109,8 @@ const pricingTiers = [
 // Image arrays for cycling in feature sections
 const imageGenerationImages = [
   "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/qwen_1767871932_qwen_1767871898_0_.png?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=800&h=600&fit=crop",
+  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/seedream4_1767689475_seedream4_1767689454_0_.png?w=800&h=600&fit=crop",
+  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/seedream4_1767015436_seedream4_1767015416_0_.png?w=800&h=600&fit=crop",
   "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&h=600&fit=crop",
 ];
 
