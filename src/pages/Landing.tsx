@@ -52,7 +52,8 @@ const workflowItems = [
     label: "Image Editing",
   },
   {
-    image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
+    image:
+      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768052088_nano_banana_1768052059_edit_20260110_183420_b3439db5_.png",
     label: "3D Creation",
   },
   {
@@ -303,17 +304,17 @@ const Landing = () => {
                   alt={storyContent[0].title}
                   className="absolute inset-0 w-full h-full object-cover"
                   initial={{ opacity: 0, scale: 1 }}
-                  animate={{ 
-                    opacity: 1, 
+                  animate={{
+                    opacity: 1,
                     scale: 1.08,
                     transition: {
                       opacity: { duration: 0.6, ease: "easeOut" },
-                      scale: { duration: 4, ease: "linear" }
-                    }
+                      scale: { duration: 4, ease: "linear" },
+                    },
                   }}
-                  exit={{ 
+                  exit={{
                     opacity: 0,
-                    transition: { duration: 0.6, ease: "easeIn" }
+                    transition: { duration: 0.6, ease: "easeIn" },
                   }}
                 />
               </AnimatePresence>
@@ -353,17 +354,17 @@ const Landing = () => {
                   alt={storyContent[1].title}
                   className="absolute inset-0 w-full h-full object-cover"
                   initial={{ opacity: 0, scale: 1 }}
-                  animate={{ 
-                    opacity: 1, 
+                  animate={{
+                    opacity: 1,
                     scale: 1.08,
                     transition: {
                       opacity: { duration: 0.6, ease: "easeOut" },
-                      scale: { duration: 4, ease: "linear" }
-                    }
+                      scale: { duration: 4, ease: "linear" },
+                    },
                   }}
-                  exit={{ 
+                  exit={{
                     opacity: 0,
-                    transition: { duration: 0.6, ease: "easeIn" }
+                    transition: { duration: 0.6, ease: "easeIn" },
                   }}
                 />
               </AnimatePresence>
@@ -380,9 +381,7 @@ const Landing = () => {
             onMouseEnter={() => setIsModel3DHovered(true)}
             onMouseLeave={() => setIsModel3DHovered(false)}
           >
-            <div 
-              className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]"
-            >
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]">
               <AnimatePresence mode="popLayout">
                 <motion.img
                   key={model3DIndex}
@@ -390,17 +389,17 @@ const Landing = () => {
                   alt={storyContent[2].title}
                   className="absolute inset-0 w-full h-full object-cover"
                   initial={{ opacity: 0, scale: 1 }}
-                  animate={{ 
-                    opacity: 1, 
+                  animate={{
+                    opacity: 1,
                     scale: 1.08,
                     transition: {
                       opacity: { duration: 0.6, ease: "easeOut" },
-                      scale: { duration: 4, ease: "linear" }
-                    }
+                      scale: { duration: 4, ease: "linear" },
+                    },
                   }}
-                  exit={{ 
+                  exit={{
                     opacity: 0,
-                    transition: { duration: 0.6, ease: "easeIn" }
+                    transition: { duration: 0.6, ease: "easeIn" },
                   }}
                 />
               </AnimatePresence>
@@ -431,16 +430,16 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
           </motion.div>
 
-          <div 
+          <div
             className="overflow-hidden"
             onMouseEnter={() => setIsCarouselHovered(true)}
             onMouseLeave={() => setIsCarouselHovered(false)}
           >
             <div
               className="flex gap-4 animate-scroll-left"
-              style={{ 
+              style={{
                 width: "fit-content",
-                animationPlayState: isCarouselHovered ? "paused" : "running"
+                animationPlayState: isCarouselHovered ? "paused" : "running",
               }}
             >
               {/* Duplicate items for seamless loop */}
