@@ -44,8 +44,9 @@ const artworkColumns = [
 // Workflow carousel items
 const workflowItems = [
   {
-    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop",
-    label: "Image Generation",
+    image:
+      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768053686_nano_banana_1768053671_edit_20260110_190112_acd7abdc_.png",
+    label: "2D Prop Generator",
   },
   {
     image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
@@ -53,8 +54,8 @@ const workflowItems = [
   },
   {
     image:
-      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/flux_kotext_output_1768052818_flux_kontext_1768052812_edit_20260110_184652_cdf71fbe.png",
-    label: "3D Creation",
+      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768052088_nano_banana_1768052059_edit_20260110_183420_b3439db5_.png?w=800&h=600&fit=crop",
+    label: "Character Turnarounds",
   },
   {
     image: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&h=600&fit=crop",
