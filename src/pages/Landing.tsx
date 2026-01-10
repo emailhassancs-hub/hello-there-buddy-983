@@ -45,8 +45,8 @@ const artworkColumns = [
 const workflowItems = [
   {
     image:
-      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768053686_nano_banana_1768053671_edit_20260110_190112_acd7abdc_.png",
-    label: "2D Prop Generator",
+      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768053953_nano_banana_1768053928_edit_20260110_190528_413e30d7_.png",
+    label: "2D Prop Generation",
   },
   {
     image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
@@ -55,11 +55,12 @@ const workflowItems = [
   {
     image:
       "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768052088_nano_banana_1768052059_edit_20260110_183420_b3439db5_.png?w=800&h=600&fit=crop",
-    label: "Character Turnarounds",
+    label: "3D Creation",
   },
   {
-    image: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&h=600&fit=crop",
-    label: "Asset Optimization",
+    image:
+      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/flux_kotext_output_1768052818_flux_kontext_1768052812_edit_20260110_184652_cdf71fbe.png",
+    label: "Character Turnarounds",
   },
   {
     image: "https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?w=800&h=600&fit=crop",
