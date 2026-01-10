@@ -111,11 +111,11 @@ const imageGenerationImages = [
   "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/qwen_1767871932_qwen_1767871898_0_.png?w=800&h=600&fit=crop",
   "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/seedream4_1764787218_seedream4_1764787199_0_.png?w=800&h=600&fit=crop",
   "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/seedream4_1767015436_seedream4_1767015416_0_.png?w=800&h=600&fit=crop",
-  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/seedream4_1767006663_seedream4_1767006637_0_.png?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&h=600&fit=crop",
 ];
 
 const imageEditingImages = [
-  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
+  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/elf.png?w=800&h=600&fit=crop",
   "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&h=600&fit=crop",
   "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&h=600&fit=crop",
   "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800&h=600&fit=crop",
