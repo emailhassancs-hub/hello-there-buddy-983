@@ -165,30 +165,6 @@ const Landing = () => {
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Start carousel from the middle so the left arrow can scroll immediately
-  useEffect(() => {
-    const el = carouselRef.current;
-    if (!el) return;
-
-    const setInitial = () => {
-      // Center-ish; clamp within valid range
-      const target = Math.max(0, Math.min(el.scrollWidth / 2, el.scrollWidth - el.clientWidth));
-      el.scrollLeft = target;
-    };
-
-    // Wait for layout + images to affect scrollWidth
-    let raf1 = 0;
-    let raf2 = 0;
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(setInitial);
-    });
-
-    return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
-    };
-  }, []);
-
   // Cycle through images only when hovering - first image waits 3 seconds before switching
   useEffect(() => {
     if (!isImageGenHovered) return;
