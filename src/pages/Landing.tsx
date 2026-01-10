@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Check, Zap } from "lucide-react";
+import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Check, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
@@ -163,6 +163,7 @@ const Landing = () => {
   const [isImageEditHovered, setIsImageEditHovered] = useState(false);
   const [isModel3DHovered, setIsModel3DHovered] = useState(false);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   // Cycle through images only when hovering - first image waits 3 seconds before switching
   useEffect(() => {
@@ -432,36 +433,67 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
           </motion.div>
 
-          <div
-            className="overflow-hidden"
-            onMouseEnter={() => setIsCarouselHovered(true)}
-            onMouseLeave={() => setIsCarouselHovered(false)}
-          >
-            <div
-              className="flex gap-4 animate-scroll-left"
-              style={{
-                width: "fit-content",
-                animationPlayState: isCarouselHovered ? "paused" : "running",
+          <div className="relative">
+            {/* Left Arrow */}
+            <button
+              onClick={() => {
+                if (carouselRef.current) {
+                  carouselRef.current.scrollBy({ left: -350, behavior: 'smooth' });
+                }
               }}
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg hover:bg-background hover:scale-110 transition-all duration-200"
             >
-              {/* Duplicate items for seamless loop */}
-              {[...workflowItems, ...workflowItems].map((item, index) => (
-                <div key={index} className="flex-shrink-0 w-[280px] md:w-[320px] lg:w-[350px]">
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
-                    <img
-                      src={item.image}
-                      alt={item.label}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <span className="inline-block px-4 py-2 bg-background/80 border border-black/10 text-black text-sm font-medium rounded-full backdrop-blur-md shadow-lg">
-                        {item.label}
-                      </span>
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            {/* Right Arrow */}
+            <button
+              onClick={() => {
+                if (carouselRef.current) {
+                  carouselRef.current.scrollBy({ left: 350, behavior: 'smooth' });
+                }
+              }}
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 flex items-center justify-center bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg hover:bg-background hover:scale-110 transition-all duration-200"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+
+            <div
+              ref={carouselRef}
+              className="overflow-hidden px-14"
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
+            >
+              <div
+                className="flex gap-4 animate-scroll-left"
+                style={{
+                  width: "fit-content",
+                  animationPlayState: isCarouselHovered ? "paused" : "running",
+                }}
+              >
+                {/* Duplicate items for seamless loop */}
+                {[...workflowItems, ...workflowItems].map((item, index) => (
+                  <div key={index} className="flex-shrink-0 w-[280px] md:w-[320px] lg:w-[350px]">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
+                      <img
+                        src={item.image}
+                        alt={item.label}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <span className="inline-block px-4 py-2 bg-background/80 border border-black/10 text-black text-sm font-medium rounded-full backdrop-blur-md shadow-lg">
+                          {item.label}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
