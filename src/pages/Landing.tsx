@@ -438,15 +438,7 @@ const Landing = () => {
             <button
               onClick={() => {
                 if (carouselRef.current) {
-                  const container = carouselRef.current;
-                  const scrollWidth = container.scrollWidth;
-                  const halfWidth = scrollWidth / 2;
-                  
-                  // If near the start, jump to the duplicate set first
-                  if (container.scrollLeft <= 350) {
-                    container.scrollLeft = halfWidth + container.scrollLeft;
-                  }
-                  container.scrollBy({ left: -350, behavior: 'smooth' });
+                  carouselRef.current.scrollBy({ left: -350, behavior: 'smooth' });
                 }
               }}
               onMouseEnter={() => setIsCarouselHovered(true)}
@@ -494,16 +486,7 @@ const Landing = () => {
             <button
               onClick={() => {
                 if (carouselRef.current) {
-                  const container = carouselRef.current;
-                  const scrollWidth = container.scrollWidth;
-                  const clientWidth = container.clientWidth;
-                  const halfWidth = scrollWidth / 2;
-                  
-                  // If near the end, jump back to the first set
-                  if (container.scrollLeft >= halfWidth - clientWidth) {
-                    container.scrollLeft = container.scrollLeft - halfWidth;
-                  }
-                  container.scrollBy({ left: 350, behavior: 'smooth' });
+                  carouselRef.current.scrollBy({ left: 350, behavior: 'smooth' });
                 }
               }}
               onMouseEnter={() => setIsCarouselHovered(true)}
