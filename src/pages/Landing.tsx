@@ -116,7 +116,7 @@ const imageGenerationImages = [
 
 const imageEditingImages = [
   "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/elf.png?w=800&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&h=600&fit=crop",
+  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/carrace.png?w=800&h=600&fit=crop",
   "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&h=600&fit=crop",
   "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800&h=600&fit=crop",
 ];
