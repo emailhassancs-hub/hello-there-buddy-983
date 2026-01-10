@@ -53,7 +53,7 @@ const workflowItems = [
   },
   {
     image:
-      "ttps://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/flux_kotext_output_1768052818_flux_kontext_1768052812_edit_20260110_184652_cdf71fbe.png",
+      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/flux_kotext_output_1768052818_flux_kontext_1768052812_edit_20260110_184652_cdf71fbe.png",
     label: "3D Creation",
   },
   {
