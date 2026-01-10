@@ -455,7 +455,7 @@ const Landing = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <span className="inline-block px-4 py-2 bg-background/50 border border-white/20 text-white text-sm font-medium rounded-full backdrop-blur-md shadow-lg">
+                      <span className="inline-block px-4 py-2 bg-background/80 border border-black/10 text-black text-sm font-medium rounded-full backdrop-blur-md shadow-lg">
                         {item.label}
                       </span>
                     </div>
