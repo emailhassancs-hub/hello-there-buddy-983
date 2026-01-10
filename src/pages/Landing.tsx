@@ -49,8 +49,8 @@ const workflowItems = [
     label: "2D Prop Generation",
   },
   {
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=600&fit=crop",
-    label: "Image Editing",
+    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/ColorChanger.png",
+    label: "Color Changer",
   },
   {
     image:
