@@ -18,6 +18,7 @@ import VerifyEmailPage from "./pages/auth/VerifyEmail";
 import OAuthSuccessPage from "./pages/auth/OAuthSuccess";
 import PaymentSuccessPage from "./pages/payment/PaymentSuccess";
 import PaymentCancelPage from "./pages/payment/PaymentCancel";
+import Landing from "./pages/Landing";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +32,7 @@ const App = () => (
           <Routes>
             {/* Protected Routes - require authentication */}
             <Route
-              path="/"
+              path="/app"
               element={
                 <ProtectedRoute>
                   <Index />
@@ -52,6 +53,12 @@ const App = () => (
                 <ProtectedRoute>
                   <GameDesignPro />
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/"
+              element={
+                <Landing />
               }
             />
             

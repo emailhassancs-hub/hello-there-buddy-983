@@ -30,8 +30,8 @@ export default function OAuthSuccessPage() {
           // Show success message
           toast.success(`Welcome back, ${userData.name}!`)
           
-          // Redirect to home page
-          navigate('/')
+          // Redirect to app
+          navigate('/app')
         } catch (error) {
           console.error('Error parsing OAuth data:', error)
           toast.error('Authentication failed')

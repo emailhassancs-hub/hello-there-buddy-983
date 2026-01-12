@@ -17,7 +17,7 @@ export default function LoginPage() {
       localStorage.setItem(LocalStorageKeys.AccessToken, res.access_token)
       localStorage.setItem(LocalStorageKeys.User, JSON.stringify(res.user ?? {}))
       setUser(res.user ?? {})
-      window.location.href = '/'
+      window.location.href = '/app'
     } catch (e: any) {
       toast.error('Sign in failed', { description: e.message })
     }

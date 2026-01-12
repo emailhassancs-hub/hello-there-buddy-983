@@ -110,7 +110,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   </Label>
                   <Input
                     id="credits"
-                    value={userProfile.credits.toLocaleString()}
+                    value={userProfile.credits?.toLocaleString() ?? "0"}
                     readOnly
                     className="bg-muted cursor-not-allowed font-mono text-foreground"
                   />
