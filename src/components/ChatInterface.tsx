@@ -122,7 +122,7 @@ const ChatInterface = ({
                        (lastMessage?.imagePaths && lastMessage.imagePaths.length > 0);
       
       // Wait longer if there are images to load (3 seconds), otherwise 2 seconds
-      const delay = hasImages ? 2500 : 1500;
+      const delay = hasImages ? 3000 : 2000;
       
       const scrollTimeout = setTimeout(() => {
         // Force scroll to bottom using both methods
