@@ -55,6 +55,11 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
       
       // If a specific session is provided, update it optimistically without full reload
       if (sessionDetail) {
+        // Skip if session_id is null
+        if (sessionDetail.session_id === null) {
+          return;
+        }
+        
         setSessions((prev) => {
           const existingIndex = prev.findIndex((s) => s.session_id === sessionDetail.session_id);
           
@@ -67,10 +72,10 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
               // Keep the original created_at if not provided
               created_at: sessionDetail.created_at || updated[existingIndex].created_at,
             };
-            return updated;
+            return updated.filter((s) => s.session_id !== null);
           } else {
             // Add new session to the beginning of the list
-            return [sessionDetail, ...prev];
+            return [sessionDetail, ...prev].filter((s) => s.session_id !== null);
           }
         });
         return; // Don't do full fetch for optimistic updates
@@ -111,7 +116,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         throw new Error("Failed to fetch sessions");
       }
       const data = await response.json();
-      const loadedSessions = data.sessions || [];
+      const loadedSessions = (data.sessions || []).filter((session: Session) => session.session_id !== null);
       setSessions(loadedSessions);
       
       // Notify parent that sessions are loaded
@@ -164,8 +169,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
       saveChatName(editingSessionId, editingName.trim());
       setEditingSessionId(null);
       setEditingName("");
-      // Force re-render
-      setSessions([...sessions]);
+      // Force re-render (sessions are already filtered, but ensure no nulls)
+      setSessions(sessions.filter((s) => s.session_id !== null));
     }
   };
 
@@ -205,8 +210,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         throw new Error("Failed to delete session");
       }
 
-      // Remove from list
-      setSessions(sessions.filter((s) => s.session_id !== sessionId));
+      // Remove from list (also filter out any null session_ids)
+      setSessions(sessions.filter((s) => s.session_id !== sessionId && s.session_id !== null));
 
       // If this was the active chat, create a new one
       if (sessionId === currentSessionId) {

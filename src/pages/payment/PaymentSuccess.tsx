@@ -19,7 +19,7 @@ export default function PaymentSuccessPage() {
       
       // Redirect to dashboard after 3 seconds
       setTimeout(() => {
-        navigate('/')
+        navigate('/app')
       }, 3000)
     } else {
       setError('No session ID provided')
@@ -53,7 +53,7 @@ export default function PaymentSuccessPage() {
             <p className="mb-6 text-muted-foreground">
               {error}
             </p>
-            <Button onClick={() => navigate('/')} className="w-full">
+            <Button onClick={() => navigate('/app')} className="w-full">
               Return to Dashboard
             </Button>
           </CardContent>
@@ -81,7 +81,7 @@ export default function PaymentSuccessPage() {
             </p>
           </div>
           
-          <Button onClick={() => navigate('/')} className="w-full">
+          <Button onClick={() => navigate('/app')} className="w-full">
             Return to Dashboard
           </Button>
         </CardContent>

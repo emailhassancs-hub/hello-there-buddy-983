@@ -56,6 +56,7 @@ export async function apiFetch<T>(
     signal?: AbortSignal // Add support for AbortController
   }
 ): Promise<T> {
+  console.log('API_BASE_URL', API_BASE_URL)
   const { method = 'GET', body, skipAuth = false, timeout, signal, headers } = options || {}
   // Build request config
   const config: AxiosRequestConfig = {
