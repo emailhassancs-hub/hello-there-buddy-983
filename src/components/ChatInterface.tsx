@@ -46,7 +46,9 @@ const ChatInterface = ({
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const prevMessagesLengthRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modelFileInputRef = useRef<HTMLInputElement>(null);
   const lastProcessedImageKeyRef = useRef<string | null>(null);
@@ -92,14 +94,59 @@ const ChatInterface = ({
 
   // Scroll to bottom when messages change
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "nearest" });
+    // Use requestAnimationFrame and setTimeout to ensure DOM is fully updated
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        // Try scrollIntoView first
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+        // Also manually scroll the container to ensure we reach the bottom
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+      }, 100);
+    });
   }, []);
 
+  // Scroll when new messages are added to filteredMessages array
   useEffect(() => {
-    if (filteredMessages.length > 0) {
-      scrollToBottom();
+    const currentLength = filteredMessages.length;
+    const prevLength = prevMessagesLengthRef.current;
+    
+    // Only scroll if a new message was actually added (length increased)
+    if (currentLength > prevLength && currentLength > 0) {
+      // Check if last message has images that need to load
+      const lastMessage = filteredMessages[currentLength - 1];
+      const hasImages = lastMessage?.image_path || lastMessage?.img_url || lastMessage?.thumbnail_url || 
+                       (lastMessage?.imagePaths && lastMessage.imagePaths.length > 0);
+      
+      // Wait longer if there are images to load (3 seconds), otherwise 2 seconds
+      const delay = hasImages ? 2500 : 1500;
+      
+      const scrollTimeout = setTimeout(() => {
+        // Force scroll to bottom using both methods
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+          }
+          // Also use scrollIntoView as backup
+          setTimeout(() => {
+            if (messagesEndRef.current) {
+              messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+            }
+          }, 100);
+        });
+      }, delay);
+      
+      prevMessagesLengthRef.current = currentLength;
+      
+      return () => clearTimeout(scrollTimeout);
+    } else if (currentLength !== prevLength) {
+      // Update ref even if length decreased (messages cleared)
+      prevMessagesLengthRef.current = currentLength;
     }
-  }, [filteredMessages, scrollToBottom]);
+  }, [filteredMessages.length, filteredMessages, scrollToBottom]);
 
   // Detect when an image or model is generated in the latest assistant message
   useEffect(() => {
@@ -113,10 +160,14 @@ const ChatInterface = ({
     // Check message object first for image fields (new structure)
     if (lastMessage.image_path || lastMessage.img_url || lastMessage.thumbnail_url) {
       onImageGeneratedRef.current?.();
+      // Scroll after image is generated (2.5 seconds to allow image to load)
+      setTimeout(() => scrollToBottom(), 2500);
     }
     // Check for model_url and trigger model refresh
     if (lastMessage.model_url) {
       onModelGeneratedRef.current?.();
+      // Scroll after model is generated (2.5 seconds to allow model to load)
+      setTimeout(() => scrollToBottom(), 2500);
     }
     if (lastMessage.thumbnail_url && lastMessage.toolName?.includes('text_to_3d')) {
       setText3dPopup(lastMessage.thumbnail_url);
@@ -127,10 +178,14 @@ const ChatInterface = ({
       const parsed = JSON.parse(lastMessage.text);
       if (parsed?.img_url || parsed?.image_path || parsed?.thumbnail_url) {
         onImageGeneratedRef.current?.();
+        // Scroll after image is generated (2.5 seconds to allow image to load)
+        setTimeout(() => scrollToBottom(), 2500);
       }
       // Check for model_url in parsed text
       if (parsed?.model_url) {
         onModelGeneratedRef.current?.();
+        // Scroll after model is generated (2.5 seconds to allow model to load)
+        setTimeout(() => scrollToBottom(), 2500);
       }
       if (parsed?.thumbnail_url && lastMessage.toolName?.includes('text_to_3d')) {
         setText3dPopup(parsed.thumbnail_url);
@@ -140,7 +195,7 @@ const ChatInterface = ({
     }
 
     lastProcessedImageKeyRef.current = key;
-  }, [filteredMessages]);
+  }, [filteredMessages, scrollToBottom]);
 
   useEffect(()=>{
     console.log(messages,'messages in chat interface===>>>')
@@ -406,7 +461,7 @@ const ChatInterface = ({
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-8 glass scrollbar-hide">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 space-y-8 glass scrollbar-hide">
         {filteredMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
             <div className="p-4 rounded-full bg-primary shadow-soft">
