@@ -41,7 +41,6 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const hasAutoLoadedRef = useRef(false);
   const [activeTab, setActiveTab] = useState("images");
   const [selectedModel, setSelectedModel] = useState<{ modelUrl: string; thumbnailUrl: string; workflow: string } | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -78,12 +77,13 @@ const Index = () => {
     }
   }, []);
 
-  // Session management
+  // Start with a new chat on page load/refresh
+  // Don't load stored session - always start fresh
   useEffect(() => {
-    const storedSessionId = localStorage.getItem("mcp_session_id");
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-    }
+    // Clear any stored session on mount to ensure fresh start
+    localStorage.removeItem("mcp_session_id");
+    setSessionId(null);
+    setMessages([]);
   }, []);
 
   // Cleanup workflow SSE on unmount
@@ -1183,34 +1183,16 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
   }, [authToken, userProfile?.email, API, toast]);
 
   // Handle when sessions are loaded from sidebar
+  // Don't auto-load any session - user must explicitly click to load a chat
   const handleSessionsLoaded = useCallback((sessions: Array<{ session_id: string }>) => {
-    // Auto-load first session if:
-    // 1. We haven't auto-loaded yet
-    // 2. There are sessions available
-    // 3. No session is currently selected OR current session doesn't exist in the list
-    // 4. No messages are loaded (meaning no chat is currently open)
-    if (!hasAutoLoadedRef.current && sessions.length > 0) {
-      const currentSessionExists = sessionId 
-        ? sessions.some(s => s.session_id === sessionId)
-        : false;
-      
-      // If no session is selected, or current session doesn't exist, or no messages loaded
-      if ((!sessionId || !currentSessionExists || messages.length === 0)) {
-        const firstSession = sessions[0];
-        hasAutoLoadedRef.current = true;
-        // Load the first session
-        handleLoadSession(firstSession.session_id);
-      } else {
-        hasAutoLoadedRef.current = true;
-      }
-    }
-  }, [sessionId, messages.length, handleLoadSession]);
+    // No auto-loading - user starts with a fresh chat
+    // They can click on any session in the sidebar to load it
+  }, []);
 
   const handleNewChat = () => {
     setSessionId(null);
     localStorage.removeItem("mcp_session_id");
     setMessages([]);
-    hasAutoLoadedRef.current = false; // Reset so we can auto-load again if needed
     toast({
       title: "New Chat Started",
       description: "You can now start a fresh conversation.",
