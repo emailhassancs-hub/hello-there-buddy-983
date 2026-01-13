@@ -61,12 +61,12 @@ const workflowItems = [
     label: "Character Turnarounds",
   },
   {
-    image: "https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?w=800&h=600&fit=crop",
-    label: "Concept Art",
+    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/sketch.png",
+    label: "Color Image",
   },
   {
-    image: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&h=600&fit=crop",
-    label: "Background Removal",
+    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/ui.png",
+    label: "Design UI",
   },
 ];
 
@@ -92,7 +92,7 @@ const pricingTiers = [
     price: "$49",
     period: "/month",
     description: "For creative professionals",
-    features: ["Unlimited generations", "Unlimited 3D models", "Advanced editing", "Priority support", "API access"],
+    features: ["Unlimited generations", "Unlimited 3D models", "Advanced editing", "Priority support"],
     popular: true,
   },
   {
@@ -135,7 +135,7 @@ const storyContent = [
     title: "Image Editing",
     subtitle: "Transform & Enhance",
     description:
-      "Edit images with precision using AI-powered tools. Remove backgrounds instantly, upscale to 4x resolution, enhance details, and apply visual effects — all with simple commands.",
+      "Edit images with precision using AI-powered tools. Remove backgrounds instantly, upscale to 4x resolution, enhance details, and merge more than two images — all with simple commands.",
   },
   {
     id: "3d-generation",
