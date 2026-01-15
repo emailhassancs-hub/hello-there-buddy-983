@@ -30,6 +30,7 @@ interface ModelViewerProps {
   apiUrl: string;
   selectedModel?: { modelUrl: string; thumbnailUrl: string; workflow: string } | null;
   refreshTrigger?: number;
+  onInternalModelSelect?: () => void;
 }
 
 interface ModelProps {
@@ -167,7 +168,7 @@ function ZoomControls({ onControlsReady }: { onControlsReady: (controls: any) =>
   );
 }
 
-const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrigger }: ModelViewerProps) => {
+const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrigger, onInternalModelSelect }: ModelViewerProps) => {
   const [models, setModels] = useState<ModelData[]>([]);
   const [internalSelectedModel, setInternalSelectedModel] = useState<ModelData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -265,8 +266,18 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrig
     setToken(accessToken);
   }, []);
 
-  // Use external selected model if provided, otherwise use internal
-  const selectedModel = externalSelectedModel ? {
+  // Clear internal selection when external model is selected from chat
+  useEffect(() => {
+    if (externalSelectedModel) {
+      // Clear internal selection so external model can be used
+      setInternalSelectedModel(null);
+    }
+  }, [externalSelectedModel?.modelUrl]);
+
+  // Use internal selected model (from gallery) if available, otherwise use external (from chat)
+  // Gallery clicks set internalSelectedModel, which takes priority
+  // Chat clicks set externalSelectedModel, and we clear internalSelectedModel to use it
+  const selectedModel = internalSelectedModel ? internalSelectedModel : (externalSelectedModel ? {
     id: '',
     generationType: externalSelectedModel.workflow.toUpperCase().replace('', '_') as any,
     status: "COMPLETED" as const,
@@ -275,7 +286,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrig
     prompt: externalSelectedModel.modelUrl.split('/').pop()?.replace(/\.[^/.]+$/, '') || '',
     creditsUsed: 0,
     createdAt: new Date().toISOString()
-  } : internalSelectedModel;
+  } : null);
 
   const loadModels = async (append = false) => {
     if (append) {
@@ -340,9 +351,11 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrig
   }, [apiUrl, token, refreshTrigger]);
 
   useEffect(() => {
-    setLoadError(null);
-    setIsModelLoading(true);
-  }, [selectedModel]);
+    if (selectedModel?.modelUrl) {
+      setLoadError(null);
+      setIsModelLoading(true);
+    }
+  }, [selectedModel?.modelUrl]);
 
   // Auto-select first model when models are loaded and no model is selected
   useEffect(() => {
@@ -566,6 +579,7 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrig
                       
                       <Suspense fallback={null}>
                         <Model 
+                          key={selectedModel.modelUrl}
                           url={selectedModel.modelUrl} 
                           type={getModelType(selectedModel.modelUrl)} 
                           onError={setLoadError}
@@ -621,7 +635,11 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrig
                             ? 'border-primary shadow-lg'
                             : 'border-border'
                         }`}
-                        onClick={() => setInternalSelectedModel(model)}
+                        onClick={() => {
+                          setInternalSelectedModel(model);
+                          // Clear external model selection when clicking from gallery
+                          onInternalModelSelect?.();
+                        }}
                       >
                         <div className="relative">
                           {model.thumbnailUrl ? (

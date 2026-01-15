@@ -1493,7 +1493,12 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
                     /> */}
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <ModelViewer apiUrl={apiUrl} selectedModel={selectedModel} refreshTrigger={modelRefreshTrigger} />
+                    <ModelViewer 
+                      apiUrl={apiUrl} 
+                      selectedModel={selectedModel} 
+                      refreshTrigger={modelRefreshTrigger}
+                      onInternalModelSelect={() => setSelectedModel(null)}
+                    />
                   </div>
                 </div>
               </TabsContent>
