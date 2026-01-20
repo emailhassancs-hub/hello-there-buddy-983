@@ -602,8 +602,6 @@ const Index = () => {
     }
   };
 
-
-  
   const handleImageGenerated = useCallback(() => {
     setImageRefreshTrigger(prev => prev + 1);
     queryClient.invalidateQueries({ queryKey: ['user-profile'] });
@@ -824,12 +822,6 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
                 ...finalStatus.data,
                 status: finalStatus.status
               };
-
-          console.log({
-            ...msg,
-            ...updatedText,
-            role: 'assistant'
-          },'final objecttttttttttttttttttttttttttttttttttttttttttttttttttttttt')
           
           return {
             ...msg,

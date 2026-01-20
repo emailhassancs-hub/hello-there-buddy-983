@@ -32,6 +32,7 @@ export const AssistantMessage = ({
   onModelSelect,
   onOptimizationFormSubmit,
 }: AssistantMessageProps) => {
+  const isProd = import.meta.env.VITE_APP_ENV === "production";
   // Handle case where text might be null, undefined, or non-string (images/models come in separate fields)
   const messageText = typeof message.text === 'string' ? message.text : '';
   const cleanedText = cleanImageTags(messageText);
@@ -127,9 +128,9 @@ export const AssistantMessage = ({
           apiUrl={apiUrl}
           onOptimizationFormSubmit={onOptimizationFormSubmit}
         />
-
-        {/* Tool name badge - hide for plain image URLs */}
-        {message.toolName && 
+         {/* Tool name badge - hide for plain image URLs */}
+         {!isProd &&
+         message.toolName && 
          !message.toolName.match(/(image_to_3d|text_to_3d|post_processing)/) && 
          !isPlainImageUrl && (
           <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
