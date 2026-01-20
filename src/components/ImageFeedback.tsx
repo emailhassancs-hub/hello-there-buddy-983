@@ -46,8 +46,11 @@ const ImageFeedback = ({ imageId, onFeedback, className }: ImageFeedbackProps) =
     }
   };
 
+  const isOtherSelected = issueType === "other";
+  const canSubmit = issueType && (!isOtherSelected || comment.trim());
+
   const handleSubmit = () => {
-    if (!issueType) return;
+    if (!canSubmit) return;
     onFeedback?.("dislike", issueType, comment || undefined);
     setSubmitted(true);
     setShowForm(false);
@@ -142,12 +145,13 @@ const ImageFeedback = ({ imageId, onFeedback, className }: ImageFeedbackProps) =
 
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  Additional Comments (optional)
+                  Additional Comments {isOtherSelected && <span className="text-destructive">*</span>}
+                  {!isOtherSelected && "(optional)"}
                 </label>
                 <Textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  placeholder="Tell us more about the issue..."
+                  placeholder={isOtherSelected ? "Please describe the issue..." : "Tell us more about the issue..."}
                   className="min-h-[60px] text-xs bg-background resize-none"
                 />
               </div>
@@ -169,7 +173,7 @@ const ImageFeedback = ({ imageId, onFeedback, className }: ImageFeedbackProps) =
                 <Button
                   size="sm"
                   onClick={handleSubmit}
-                  disabled={!issueType}
+                  disabled={!canSubmit}
                   className="h-8 px-3 text-xs gap-1"
                 >
                   <Send className="w-3 h-3" />
