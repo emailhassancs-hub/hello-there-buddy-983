@@ -65,7 +65,7 @@ VITE_API_BASE_URL=https://games-ai-studio-middleware-agentic-main-347148155332.u
 VITE_API_BACKEND_URL=https://games-ai-studio-be-nest-347148155332.us-central1.run.app
 
 # Video Streaming URL - used for video playback
-VITE_VIDEO_STREAM_URL=http://35.209.183.202:8000
+VITE_VIDEO_STREAM_URL=http://35.209.183.202:8000  
 ```
 
 **Note**: All environment variables in Vite must be prefixed with `VITE_` to be exposed to the client code.
