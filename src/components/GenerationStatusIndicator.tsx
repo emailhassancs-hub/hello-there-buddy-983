@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Loader2, CheckCircle, XCircle, ImageIcon } from "lucide-react";
+import ImageFeedback from "./ImageFeedback";
 
 interface GenerationStatusIndicatorProps {
   status: string;
@@ -118,12 +119,13 @@ interface GeneratedImageProps {
   imageUrl: string;
   jobId?: string;
   className?: string;
+  onFeedback?: (type: "like" | "dislike", comment?: string) => void;
 }
 
-export function GeneratedImage({ imageUrl, jobId, className }: GeneratedImageProps) {
+export function GeneratedImage({ imageUrl, jobId, className, onFeedback }: GeneratedImageProps) {
   return (
     <div className={cn(
-      "flex flex-col gap-2",
+      "flex flex-col gap-3",
       className
     )}>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -143,6 +145,11 @@ export function GeneratedImage({ imageUrl, jobId, className }: GeneratedImagePro
           Job: {jobId.substring(0, 8)}...
         </span>
       )}
+      <ImageFeedback 
+        imageId={jobId} 
+        onFeedback={onFeedback}
+        className="mt-1"
+      />
     </div>
   );
 }
