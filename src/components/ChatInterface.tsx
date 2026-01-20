@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box, User } from "lucide-react";
 import toolsIcon from "@/assets/tools-icon.png";
+import mockupImage from "@/assets/mockup-generated.jpg";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import TypewriterText from "./TypewriterText";
@@ -569,7 +570,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-8 glass scrollbar-hide">
         {filteredMessages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
             <div className="p-4 rounded-full bg-primary shadow-soft">
               <Sparkles className="w-8 h-8 text-primary-foreground" />
             </div>
@@ -580,6 +581,20 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
             >
               <p className="text-chat-assistant-foreground text-lg max-w-md font-medium">
                 {welcomeMessages[currentMessageIndex]}
+              </p>
+            </div>
+            
+            {/* Mockup Generated Image */}
+            <div className="w-full max-w-md mt-4">
+              <div className="rounded-xl overflow-hidden shadow-lg border border-border/50">
+                <img 
+                  src={mockupImage} 
+                  alt="AI Generated Example" 
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 italic">
+                Example AI-generated image
               </p>
             </div>
           </div>
