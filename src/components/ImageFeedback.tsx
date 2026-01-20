@@ -124,7 +124,7 @@ const ImageFeedback = ({ imageId, onFeedback, className }: ImageFeedbackProps) =
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 pt-1 p-4 rounded-lg bg-muted/30 border border-border/50 min-w-[400px] max-w-[500px]">
+            <div className="space-y-3 pt-1 p-3 rounded-lg bg-muted/30 border border-border/50">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground">
                   Issue Type <span className="text-destructive">*</span>
