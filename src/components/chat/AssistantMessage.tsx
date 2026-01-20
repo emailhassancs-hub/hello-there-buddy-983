@@ -128,15 +128,6 @@ export const AssistantMessage = ({
           onOptimizationFormSubmit={onOptimizationFormSubmit}
         />
 
-        {/* Tool name badge - hide for plain image URLs */}
-        {message.toolName && 
-         !message.toolName.match(/(image_to_3d|text_to_3d|post_processing)/) && 
-         !isPlainImageUrl && (
-          <div className="mt-2 text-xs text-muted-foreground bg-secondary/30 px-2 py-1 rounded inline-block">
-            Tool result: {message.toolName}
-          </div>
-        )}
-
         {message.timestamp && (
           <div className="text-xs opacity-70 mt-2">
             {message.timestamp.toLocaleTimeString()}
