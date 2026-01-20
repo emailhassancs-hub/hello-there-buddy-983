@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Image as ImageIcon, RefreshCw, X, Download } from "lucide-react";
+import { Image as ImageIcon, RefreshCw, X, Download, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,9 +30,10 @@ interface EditedImageItem {
 interface ImageViewerProps {
   apiUrl: string;
   refreshTrigger?: number;
+  onRemixImage?: (imageUrl: string) => void;
 }
 
-const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
+const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps) => {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [editedImages, setEditedImages] = useState<EditedImageItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -392,16 +393,34 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                               e.currentTarget.src = "/placeholder.svg";
                             }}
                           />
-                          {/* Download button - prominent on hover */}
+                          {/* Remix (left) + Download (right) icons inside same black pill */}
                           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <Button
                               variant="default"
                               size="sm"
-                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 gap-2 font-medium"
-                              onClick={(e) => handleDownloadImage(image.url, 'generated_image',e)}
+                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 flex items-center gap-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRemixImage?.(image.url);
+                              }}
+                              title="Remix or download image"
                             >
-                              <Download className="h-4 w-4" />
-                              Download
+                              {onRemixImage && (
+                                <ArrowLeftRight
+                                  className="h-4 w-4"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemixImage(image.url);
+                                  }}
+                                />
+                              )}
+                              <Download
+                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadImage(image.url, "generated_image", e);
+                                }}
+                              />
                             </Button>
                           </div>
                         </div>
@@ -481,16 +500,34 @@ const ImageViewer = ({ apiUrl, refreshTrigger }: ImageViewerProps) => {
                               e.currentTarget.src = "/placeholder.svg";
                             }}
                           />
-                          {/* Download button - prominent on hover */}
+                          {/* Remix (left) + Download (right) icons inside same black pill */}
                           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <Button
                               variant="default"
                               size="sm"
-                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 gap-2 font-medium"
-                              onClick={(e) => handleDownloadImage(image.outputImagePath, `edited_image`,e)}
+                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 flex items-center gap-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRemixImage?.(image.outputImagePath);
+                              }}
+                              title="Remix or download image"
                             >
-                              <Download className="h-4 w-4" />
-                              Download
+                              {onRemixImage && (
+                                <ArrowLeftRight
+                                  className="h-4 w-4"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemixImage(image.outputImagePath);
+                                  }}
+                                />
+                              )}
+                              <Download
+                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadImage(image.outputImagePath, "edited_image", e);
+                                }}
+                              />
                             </Button>
                           </div>
                         </div>

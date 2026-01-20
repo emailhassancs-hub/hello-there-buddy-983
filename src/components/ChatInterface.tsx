@@ -80,12 +80,30 @@ const ChatInterface = ({
     handleFileSelect: handleFileSelectFromHook,
     removeUploadedUrl,
     clearUploads,
+    addImageUrl,
   } = useFileUpload({
     apiUrl,
     userEmail,
     sessionId,
     accessToken,
   });
+
+  // Listen for remix image events from ImageViewer
+  useEffect(() => {
+    const handleRemixImage = (event: CustomEvent<{ imageUrl: string }>) => {
+      const { imageUrl } = event.detail;
+      addImageUrl(imageUrl);
+      toast({
+        title: "Image added",
+        description: "Image has been added to your chat input.",
+      });
+    };
+
+    window.addEventListener('remixImage', handleRemixImage as EventListener);
+    return () => {
+      window.removeEventListener('remixImage', handleRemixImage as EventListener);
+    };
+  }, [addImageUrl, toast]);
 
   // Filter and clean messages for rendering
   const filteredMessages = useMemo(() => {

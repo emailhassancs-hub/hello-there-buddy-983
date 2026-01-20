@@ -1465,7 +1465,14 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
               )}
               
               <TabsContent value="images" className="flex-1 m-0 overflow-hidden">
-                <ImageViewer apiUrl={apiUrl} refreshTrigger={imageRefreshTrigger} />
+                <ImageViewer 
+                  apiUrl={apiUrl} 
+                  refreshTrigger={imageRefreshTrigger}
+                  onRemixImage={(imageUrl) => {
+                    // Dispatch custom event to add image to chat input
+                    window.dispatchEvent(new CustomEvent('remixImage', { detail: { imageUrl } }));
+                  }}
+                />
               </TabsContent>
               
               <TabsContent value="models" className="flex-1 m-0 overflow-hidden">

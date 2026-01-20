@@ -150,6 +150,21 @@ export const useFileUpload = (options: UploadOptions) => {
     setUploadedImagePreviews([]);
   }, [uploadedImagePreviews]);
 
+  const addImageUrl = useCallback((imageUrl: string) => {
+    const MAX_FILES = 4;
+    if (uploadedImageUrls.length >= MAX_FILES) {
+      toast({
+        title: "Upload limit reached",
+        description: `You can add a maximum of ${MAX_FILES} files. Please remove some files before adding more.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    // Add the image URL directly (no upload needed since it's already on the server)
+    setUploadedImageUrls(prev => [...prev, imageUrl]);
+    setUploadedImagePreviews(prev => [...prev, imageUrl]);
+  }, [uploadedImageUrls.length, toast]);
+
   return {
     isUploading,
     uploadedImageUrls,
@@ -158,6 +173,7 @@ export const useFileUpload = (options: UploadOptions) => {
     removeUploadedUrl,
     clearUploads,
     uploadImages,
+    addImageUrl,
   };
 };
 
