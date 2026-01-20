@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box, User } from "lucide-react";
 import toolsIcon from "@/assets/tools-icon.png";
 import mockupImage from "@/assets/mockup-generated.jpg";
+import ImageFeedback from "./ImageFeedback";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import TypewriterText from "./TypewriterText";
@@ -573,7 +574,7 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
           <div className="flex flex-col h-full">
             {/* Mockup Generated Image - Left aligned */}
             <div className="flex justify-start mb-6">
-              <div className="max-w-[240px]">
+              <div className="max-w-[240px] space-y-3">
                 <div className="rounded-xl overflow-hidden shadow-lg border border-border/50">
                   <img 
                     src={mockupImage} 
@@ -581,9 +582,15 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     className="w-full h-auto object-cover"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 italic">
+                <p className="text-xs text-muted-foreground italic">
                   Example AI-generated image
                 </p>
+                <ImageFeedback 
+                  imageId="mockup-example"
+                  onFeedback={(type, comment) => {
+                    console.log("Mockup feedback:", type, comment);
+                  }}
+                />
               </div>
             </div>
             
