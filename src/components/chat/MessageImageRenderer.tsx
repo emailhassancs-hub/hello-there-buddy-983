@@ -15,6 +15,7 @@ export const MessageImageRenderer = ({
   onImageZoom,
   onModelSelect,
 }: MessageImageRendererProps) => {
+  const isProd = import.meta.env.VITE_APP_ENV === "production";
   // Check status - only hide images when processing/listening, show otherwise
   const status = message.status?.toLowerCase();
   if (status && (status === "processing" || status === "listening")) {
@@ -93,6 +94,9 @@ export const MessageImageRenderer = ({
           style={{ marginTop: '8px' }}
           onImageClick={onImageZoom}
         />
+        {!isProd && message.jobId && (
+          <p className="text-xs text-muted-foreground italic">Job ID: {message.jobId}</p>
+        )}
 
       </div>
     );
@@ -108,6 +112,9 @@ export const MessageImageRenderer = ({
           style={{ marginTop: '8px' }}
           onImageClick={onImageZoom}
         />
+        {!isProd && message.jobId && (
+          <p className="text-xs text-muted-foreground italic">Job ID: {message.jobId}</p>
+        )}
         {message.prompt && (
           <p className="text-xs text-muted-foreground italic whitespace-pre-wrap break-words">
             {message.prompt}
@@ -170,6 +177,9 @@ export const MessageImageRenderer = ({
               style={{ marginTop: '8px' }}
               onImageClick={onImageZoom}
             />
+            {!isProd && parsed.job_id && (
+              <p className="text-xs text-muted-foreground italic">Job ID: {parsed.job_id}</p>
+            )}
           </div>
         );
       }
@@ -205,6 +215,9 @@ export const MessageImageRenderer = ({
               style={{ marginTop: '8px' }}
               onImageClick={onImageZoom}
             />
+            {!isProd && parsed.job_id && (
+              <p className="text-xs text-muted-foreground italic">Job ID: {parsed.job_id}</p>
+            )}
             {parsed.prompt && (
               <p className="text-xs text-muted-foreground italic whitespace-pre-wrap break-words">
                 {parsed.prompt}
