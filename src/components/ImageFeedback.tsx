@@ -1,19 +1,36 @@
 import { useState } from "react";
 import { ThumbsUp, ThumbsDown, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ImageFeedbackProps {
   imageId?: string;
-  onFeedback?: (type: "like" | "dislike", comment?: string) => void;
+  onFeedback?: (type: "like" | "dislike", issueType?: string, comment?: string) => void;
   className?: string;
 }
 
+const issueTypes = [
+  { value: "style", label: "Don't like the style" },
+  { value: "reference", label: "Don't match my reference" },
+  { value: "slow", label: "Slow generation" },
+  { value: "instructions", label: "Didn't follow instructions" },
+  { value: "credits", label: "High credit usage" },
+  { value: "other", label: "Other" },
+];
+
 const ImageFeedback = ({ imageId, onFeedback, className }: ImageFeedbackProps) => {
   const [feedback, setFeedback] = useState<"like" | "dislike" | null>(null);
-  const [showInput, setShowInput] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [issueType, setIssueType] = useState<string>("");
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -23,22 +40,17 @@ const ImageFeedback = ({ imageId, onFeedback, className }: ImageFeedbackProps) =
     if (type === "like") {
       onFeedback?.(type);
       setSubmitted(true);
-      setShowInput(false);
+      setShowForm(false);
     } else {
-      setShowInput(true);
+      setShowForm(true);
     }
   };
 
-  const handleSubmitComment = () => {
-    onFeedback?.("dislike", comment);
+  const handleSubmit = () => {
+    if (!issueType) return;
+    onFeedback?.("dislike", issueType, comment || undefined);
     setSubmitted(true);
-    setShowInput(false);
-  };
-
-  const handleSkipComment = () => {
-    onFeedback?.("dislike");
-    setSubmitted(true);
-    setShowInput(false);
+    setShowForm(false);
   };
 
   if (submitted) {
@@ -66,7 +78,7 @@ const ImageFeedback = ({ imageId, onFeedback, className }: ImageFeedbackProps) =
   }
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-3", className)}>
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground">Was this helpful?</span>
         <div className="flex items-center gap-1">
@@ -102,41 +114,68 @@ const ImageFeedback = ({ imageId, onFeedback, className }: ImageFeedbackProps) =
       </div>
 
       <AnimatePresence>
-        {showInput && (
+        {showForm && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="flex items-center gap-2 pt-1">
-              <Input
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Tell us how we can improve..."
-                className="h-8 text-xs flex-1 bg-muted/50 border-muted-foreground/20"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && comment.trim()) {
-                    handleSubmitComment();
-                  }
-                }}
-              />
-              <Button
-                size="sm"
-                onClick={handleSubmitComment}
-                disabled={!comment.trim()}
-                className="h-8 px-3 text-xs"
-              >
-                <Send className="w-3 h-3" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSkipComment}
-                className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
-              >
-                Skip
-              </Button>
+            <div className="space-y-3 pt-1 p-3 rounded-lg bg-muted/30 border border-border/50">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">
+                  Issue Type <span className="text-destructive">*</span>
+                </label>
+                <Select value={issueType} onValueChange={setIssueType}>
+                  <SelectTrigger className="h-9 text-xs bg-background">
+                    <SelectValue placeholder="Select an issue..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {issueTypes.map((issue) => (
+                      <SelectItem key={issue.value} value={issue.value} className="text-xs">
+                        {issue.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Additional Comments (optional)
+                </label>
+                <Textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Tell us more about the issue..."
+                  className="min-h-[60px] text-xs bg-background resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowForm(false);
+                    setFeedback(null);
+                    setIssueType("");
+                    setComment("");
+                  }}
+                  className="h-8 px-3 text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSubmit}
+                  disabled={!issueType}
+                  className="h-8 px-3 text-xs gap-1"
+                >
+                  <Send className="w-3 h-3" />
+                  Submit
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}
