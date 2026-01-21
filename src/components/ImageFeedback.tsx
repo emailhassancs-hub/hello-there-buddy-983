@@ -19,12 +19,12 @@ interface ImageFeedbackProps {
 }
 
 const issueTypes = [
-  { value: "style", label: "Don't like the style" },
-  { value: "reference", label: "Don't match my reference" },
-  { value: "slow", label: "Slow generation" },
-  { value: "instructions", label: "Didn't follow instructions" },
-  { value: "credits", label: "High credit usage" },
-  { value: "other", label: "Other" },
+  { value: "Don't like the style", label: "Don't like the style" },
+  { value: "Don't match my reference", label: "Don't match my reference" },
+  { value: "Slow generation", label: "Slow generation" },
+  { value: "Didn't follow instructions", label: "Didn't follow instructions" },
+  { value: "High credits usage", label: "High credits usage" },
+  { value: "Other", label: "Other" },
 ];
 
 const ImageFeedback = ({ imageId, onFeedback, className }: ImageFeedbackProps) => {
