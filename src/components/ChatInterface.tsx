@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } fr
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box, User } from "lucide-react";
+import { Send, Sparkles, BookOpen, Plus, Upload, FileText, ChevronDown, ChevronUp, X, Box, User, Pencil } from "lucide-react";
 import toolsIcon from "@/assets/tools-icon.png";
 import mockupImage from "@/assets/mockup-generated.jpg";
 import ImageFeedback from "./ImageFeedback";
@@ -585,6 +585,27 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 <p className="text-xs text-muted-foreground italic">
                   Example AI-generated image
                 </p>
+                {/* Action buttons */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => console.log("Edit Image clicked")}
+                    className="gap-1.5 text-xs h-7 border-border/60 hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Edit Image
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => console.log("Generate 3D Model clicked")}
+                    className="gap-1.5 text-xs h-7 border-border/60 hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    <Box className="h-3 w-3" />
+                    Generate 3D Model
+                  </Button>
+                </div>
                 <ImageFeedback 
                   imageId="mockup-example"
                   onFeedback={(type, comment) => {
