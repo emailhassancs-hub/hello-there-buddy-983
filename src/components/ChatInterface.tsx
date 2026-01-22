@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Message, ChatInterfaceProps, ToolCall } from "./chat/types";
 import { filterMessages, validateToolArgs } from "./chat/utils";
+import ImageFeedback from "./ImageFeedback";
+import { apiFetch } from "@/lib/api";
 import { UserMessage } from "./chat/UserMessage";
 import { AssistantMessage } from "./chat/AssistantMessage";
 import { ToolConfirmationUI } from "./chat/ToolConfirmationUI";
@@ -80,12 +82,30 @@ const ChatInterface = ({
     handleFileSelect: handleFileSelectFromHook,
     removeUploadedUrl,
     clearUploads,
+    addImageUrl,
   } = useFileUpload({
     apiUrl,
     userEmail,
     sessionId,
     accessToken,
   });
+
+  // Listen for remix image events from ImageViewer
+  useEffect(() => {
+    const handleRemixImage = (event: CustomEvent<{ imageUrl: string }>) => {
+      const { imageUrl } = event.detail;
+      addImageUrl(imageUrl);
+      toast({
+        title: "Image added",
+        description: "Image has been added to your chat input.",
+      });
+    };
+
+    window.addEventListener('remixImage', handleRemixImage as EventListener);
+    return () => {
+      window.removeEventListener('remixImage', handleRemixImage as EventListener);
+    };
+  }, [addImageUrl, toast]);
 
   // Filter and clean messages for rendering
   const filteredMessages = useMemo(() => {
@@ -440,6 +460,93 @@ const ChatInterface = ({
     setZoomedImage(src);
   }, []);
 
+  const shouldShowFeedback = useCallback((message: Message) => {
+    if (message.role !== "assistant") return false;
+    const status = message.status?.toLowerCase();
+    if (status === "listening" || status === "processing") return false;
+    return Boolean(
+      message.image_path ||
+      message.img_url ||
+      message.thumbnail_url ||
+      message.model_url ||
+      (message.imagePaths && message.imagePaths.length > 0)
+    );
+  }, []);
+
+  const getFeedbackId = useCallback((message: Message, index: number) => {
+    return (
+      (message as any).jobId ||
+      (message as any).job_id ||
+      message.image_path ||
+      message.img_url ||
+      message.thumbnail_url ||
+      message.model_url ||
+      `msg-${index}`
+    );
+  }, []);
+
+
+  const inferGenerationKind = useCallback((message: Message) => {
+    if (message.formType === "optimized-model") return "MODEL_OPTIMIZATION";
+    if (message.model_url || (message.thumbnail_url && message.toolName?.includes("3d"))) return "MODEL_GENERATION";
+    if ((message.generation_type || message.type)?.toLowerCase() === "image_editing") return "IMAGE_EDITING";
+    if (message.image_path || message.img_url || message.thumbnail_url) return "IMAGE_GENERATION";
+    return "OTHER";
+  }, []);
+
+  const submitFeedback = useCallback(
+    async (
+      message: Message,
+      index: number,
+      type: "like" | "dislike",
+      issueType?: string,
+      comment?: string,
+    ) => {
+
+     console.log(message,'message in submit feedback===>>>')
+      const generationKind = inferGenerationKind(message);
+      // Always prefer backend-emitted job_id, then fallback to local jobId
+      const jobId = message.job_id || message.jobId;
+
+      // If we don't have a job id, skip sending feedback to backend
+      if (!jobId) {
+        console.warn("Skipping feedback submission: missing job_id for message", message);
+        return;
+      }
+
+      // Source URL to identify which asset feedback is for (image/model URL)
+      const sourceUrl =
+        message.image_path ||
+        message.img_url ||
+        message.thumbnail_url ||
+        message.model_url ||
+        undefined;
+
+      const body: any = {
+        type,
+        generationKind,
+        jobId,
+        sourceUrl,
+        toolName: message.toolName,
+        issueType,
+        comment,
+      };
+
+      try {
+        await apiFetch("/api/generation-feedback", { method: "POST", body });
+      } catch (err: any) {
+        console.error("Failed to submit feedback:", err);
+        toast({
+          title: "Feedback failed",
+          description: err?.message || "Could not save feedback. Please try again.",
+          variant: "destructive",
+        });
+      }
+
+    },
+    [inferGenerationKind, toast],
+  );
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
@@ -480,13 +587,27 @@ const ChatInterface = ({
             {message.role === "user" ? (
               <UserMessage message={message} />
             ) : (
-              <AssistantMessage
-                message={message}
-                apiUrl={apiUrl}
-                onImageZoom={handleImageZoom}
-                onModelSelect={onModelSelect}
-                onOptimizationFormSubmit={onOptimizationFormSubmit}
-              />
+              <>
+                <AssistantMessage
+                  message={message}
+                  apiUrl={apiUrl}
+                  onImageZoom={handleImageZoom}
+                  onModelSelect={onModelSelect}
+                  onOptimizationFormSubmit={onOptimizationFormSubmit}
+                />
+
+                {/* Feedback for generation results (image gen/edit + model gen) */}
+                {shouldShowFeedback(message) && (
+                  <div className="mt-2 ml-4">
+                    <ImageFeedback
+                      imageId={getFeedbackId(message, index)}
+                      onFeedback={async (type, issueType, comment) =>
+                        submitFeedback(message, index, type, issueType, comment)
+                      }
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             {/* Tool Confirmation UI */}

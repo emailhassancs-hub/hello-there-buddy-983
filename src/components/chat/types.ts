@@ -5,6 +5,10 @@ export interface ToolCall {
 }
 
 export interface Message {
+  /**
+   * Optional database record id (uuid) from history tables when available in SSE payloads.
+   */
+  id?: string;
   role: "user" | "assistant" | "system" | "tool";
   text: string;
   timestamp?: Date;
