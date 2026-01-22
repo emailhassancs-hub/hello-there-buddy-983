@@ -585,8 +585,14 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                 <p className="text-xs text-muted-foreground italic">
                   Example AI-generated image
                 </p>
+                <ImageFeedback 
+                  imageId="mockup-example"
+                  onFeedback={(type, comment) => {
+                    console.log("Mockup feedback:", type, comment);
+                  }}
+                />
                 {/* Action buttons */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -606,12 +612,6 @@ const ChatInterface = ({ messages, onSendMessage, onToolConfirmation, isGenerati
                     Generate 3D Model
                   </Button>
                 </div>
-                <ImageFeedback 
-                  imageId="mockup-example"
-                  onFeedback={(type, comment) => {
-                    console.log("Mockup feedback:", type, comment);
-                  }}
-                />
               </div>
             </div>
             
