@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
-import { Loader2, CheckCircle, XCircle, ImageIcon } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, ImageIcon, Pencil, Box } from "lucide-react";
+import { Button } from "./ui/button";
 import ImageFeedback from "./ImageFeedback";
 
 interface GenerationStatusIndicatorProps {
@@ -120,9 +121,11 @@ interface GeneratedImageProps {
   jobId?: string;
   className?: string;
   onFeedback?: (type: "like" | "dislike", comment?: string) => void;
+  onEditImage?: () => void;
+  onGenerate3DModel?: () => void;
 }
 
-export function GeneratedImage({ imageUrl, jobId, className, onFeedback }: GeneratedImageProps) {
+export function GeneratedImage({ imageUrl, jobId, className, onFeedback, onEditImage, onGenerate3DModel }: GeneratedImageProps) {
   return (
     <div className={cn(
       "flex flex-col gap-3",
@@ -145,6 +148,29 @@ export function GeneratedImage({ imageUrl, jobId, className, onFeedback }: Gener
           Job: {jobId.substring(0, 8)}...
         </span>
       )}
+      
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 mt-1">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onEditImage}
+          className="gap-2 text-xs h-8 border-border/60 hover:bg-accent hover:text-accent-foreground transition-colors"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Edit Image
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onGenerate3DModel}
+          className="gap-2 text-xs h-8 border-border/60 hover:bg-accent hover:text-accent-foreground transition-colors"
+        >
+          <Box className="h-3.5 w-3.5" />
+          Generate 3D Model
+        </Button>
+      </div>
+      
       <ImageFeedback 
         imageId={jobId} 
         onFeedback={onFeedback}
