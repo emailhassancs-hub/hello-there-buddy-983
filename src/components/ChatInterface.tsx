@@ -528,6 +528,7 @@ const ChatInterface = ({
         jobId,
         sourceUrl,
         toolName: message.toolName,
+        sessionId,
         issueType,
         comment,
       };
@@ -544,7 +545,7 @@ const ChatInterface = ({
       }
 
     },
-    [inferGenerationKind, toast],
+    [inferGenerationKind, toast, sessionId],
   );
 
   return (
