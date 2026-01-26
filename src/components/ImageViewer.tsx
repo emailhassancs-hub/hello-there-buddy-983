@@ -395,33 +395,30 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
                           />
                           {/* Remix (left) + Download (right) icons inside same black pill */}
                           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 flex items-center gap-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onRemixImage?.(image.url);
-                              }}
-                              title="Remix or download image"
-                            >
+                            <div className="h-9 px-3 bg-primary text-primary-foreground shadow-lg border-0 rounded-md flex items-center gap-2">
                               {onRemixImage && (
-                                <ArrowLeftRight
-                                  className="h-4 w-4"
+                                <button
+                                  className="h-full flex items-center justify-center hover:bg-primary/80 rounded-l-md px-2 transition-colors"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onRemixImage(image.url);
                                   }}
-                                />
+                                  title="Remix image"
+                                >
+                                  <ArrowLeftRight className="h-4 w-4" />
+                                </button>
                               )}
-                              <Download
-                                className="h-4 w-4"
+                              <button
+                                className="h-full flex items-center justify-center hover:bg-primary/80 rounded-r-md px-2 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDownloadImage(image.url, "generated_image", e);
                                 }}
-                              />
-                            </Button>
+                                title="Download image"
+                              >
+                                <Download className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                         <div className="p-3 border-t border-border/50">
@@ -502,33 +499,30 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
                           />
                           {/* Remix (left) + Download (right) icons inside same black pill */}
                           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-0 flex items-center gap-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onRemixImage?.(image.outputImagePath);
-                              }}
-                              title="Remix or download image"
-                            >
+                            <div className="h-9 px-3 bg-primary text-primary-foreground shadow-lg border-0 rounded-md flex items-center gap-2">
                               {onRemixImage && (
-                                <ArrowLeftRight
-                                  className="h-4 w-4"
+                                <button
+                                  className="h-full flex items-center justify-center hover:bg-primary/80 rounded-l-md px-2 transition-colors"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onRemixImage(image.outputImagePath);
                                   }}
-                                />
+                                  title="Remix image"
+                                >
+                                  <ArrowLeftRight className="h-4 w-4" />
+                                </button>
                               )}
-                              <Download
-                                className="h-4 w-4"
+                              <button
+                                className="h-full flex items-center justify-center hover:bg-primary/80 rounded-r-md px-2 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDownloadImage(image.outputImagePath, "edited_image", e);
                                 }}
-                              />
-                            </Button>
+                                title="Download image"
+                              >
+                                <Download className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                         <div className="p-3 border-t border-border/50">
