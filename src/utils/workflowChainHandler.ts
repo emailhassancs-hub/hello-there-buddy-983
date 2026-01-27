@@ -18,6 +18,7 @@ export interface ChainEvent {
   job_id?: string;
   image_path?: string;
   model_url?: string;
+  thumbnail_url?: string;
   error?: string;
   outputs?: any;
   [key: string]: any;
@@ -98,19 +99,23 @@ export function handleChainEvent(
       );
       handlers.onProgressUpdate?.(event.task_number, event.total_tasks);
 
-      // Store the result
-      if (event.image_path) {
-        results.images.push(event.image_path);
+      // ✅ FIX: Store the result - check both image_path AND thumbnail_url for 3D models
+      const imageUrl = event.image_path || event.thumbnail_url;
+      if (imageUrl) {
+        results.images.push(imageUrl);
+        console.log(`🖼️ Added image/thumbnail: ${imageUrl}`);
       }
       
       if (event.model_url) {
         results.models.push(event.model_url);
+        console.log(`🎮 Added 3D model: ${event.model_url}`);
       }
 
-      // Store in outputs
+      // ✅ FIX: Store in outputs - include thumbnail_url
       results.allOutputs[`task_${event.task_number}`] = {
         job_id: event.job_id,
         image_path: event.image_path,
+        thumbnail_url: event.thumbnail_url,
         model_url: event.model_url,
         status: event.status,
       };
@@ -159,8 +164,9 @@ export function handleChainEvent(
       console.log("📢 Unknown event type:", eventType, event);
       
       // Handle legacy status updates
-      if (event.status === "COMPLETED" && event.image_path) {
-        console.log("🖼️ Legacy image result:", event.image_path);
+      if (event.status === "COMPLETED" && (event.image_path || event.thumbnail_url)) {
+        const url = event.image_path || event.thumbnail_url;
+        console.log("🖼️ Legacy image/thumbnail result:", url);
       }
   }
 }
@@ -191,6 +197,16 @@ export function createChainSSEConnection(
     try {
       const update: ChainEvent = JSON.parse(event.data);
       console.log("📢 Chain SSE Event:", update);
+      
+      // ✅ ADD: Debug logging for image/thumbnail URLs
+      if (update.type === 'task_completed') {
+        console.log("📢 Task completed URLs:", {
+          image_path: update.image_path,
+          thumbnail_url: update.thumbnail_url,
+          model_url: update.model_url
+        });
+      }
+      
       handleChainEvent(update, eventSource, results, totalTasks, handlers);
     } catch (err) {
       console.error("❌ Failed to parse SSE event:", err, event.data);

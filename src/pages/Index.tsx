@@ -631,7 +631,8 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
             text: `⚡ Starting task ${event.task_number}/${event.total_tasks}...`,
             job_id: `chain_task_${event.task_number}_${event.chain_id}`,
             status: "listening",
-            generation_type: event.task_type === "image_editing" ? "image_editing" : "image_generation",
+            generation_type: event.task_type === "image_editing" ? "image_editing" : 
+                            event.task_type === "3d_generation" ? "3d_generation" : "image_generation",
             chainId: event.chain_id,
             taskNumber: event.task_number,
           };
@@ -655,12 +656,29 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         setWorkflowProgress({ current: event.task_number || 0, total: chain.total_tasks });
         setWorkflowStatus(`✅ Task ${event.task_number}/${event.total_tasks} completed!`);
         
-        const imagePath = event.image_path || event.output?.image_path;
+        // ✅ FIX: Check both image_path AND thumbnail_url (for 3D models)
+        const imagePath = event.image_path || event.thumbnail_url || event.output?.image_path || event.output?.thumbnail_url;
+        
+        // ✅ DEBUG: Log what we received
+        console.log(`🖼️ [onTaskCompleted] Task ${event.task_number} URLs:`, {
+          image_path: event.image_path,
+          thumbnail_url: event.thumbnail_url,
+          model_url: event.model_url,
+          resolved_imagePath: imagePath
+        });
+        
         if (imagePath) {
           setMessages((prev) =>
             prev.map((msg: any) => {
               if (msg.job_id === event.job_id || (msg.chainId === event.chain_id && msg.taskNumber === event.task_number)) {
-                return { ...msg, status: "COMPLETED", image_path: imagePath, text: `✅ Task ${event.task_number}/${event.total_tasks} completed` };
+                return { 
+                  ...msg, 
+                  status: "COMPLETED", 
+                  image_path: imagePath,
+                  thumbnail_url: event.thumbnail_url,  // ✅ Also store thumbnail_url
+                  model_url: event.model_url,          // ✅ Also store model_url for 3D
+                  text: `✅ Task ${event.task_number}/${event.total_tasks} completed` 
+                };
               }
               return msg;
             })
@@ -685,17 +703,39 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
             let updatedMessages = [...prev];
             outputKeys.forEach((key, index) => {
               const output = event.outputs[key];
-              if (output && output.image_path) {
-                const alreadyHasImage = updatedMessages.some((msg: any) => msg.image_path === output.image_path);
+              
+              // ✅ FIX: Check both image_path AND thumbnail_url
+              const outputImagePath = output?.image_path || output?.thumbnail_url;
+              
+              if (output && outputImagePath) {
+                const alreadyHasImage = updatedMessages.some((msg: any) => 
+                  msg.image_path === outputImagePath || msg.thumbnail_url === outputImagePath
+                );
                 if (!alreadyHasImage) {
                   const taskNumber = index + 1;
                   const placeholderIndex = updatedMessages.findIndex(
-                    (msg: any) => msg.chainId === event.chain_id && msg.taskNumber === taskNumber && !msg.image_path
+                    (msg: any) => msg.chainId === event.chain_id && msg.taskNumber === taskNumber && !msg.image_path && !msg.thumbnail_url
                   );
                   if (placeholderIndex !== -1) {
-                    updatedMessages[placeholderIndex] = { ...updatedMessages[placeholderIndex], status: "COMPLETED", image_path: output.image_path, text: `✅ Result ${taskNumber}/${outputKeys.length}` };
+                    updatedMessages[placeholderIndex] = { 
+                      ...updatedMessages[placeholderIndex], 
+                      status: "COMPLETED", 
+                      image_path: outputImagePath,
+                      thumbnail_url: output.thumbnail_url,  // ✅ Store thumbnail_url
+                      model_url: output.model_url,          // ✅ Store model_url
+                      text: `✅ Result ${taskNumber}/${outputKeys.length}` 
+                    };
                   } else {
-                    updatedMessages.push({ role: "assistant", text: `✅ Result ${taskNumber}/${outputKeys.length}`, status: "COMPLETED", image_path: output.image_path, generation_type: output.type || "image_generation", job_id: output.job_id });
+                    updatedMessages.push({ 
+                      role: "assistant", 
+                      text: `✅ Result ${taskNumber}/${outputKeys.length}`, 
+                      status: "COMPLETED", 
+                      image_path: outputImagePath,
+                      thumbnail_url: output.thumbnail_url,
+                      model_url: output.model_url,
+                      generation_type: output.type || "image_generation", 
+                      job_id: output.job_id 
+                    });
                   }
                 }
               }
