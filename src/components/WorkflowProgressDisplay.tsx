@@ -47,7 +47,7 @@ export const WorkflowProgressDisplay = ({
             <CheckCircle2 className="h-5 w-5 text-green-500" />
           )}
           <span className="text-sm font-medium text-foreground">
-            Workflow Chain: {chainId.substring(0, 8)}...
+            Workflow Chain Progress
           </span>
         </div>
         <span className="text-xs text-muted-foreground">
@@ -74,8 +74,8 @@ export const WorkflowProgressDisplay = ({
         </p>
       </div>
 
-      {/* Task Counter */}
-      <div className="grid grid-cols-3 gap-2 text-xs">
+      {/* Task Counter - Commented out per user request */}
+      {/* <div className="grid grid-cols-3 gap-2 text-xs">
         <div className="p-2 rounded bg-background/50 text-center">
           <span className="block text-muted-foreground">Current</span>
           <span className="font-semibold text-foreground">{currentTask}</span>
@@ -90,7 +90,7 @@ export const WorkflowProgressDisplay = ({
             {Math.max(0, totalTasks - currentTask)}
           </span>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

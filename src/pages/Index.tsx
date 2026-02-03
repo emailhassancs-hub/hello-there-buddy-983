@@ -95,6 +95,20 @@ const Index = () => {
     };
   }, []);
 
+  // Auto-remove workflow card after 3 seconds when workflow completes
+  useEffect(() => {
+    if (workflowResults && workflowChain) {
+      const timer = setTimeout(() => {
+        setWorkflowChain(null);
+        setWorkflowResults(null);
+        setWorkflowProgress({ current: 0, total: 0 });
+        setWorkflowStatus("");
+      }, 3000); 
+
+      return () => clearTimeout(timer);
+    }
+  }, [workflowResults, workflowChain]);
+
   // Listen for model selection form refresh event
   useEffect(() => {
     const handleRefreshModelSelection = async () => {
@@ -1502,18 +1516,28 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
               {workflowChain && (
                 <div className="border-b p-4 bg-muted/20">
                   {workflowResults ? (
-                    <WorkflowChainResults
-                      chainId={workflowChain.chain_id}
-                      images={workflowResults.images}
-                      models={workflowResults.models}
-                      totalTasks={workflowChain.total_tasks}
-                      onClose={() => {
-                        setWorkflowChain(null);
-                        setWorkflowResults(null);
-                        setWorkflowProgress({ current: 0, total: 0 });
-                        setWorkflowStatus("");
-                      }}
-                    />
+                    // Success message - shows for 3 seconds then auto-removes
+                    <div className="w-full space-y-4 p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-800">
+                      <div className="text-center space-y-2">
+                        <h3 className="text-xl font-bold text-green-900 dark:text-green-100 flex items-center justify-center gap-2">
+                          🎉 Workflow Chain Progress Complete!
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div className="p-3 rounded-lg bg-white/50 dark:bg-black/20 border border-green-200 dark:border-green-800">
+                            <span className="block text-xs text-green-600 dark:text-green-400">Tasks Completed</span>
+                            <span className="text-2xl font-bold text-green-900 dark:text-green-100">
+                              {workflowChain.total_tasks}/{workflowChain.total_tasks}
+                            </span>
+                          </div>
+                          <div className="p-3 rounded-lg bg-white/50 dark:bg-black/20 border border-green-200 dark:border-green-800">
+                            <span className="block text-xs text-green-600 dark:text-green-400">Results Generated</span>
+                            <span className="text-2xl font-bold text-green-900 dark:text-green-100">
+                              {workflowResults.images.length + workflowResults.models.length}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <WorkflowProgressDisplay
                       chainId={workflowChain.chain_id}
