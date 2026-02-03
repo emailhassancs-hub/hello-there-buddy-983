@@ -44,29 +44,29 @@ const artworkColumns = [
 const workflowItems = [
   {
     image:
-      "https://resources.rapidassets.ai/api/v1/image-generation/2d_prop.webp",
+      "https://resources.rapidassets.ai/api/v1/image-editing/2d_prop.webp",
     label: "2D Prop Generation",
   },
   {
-    image: "https://resources.rapidassets.ai/api/v1/image-generation/ColorChanger.webp",
+    image: "https://resources.rapidassets.ai/api/v1/image-editing/ColorChanger.webp",
     label: "Color Changer",
   },
   {
     image:
-      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/character_gen.webp",
+      "https://resources.rapidassets.ai/api/v1/image-editing/image-editing/character_gen.webp",
     label: "Character Generation",
   },
   {
     image:
-      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/turnaround.webp",
+      "https://resources.rapidassets.ai/api/v1/image-editing/turnaround.webp",
     label: "Character Turnarounds",
   },
   {
-    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/sketch.webp",
+    image: "https://resources.rapidassets.ai/api/v1/image-editing/sketch.webp",
     label: "Color Image",
   },
   {
-    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/ui.webp",
+    image: "https://resources.rapidassets.ai/api/v1/image-editing/ui.webp",
     label: "Design UI",
   },
 ];
@@ -107,19 +107,18 @@ const pricingTiers = [
 
 // Image arrays for cycling in feature sections
 const imageGenerationImages = [
-  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/qwen_1767871932_qwen_1767871898_0_.png?w=800&h=600&fit=crop",
-  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/seedream4_1764787218_seedream4_1764787199_0_.png?w=800&h=600&fit=crop",
-  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/seedream4_1767015436_seedream4_1767015416_0_.png?w=800&h=600&fit=crop",
+  "https://resources.rapidassets.ai/api/v1/image-editing/ship.webp?w=800&h=600&fit=crop",
+  "https://resources.rapidassets.ai/api/v1/image-editing/alien.webp?w=800&h=600&fit=crop",
 ];
 
 const imageEditingImages = [
-  "https://games-ai-studio-be-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768209904_nano_banana_1768209884_edit_20260112_142444_beebc198_.png?w=800&h=600&fit=crop",
-  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/elf.png?w=800&h=600&fit=crop",
+  "https://resources.rapidassets.ai/api/v1/image-editing/flying_cat.webp?w=800&h=600&fit=crop",
+  "https://resources.rapidassets.ai/api/v1/image-editing/elf.webp?w=800&h=600&fit=crop",
 ];
 
 const model3DImages = [
-  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/qwen_1768289160_qwen_1768289139_0_.png?w=800&h=600&fit=crop",
-  "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-generation/qwen_1768289295_qwen_1768289273_0_.png?w=800&h=600&fit=crop",
+  "https://resources.rapidassets.ai/api/v1/image-editing/potion.webp?w=800&h=600&fit=crop",
+  "https://resources.rapidassets.ai/api/v1/image-editing/hammer.webp?w=800&h=600&fit=crop",
 ];
 
 // Scrollable storytelling content
