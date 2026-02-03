@@ -44,29 +44,29 @@ const artworkColumns = [
 const workflowItems = [
   {
     image:
-      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768053953_nano_banana_1768053928_edit_20260110_190528_413e30d7_.png",
+      "https://resources.rapidassets.ai/api/v1/image-generation/2d_prop.webp",
     label: "2D Prop Generation",
   },
   {
-    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/ColorChanger.png",
+    image: "https://resources.rapidassets.ai/api/v1/image-generation/ColorChanger.webp",
     label: "Color Changer",
   },
   {
     image:
-      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/NanoBananaEdit_output_1768063112_nano_banana_1768063100_edit_20260110_213820_6ac78286_.png",
+      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/character_gen.webp",
     label: "Character Generation",
   },
   {
     image:
-      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/flux_kotext_output_1768052818_flux_kontext_1768052812_edit_20260110_184652_cdf71fbe.png",
+      "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/turnaround.webp",
     label: "Character Turnarounds",
   },
   {
-    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/sketch.png",
+    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/sketch.webp",
     label: "Color Image",
   },
   {
-    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/ui.png",
+    image: "https://games-ai-studio-be-feature-347148155332.us-central1.run.app/image-editing/ui.webp",
     label: "Design UI",
   },
 ];
