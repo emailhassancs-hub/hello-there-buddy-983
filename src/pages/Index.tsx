@@ -1176,22 +1176,45 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       const loadedMessages: Message[] = data.messages
         .filter((msg: any) => msg.type !== "system")
         .map((msg: any) => {
-          const content = msg.content || "";
+          const content = msg.content ?? "";
           const role = msg.type === "human" ? "user" : msg.type === "ai" ? "assistant" : "assistant";
-          
+
+          // ✅ NEW: Persist tool_generation outputs (image/model URLs) on reload
+          // The export API returns these under msg.tool_generation; SSE puts them directly on the message.
+          // Normalize so AssistantMessage/MessageImageRenderer can render after reload.
+          const toolGen = msg.tool_generation;
+          if (role === "assistant" && toolGen && typeof toolGen === "object") {
+            const imagePath = toolGen.image_path || toolGen.image_url;
+            return {
+              role,
+              text: typeof content === "string" ? content : "",
+              timestamp: toolGen.created_at ? new Date(toolGen.created_at) : new Date(),
+              status: toolGen.status,
+              jobId: toolGen.job_id,
+              job_id: toolGen.job_id,
+              type: toolGen.type,
+              generation_type: toolGen.type,
+              model: toolGen.model,
+              image_path: imagePath,
+              img_url: toolGen.image_url || toolGen.image_path,
+              thumbnail_url: toolGen.thumbnail_url,
+              model_url: toolGen.model_url,
+            };
+          }
+
           // Extract image URLs from content for user messages
           let imagePaths: string[] | undefined;
-          if (role === "user" && content) {
+          if (role === "user" && typeof content === "string" && content) {
             const extractedUrls = extractImageUrls(content);
             if (extractedUrls.length > 0) {
               imagePaths = extractedUrls;
             }
           }
-          
+
           return {
             ...msg,
             role,
-            text: content,
+            text: typeof content === "string" ? content : "",
             timestamp: new Date(),
             toolName: msg.type === "tool" ? msg.name : undefined,
             imagePaths,
