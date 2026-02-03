@@ -503,7 +503,7 @@ The implementation works out of the box with:
 ## 📝 Implementation Metadata
 
 ```
-Project: Game AI Studio - Workflow Chain Frontend
+Project: Rapid Assets Studio - Workflow Chain Frontend
 Component: Workflow Chain Support
 Type: Feature Implementation
 Status: Complete ✅

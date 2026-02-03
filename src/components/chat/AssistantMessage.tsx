@@ -77,7 +77,7 @@ export const AssistantMessage = ({
       <div className="max-w-[80%] chat-bubble-enter">
         <div className="flex items-center gap-1.5 mb-2">
           <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs font-bold text-muted-foreground">Game AI Studio</span>
+          <span className="text-xs font-bold text-muted-foreground">Rapid Assets Studio</span>
         </div>
 
         {/* Render text content first if it's not just an image URL */}

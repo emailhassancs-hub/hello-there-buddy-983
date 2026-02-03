@@ -1,6 +1,6 @@
 # ✨ WORKFLOW CHAIN IMPLEMENTATION - MASTER SUMMARY
 
-> **Complete frontend implementation for Workflow Chain support in Game AI Studio**
+> **Complete frontend implementation for Workflow Chain support in Rapid Assets Studio**
 
 ---
 
