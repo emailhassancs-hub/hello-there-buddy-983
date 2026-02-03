@@ -654,7 +654,7 @@ const ChatInterface = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/jpg"
           multiple
           onChange={handleFileSelect}
           className="hidden"

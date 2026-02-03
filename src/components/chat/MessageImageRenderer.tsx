@@ -46,7 +46,8 @@ export const MessageImageRenderer = ({
         <img
           src={previewUrl}
           alt="3D Model Preview"
-          className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+          className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-80 transition-opacity"
+          style={{ marginTop: '8px' }}
           onClick={() => onModelSelect?.(message.model_url!, previewUrl, workflow)}
         />
         <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>
@@ -79,7 +80,8 @@ export const MessageImageRenderer = ({
           <img
             src={message.thumbnail_url}
             alt="3D Model Preview"
-            className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+            className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-80 transition-opacity"
+            style={{ marginTop: '8px' }}
             onClick={() => onModelSelect?.(message.model_url!, message.thumbnail_url!, workflow)}
           />
           <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>
@@ -102,7 +104,8 @@ export const MessageImageRenderer = ({
             <img
               src={parsed.thumbnail_url}
               alt="3D Model Preview"
-              className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+              className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-80 transition-opacity"
+              style={{ marginTop: '8px' }}
               onClick={() => onModelSelect?.(parsed.model_url!, parsed.thumbnail_url!, workflow)}
             />
             <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>

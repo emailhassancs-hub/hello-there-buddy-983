@@ -28,6 +28,13 @@ export const useFileUpload = (options: UploadOptions) => {
     query?: string
   ): Promise<UploadResult> => {
     try {
+      // Safety check: Reject WebP files
+      const webpFiles = files.filter(file => file.type === 'image/webp' || file.name.toLowerCase().endsWith('.webp'));
+      if (webpFiles.length > 0) {
+        const fileNames = webpFiles.map(f => f.name).join(', ');
+        throw new Error(`WebP format is not supported. Please use PNG, JPEG, or GIF format instead. The following file(s) were rejected: ${fileNames}`);
+      }
+
       // Safety check: Validate file sizes before uploading
       const MAX_FILE_SIZE = 28 * 1024 * 1024; // 28MB
       const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
@@ -84,8 +91,21 @@ export const useFileUpload = (options: UploadOptions) => {
   const handleFileSelect = useCallback(async (files: FileList | null) => {
     if (!files) return;
 
-    const fileArray = Array.from(files).filter(file => file.type.startsWith('image/'));
+    let fileArray = Array.from(files).filter(file => file.type.startsWith('image/'));
     if (fileArray.length === 0) return;
+
+    // Reject WebP files
+    const webpFiles = fileArray.filter(file => file.type === 'image/webp' || file.name.toLowerCase().endsWith('.webp'));
+    if (webpFiles.length > 0) {
+      toast({
+        title: "WebP format not supported",
+        description: `WebP format is not supported. Please use PNG, JPEG, or GIF format instead. The following file(s) were rejected: ${webpFiles.map(file => file.name).join(', ')}`,
+        variant: "destructive",
+      });
+      // Remove WebP files from the array
+      fileArray = fileArray.filter(file => file.type !== 'image/webp' && !file.name.toLowerCase().endsWith('.webp'));
+      if (fileArray.length === 0) return;
+    }
 
     // Check file size (28MB = 28 * 1024 * 1024 bytes)
     const MAX_FILE_SIZE = 28 * 1024 * 1024; // 28MB

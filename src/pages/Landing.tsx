@@ -195,7 +195,7 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-primary" />
-            <span className="font-bold text-xl">Rapid Assets Studio</span>
+            <span className="font-bold text-xl">Rapid Assets</span>
             <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-primary/10 text-primary border border-primary/20">
               Beta
             </span>
@@ -508,7 +508,6 @@ const Landing = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-4">Pricing</h2>
-            <p className="text-xl text-muted-foreground">Choose the plan that fits your needs</p>
           </motion.div>
 
           <motion.div
@@ -531,9 +530,9 @@ const Landing = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              <span className="font-semibold">Rapid Assets Studio</span>
+              <span className="font-semibold">Rapid Assets</span>
             </div>
-            <p className="text-muted-foreground text-sm">© 2026 Rapid Assets Studio. All rights reserved.</p>
+            <p className="text-muted-foreground text-sm">© 2026 Rapid Assets. All rights reserved.</p>
           </div>
         </div>
       </footer>
