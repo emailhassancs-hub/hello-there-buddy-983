@@ -558,12 +558,12 @@ const ChatInterface = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-foreground dark:text-white">Game AI Studio</h2>
+              <h2 className="text-xl font-bold text-foreground dark:text-white">Rapid Assets Studio</h2>
               <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-primary/10 text-primary border border-primary/20">
                 Beta
               </span>
             </div>
-            <p className="text-sm text-muted-foreground dark:text-white/70">The Agent Engine</p>
+            {/* <p className="text-sm text-muted-foreground dark:text-white/70">The Agent Engine</p> */}
           </div>
         </div>
       </div>
@@ -654,7 +654,7 @@ const ChatInterface = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/jpg"
           multiple
           onChange={handleFileSelect}
           className="hidden"

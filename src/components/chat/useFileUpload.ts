@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { apiFetch } from "@/lib/api";
 
 interface UploadOptions {
   apiUrl: string;
@@ -26,42 +27,44 @@ export const useFileUpload = (options: UploadOptions) => {
     files: File[],
     query?: string
   ): Promise<UploadResult> => {
-    const formData = new FormData();
-
-    if (userEmail) {
-      formData.append("email", userEmail);
-    }
-    if (query) {
-      formData.append("query", query);
-    }
-    if (sessionId) {
-      formData.append("session_id", sessionId);
-    }
-
-    files.forEach((file) => {
-      formData.append("files", file);
-    });
-
     try {
-      const headers: HeadersInit = {};
-      if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`;
+      // Safety check: Reject WebP files
+      const webpFiles = files.filter(file => file.type === 'image/webp' || file.name.toLowerCase().endsWith('.webp'));
+      if (webpFiles.length > 0) {
+        const fileNames = webpFiles.map(f => f.name).join(', ');
+        throw new Error(`WebP format is not supported. Please use PNG, JPEG, or GIF format instead. The following file(s) were rejected: ${fileNames}`);
       }
 
-      const response = await fetch(`${apiUrl}/upload`, {
-        method: "POST",
-        headers,
-        body: formData,
+      // Safety check: Validate file sizes before uploading
+      const MAX_FILE_SIZE = 28 * 1024 * 1024; // 28MB
+      const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
+      
+      if (oversizedFiles.length > 0) {
+        const fileNames = oversizedFiles.map(f => f.name).join(', ');
+        throw new Error(`File size must be less than 28MB. The following file(s) exceed this limit: ${fileNames}`);
+      }
+
+      // Upload each file to Nest endpoint /api/v1/upload-image using apiFetch
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const data = await apiFetch<{ success: boolean; filename?: string; url?: string }>(
+          "/api/v1/upload-image",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+        
+        if (!data.success || !data.url) {
+          throw new Error("Invalid response from upload endpoint");
+        }
+
+        return data.url;
       });
 
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      const uploaded = data.uploaded || [];
-      const imageUrls = uploaded.map((item: { url: string }) => item.url);
-      const blobPaths = uploaded.map((item: { blob_path: string }) => item.blob_path);
+      const imageUrls = await Promise.all(uploadPromises);
 
       toast({
         title: "Success",
@@ -70,26 +73,52 @@ export const useFileUpload = (options: UploadOptions) => {
 
       return {
         urls: imageUrls,
-        blobPaths,
-        aiResponse: data.ai_response,
-        sessionId: data.session_id,
+        blobPaths: imageUrls, // Use URLs as blob paths for consistency
+        aiResponse: undefined,
+        sessionId: sessionId,
       };
     } catch (error) {
       console.error("Upload error:", error);
       toast({
         title: "Error",
-        description: "Failed to upload images",
+        description: error instanceof Error ? error.message : "Failed to upload images",
         variant: "destructive",
       });
       return { urls: [], blobPaths: [] };
     }
-  }, [apiUrl, userEmail, sessionId, accessToken, toast]);
+  }, [sessionId, toast]);
 
   const handleFileSelect = useCallback(async (files: FileList | null) => {
     if (!files) return;
 
-    const fileArray = Array.from(files).filter(file => file.type.startsWith('image/'));
+    let fileArray = Array.from(files).filter(file => file.type.startsWith('image/'));
     if (fileArray.length === 0) return;
+
+    // Reject WebP files
+    const webpFiles = fileArray.filter(file => file.type === 'image/webp' || file.name.toLowerCase().endsWith('.webp'));
+    if (webpFiles.length > 0) {
+      toast({
+        title: "WebP format not supported",
+        description: `WebP format is not supported. Please use PNG, JPEG, or GIF format instead. The following file(s) were rejected: ${webpFiles.map(file => file.name).join(', ')}`,
+        variant: "destructive",
+      });
+      // Remove WebP files from the array
+      fileArray = fileArray.filter(file => file.type !== 'image/webp' && !file.name.toLowerCase().endsWith('.webp'));
+      if (fileArray.length === 0) return;
+    }
+
+    // Check file size (28MB = 28 * 1024 * 1024 bytes)
+    const MAX_FILE_SIZE = 28 * 1024 * 1024; // 28MB
+    const oversizedFiles = fileArray.filter(file => file.size > MAX_FILE_SIZE);
+    
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: "File too large",
+        description: `File size must be less than 28MB. The following file(s) exceed this limit: ${oversizedFiles.map(file => file.name).join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     const MAX_FILES = 4;
     const currentCount = uploadedImageUrls.length;

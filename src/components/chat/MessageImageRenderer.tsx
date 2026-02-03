@@ -24,6 +24,37 @@ export const MessageImageRenderer = ({
   
   // If we have image content, show it (status check above already filtered out processing/listening)
 
+  // ✅ If message has a 3D model URL + a preview image, allow clicking the preview to open the 3D viewer.
+  // This covers both SSE messages (toolName present) and reloaded history messages (toolName often missing).
+  if (message.model_url && (message.thumbnail_url || message.image_path)) {
+    const previewUrl = message.thumbnail_url || message.image_path!;
+    const workflow =
+      message.toolName?.includes('image_to_3d')
+        ? 'image_to_3d'
+        : message.toolName?.includes('text_to_3d')
+          ? 'text_to_3d'
+          : typeof message.generation_type === 'string' && message.generation_type.toLowerCase().includes('image_to_3d')
+            ? 'image_to_3d'
+            : typeof message.generation_type === 'string' && message.generation_type.toLowerCase().includes('text_to_3d')
+              ? 'text_to_3d'
+              : message.model_url.includes('image_to_3d')
+                ? 'image_to_3d'
+                : 'text_to_3d';
+
+    return (
+      <div className="space-y-2">
+        <img
+          src={previewUrl}
+          alt="3D Model Preview"
+          className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-80 transition-opacity"
+          style={{ marginTop: '8px' }}
+          onClick={() => onModelSelect?.(message.model_url!, previewUrl, workflow)}
+        />
+        <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>
+      </div>
+    );
+  }
+
   // Check for 3D model tool messages - check message object first
   if (is3DModelTool(message.toolName)) {
     if (message.text?.includes('Error executing tool') || message.text?.includes('500 Server Error')) {
@@ -49,7 +80,8 @@ export const MessageImageRenderer = ({
           <img
             src={message.thumbnail_url}
             alt="3D Model Preview"
-            className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+            className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-80 transition-opacity"
+            style={{ marginTop: '8px' }}
             onClick={() => onModelSelect?.(message.model_url!, message.thumbnail_url!, workflow)}
           />
           <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>
@@ -72,7 +104,8 @@ export const MessageImageRenderer = ({
             <img
               src={parsed.thumbnail_url}
               alt="3D Model Preview"
-              className="rounded-lg max-w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+              className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-80 transition-opacity"
+              style={{ marginTop: '8px' }}
               onClick={() => onModelSelect?.(parsed.model_url!, parsed.thumbnail_url!, workflow)}
             />
             <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>

@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Check, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
+// Comment out night theme logic on landing page, just keep the day/white one
+// import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Artwork images for masonry background - using diverse AI art styles
 const artworkColumns = [
@@ -194,13 +195,14 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-primary" />
-            <span className="font-bold text-xl">Game AI Studio</span>
+            <span className="font-bold text-xl">Rapid Assets</span>
             <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-primary/10 text-primary border border-primary/20">
               Beta
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <ThemeToggle />
+            {/* Comment out night theme logic on landing page, just keep the day/white one */}
+            {/* <ThemeToggle /> */}
             <Button onClick={() => navigate("/app")} className="gap-2">
               Get Started
               <ArrowRight className="w-4 h-4" />
@@ -267,7 +269,7 @@ const Landing = () => {
                 </div>
               </div>
               <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
-                AI for production ready visuals and 3D assets.
+                AI for production grade visuals and 3D assets.
               </p>
               <Button size="lg" onClick={() => navigate("/app")} className="text-lg px-8 py-6 gap-2">
                 Start Creating
@@ -505,59 +507,20 @@ const Landing = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">Simple Pricing</h2>
-            <p className="text-xl text-muted-foreground">Choose the plan that fits your needs</p>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">Pricing</h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingTiers.map((tier, index) => (
-              <motion.div
-                key={tier.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`relative p-8 rounded-2xl border transition-all duration-300 hover:shadow-xl ${
-                  tier.popular
-                    ? "bg-primary text-primary-foreground border-primary scale-105"
-                    : "bg-background border-border hover:border-primary/50"
-                }`}
-              >
-                {tier.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-background text-foreground text-sm font-medium rounded-full border border-border">
-                    Most Popular
-                  </div>
-                )}
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-2">{tier.name}</h3>
-                  <p className={tier.popular ? "text-primary-foreground/80" : "text-muted-foreground"}>
-                    {tier.description}
-                  </p>
-                </div>
-                <div className="mb-6">
-                  <span className="text-5xl font-bold">{tier.price}</span>
-                  <span className={tier.popular ? "text-primary-foreground/80" : "text-muted-foreground"}>
-                    {tier.period}
-                  </span>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-3">
-                      <Check className={`w-5 h-5 ${tier.popular ? "text-primary-foreground" : "text-primary"}`} />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  onClick={() => navigate("/app")}
-                  variant={tier.popular ? "secondary" : "default"}
-                  className="w-full"
-                >
-                  Get Started
-                </Button>
-              </motion.div>
-            ))}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center py-16"
+          >
+            <div className="inline-flex items-center justify-center px-8 py-4 rounded-full bg-muted border border-border">
+              <span className="text-2xl md:text-3xl font-semibold text-muted-foreground">Coming Soon</span>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -567,9 +530,9 @@ const Landing = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              <span className="font-semibold">Game AI Studio</span>
+              <span className="font-semibold">Rapid Assets</span>
             </div>
-            <p className="text-muted-foreground text-sm">© 2025 Game AI Studio. All rights reserved.</p>
+            <p className="text-muted-foreground text-sm">© 2026 Rapid Assets. All rights reserved.</p>
           </div>
         </div>
       </footer>
