@@ -53,7 +53,7 @@ const workflowItems = [
   },
   {
     image:
-      "https://resources.rapidassets.ai/api/v1/image-editing/image-editing/character_gen.webp",
+      "https://resources.rapidassets.ai/api/v1/image-editing/character_gen.webp",
     label: "Character Generation",
   },
   {
