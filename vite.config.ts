@@ -6,6 +6,9 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isProd =mode === "production" || process.env.VITE_APP_ENV === "production";
+  console.log(mode,'mode====================>>>>>')
+  console.log(process.env.VITE_APP_ENV,'process.env.VITE_APP_ENV====================>>>>>')
+  console.log(isProd,'isProd====================>>>>>')
   return {
   server: {
     host: "::",
