@@ -95,7 +95,7 @@ export function useSSE({
   }, []);
 
   const connect = useCallback(async () => {
-    console.log('trying to connect==========>>>')
+    console.log('trying to connect SSE==========>>>')
     // Don't connect if disabled, no jobId, already connected, or already attempted
     if (!enabled || !jobId || eventSourceRef.current || hasAttemptedConnectionRef.current) {
       return;

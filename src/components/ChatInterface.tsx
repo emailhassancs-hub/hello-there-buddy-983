@@ -217,9 +217,6 @@ const ChatInterface = ({
     lastProcessedImageKeyRef.current = key;
   }, [filteredMessages, scrollToBottom]);
 
-  useEffect(()=>{
-    console.log(messages,'messages in chat interface===>>>')
-  },[messages])
 
   // Initialize edited args when confirmation is needed
   useEffect(() => {
@@ -503,7 +500,6 @@ const ChatInterface = ({
       comment?: string,
     ) => {
 
-     console.log(message,'message in submit feedback===>>>')
       const generationKind = inferGenerationKind(message);
       // Always prefer backend-emitted job_id, then fallback to local jobId
       const jobId = message.job_id || message.jobId;

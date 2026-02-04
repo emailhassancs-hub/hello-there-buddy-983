@@ -37,7 +37,6 @@ interface ModelSelectionFormProps {
 }
 
 export const ModelSelectionForm = ({ models, onModelSelect, onUploadNew, isUploading = false, isDisabled = false }: ModelSelectionFormProps) => {
-  console.log(models,'models===');
   const [selectedModel, setSelectedModel] = useState<number | null>(null);
   const [confirmedModelId, setConfirmedModelId] = useState<number | null>(null);
 
