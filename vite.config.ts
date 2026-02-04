@@ -15,4 +15,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // In production builds, remove console.log/info/debug/warn but keep console.error
+  build:
+    mode === "production"
+      ? {
+          minify: "esbuild",
+          esbuild: {
+            // Treat these calls as pure so esbuild drops them
+            pure: ["console.log"],
+          },
+        }
+      : {},
 }));

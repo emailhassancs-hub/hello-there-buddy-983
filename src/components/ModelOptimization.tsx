@@ -146,7 +146,6 @@ async function optimizeMultipleModels(optimizations: OptimizationRequest[]): Pro
 async function uploadModel(file: File, modelName: string): Promise<any> {
 
 
-  console.log("file", file, "modelName", modelName)
   try {
     const res = await apiFetch<any>(`/api/model-optimization/get-signed-url`, {
       method: "POST",
