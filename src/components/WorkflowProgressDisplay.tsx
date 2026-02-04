@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Clock, Zap } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -20,12 +19,7 @@ export const WorkflowProgressDisplay = ({
   isLoading = true,
   error = null,
 }: WorkflowProgressDisplayProps) => {
-  const [displayStatus, setDisplayStatus] = useState(currentStatus);
   const progressPercent = totalTasks > 0 ? (currentTask / totalTasks) * 100 : 0;
-
-  useEffect(() => {
-    setDisplayStatus(currentStatus);
-  }, [currentStatus]);
 
   if (error) {
     return (
@@ -65,13 +59,6 @@ export const WorkflowProgressDisplay = ({
             Processing...
           </span>
         </div>
-      </div>
-
-      {/* Status Message */}
-      <div className="p-3 bg-background/50 rounded border border-border/30">
-        <p className="text-sm text-foreground line-clamp-2">
-          {displayStatus}
-        </p>
       </div>
 
       {/* Task Counter - Commented out per user request */}
