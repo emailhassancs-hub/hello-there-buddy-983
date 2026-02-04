@@ -29,7 +29,7 @@ git clone <YOUR_GIT_URL>
 # Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
+# Step 3: Install the necessary dependencies.  
 npm i
 
 # Step 4: Create a .env file with your environment variables (see Environment Variables section below)

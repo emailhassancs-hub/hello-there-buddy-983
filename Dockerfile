@@ -12,7 +12,8 @@
     # Set build-time env variables (Vite needs these at build time)
     ENV VITE_APP_ENV=production
     ENV VITE_API_BACKEND_URL=https://api.rapidassets.ai
-    ENV VITE_API_BASE_URL=https://agent.rapidassets.ai
+    # ENV VITE_API_BASE_URL=https://agent.rapidassets.ai
+    ENV VITE_API_BASE_URL=https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app
     ENV VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51SDMyCRodhwKeNjpeBuwyEZfZezdXCUVGlLNM3BIAdnHXtRbXCEJjaRG44G0UlFZ5qLQPfXYfGy0kYXCqBpZkbEF00UFc5pWQM
     # Build
     RUN npm run build
