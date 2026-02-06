@@ -4,12 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  const isProd =mode === "production" || process.env.VITE_APP_ENV === "production";
-  console.log(mode,'mode====================>>>>>')
-  console.log(process.env.VITE_APP_ENV,'process.env.VITE_APP_ENV====================>>>>>')
-  console.log(isProd,'isProd====================>>>>>')
-  return {
+export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 7071,
@@ -20,16 +15,4 @@ export default defineConfig(({ mode }) => {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // In production builds, remove console.log/info/debug/warn but keep console.error
-  build:
-  isProd
-      ? {
-          minify: "esbuild",
-          esbuild: {
-            // Treat these calls as pure so esbuild drops them
-            pure: ["console.log"],
-          },
-        }
-      : {},
-  };
-});
+}));

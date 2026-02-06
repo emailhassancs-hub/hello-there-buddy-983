@@ -10,7 +10,6 @@
     COPY . .
     
     # Set build-time env variables (Vite needs these at build time)
-# ENV VITE_APP_ENV=staging
     ENV VITE_API_BACKEND_URL=https://games-ai-studio-be-nest-347148155332.us-central1.run.app
     ENV VITE_API_BASE_URL=https://games-ai-studio-middleware-agentic-dev-347148155332.us-central1.run.app
     ENV VITE_APP_ENV=staging
