@@ -1,95 +1,172 @@
-# Welcome to your Lovable project
+# Rapid Assets Studio - Frontend
 
-## Project info
+A modern React application built with Vite, TypeScript, and Tailwind CSS for the Rapid Assets Studio platform. This frontend provides a chat interface for AI-powered image generation, 3D model creation, and workflow management.
 
-**URL**: https://lovable.dev/projects/e6a8dbd4-bc7b-424f-8c6e-b31bb6b7ca47
+## 🚀 Tech Stack
 
-## How can I edit this code?
+- **Framework**: React 18.3+ with TypeScript
+- **Build Tool**: Vite 5.4+
+- **UI Library**: shadcn/ui (Radix UI components)
+- **Styling**: Tailwind CSS
+- **Routing**: React Router DOM
+- **HTTP Client**: Axios
+- **Form Handling**: React Hook Form with Zod validation
 
-There are several ways of editing your application.
+## 📋 Prerequisites
 
-**Use Lovable**
+- Node.js 18+ (recommended: use [nvm](https://github.com/nvm-sh/nvm))
+- npm or yarn
+- Git
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e6a8dbd4-bc7b-424f-8c6e-b31bb6b7ca47) and start prompting.
+## 🛠️ Installation
 
-Changes made via Lovable will be committed automatically to this repo.
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd game-ai-spt-game-ai-studio-fe-agentic
+   ```
 
-**Use your preferred IDE**
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+3. **Set up environment variables**
+   
+   Create a `.env` file in the root directory:
+   ```env
+   # Main API URL (Middleware/Agentic) - used for chat, sessions, video list, etc.
+   VITE_API_BASE_URL=https://your-middleware-api-url.com
+   
+   # Backend API URL (NestJS) - used for image generation history, model optimization, etc.
+   VITE_API_BACKEND_URL=https://your-nestjs-api-url.com
+   
+   # Application Environment (development, staging, production)
+   VITE_APP_ENV=development
+   
+   # Stripe Publishable Key (optional, for payments)
+   VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+   **Note**: All environment variables in Vite must be prefixed with `VITE_` to be exposed to the client code.
 
-Follow these steps:
+## 🏃 Development
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Start the development server:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.  
-npm i
-
-# Step 4: Create a .env file with your environment variables (see Environment Variables section below)
-# Copy .env.example to .env and update the values if needed
-
-# Step 5: Start the development server with auto-reloading and an instant preview.
-npm run dev   
+```bash
+npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:7071`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Available Scripts
 
-**Use GitHub Codespaces**
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build for production
+- `npm run build:dev` - Build for development/staging
+- `npm run preview` - Preview production build locally
+- `npm run lint` - Run ESLint
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🏗️ Build
 
-## Environment Variables
+### Production Build
 
-This project uses environment variables for API configuration. Create a `.env` file in the root directory with the following variables:
-
-```env
-# Main API URL (Middleware/Agentic) - used for chat, sessions, video list, etc.
-VITE_API_BASE_URL=https://games-ai-studio-middleware-agentic-main-347148155332.us-central1.run.app
-
-# Backend API URL (Nest) - used for image generation history, model optimization, etc.
-VITE_API_BACKEND_URL=https://games-ai-studio-be-nest-347148155332.us-central1.run.app
-
-# Video Streaming URL - used for video playback
-VITE_VIDEO_STREAM_URL=http://35.209.183.202:8000  
+```bash
+npm run build
 ```
 
-**Note**: All environment variables in Vite must be prefixed with `VITE_` to be exposed to the client code.
+This creates an optimized production build in the `dist/` directory.
 
-If these variables are not set, the application will use the default production URLs as fallbacks.
+### Staging Build
 
-## What technologies are used for this project?
+```bash
+npm run build:dev
+```
 
-This project is built with:
+Builds with development mode configuration.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🐳 Docker Deployment
 
-## How can I deploy this project?
+The project includes a multi-stage Dockerfile for containerized deployment:
 
-Simply open [Lovable](https://lovable.dev/projects/e6a8dbd4-bc7b-424f-8c6e-b31bb6b7ca47) and click on Share -> Publish.
+```bash
+# Build the Docker image
+docker build -t rapid-assets-frontend .
 
-## Can I connect a custom domain to my Lovable project?
+# Run the container
+docker run -p 7071:7071 rapid-assets-frontend
+```
 
-Yes, you can!
+### Environment Variables in Docker
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Set build-time environment variables in the Dockerfile or via `--build-arg`:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```dockerfile
+ENV VITE_API_BASE_URL=https://your-api-url.com
+ENV VITE_API_BACKEND_URL=https://your-backend-url.com
+ENV VITE_APP_ENV=production
+```
+
+## 📁 Project Structure
+
+```
+src/
+├── components/          # Reusable React components
+│   ├── chat/           # Chat interface components
+│   └── ui/             # shadcn/ui components
+├── lib/                 # Utility libraries and API clients
+├── pages/               # Page components
+├── utils/               # Helper functions
+├── enums/               # TypeScript enums
+├── App.tsx              # Main application component
+└── main.tsx             # Application entry point
+```
+
+## 🔧 Key Features
+
+- **Chat Interface**: Real-time chat with AI for image and 3D model generation
+- **Image Upload**: Upload and process images (max 28MB, WebP not supported)
+- **3D Model Viewer**: Interactive 3D model visualization using Three.js
+- **Workflow Management**: Chain multiple AI tasks together
+- **Credit System**: Track and manage user credits
+
+## 🐛 Debugging
+
+### Console Logs
+
+- **Development/Staging**: All `console.log`, `console.warn`, and `console.error` are visible
+- **Production**: Only `console.warn` and `console.error` are visible (`.log` is disabled)
+
+
+## 📝 Environment Variables Reference
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `VITE_API_BASE_URL` | Middleware/Agentic API URL | Yes | - |
+| `VITE_API_BACKEND_URL` | NestJS Backend API URL | Yes | - |
+| `VITE_APP_ENV` | Application environment (development/staging/production) | No | development |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key for payments | No | - |
+
+## 🔒 Security Notes
+
+- Environment variables prefixed with `VITE_` are exposed to the client bundle
+- Never include sensitive keys (like Stripe secret keys) in frontend environment variables
+- Use backend APIs for sensitive operations
+
+## 📚 Additional Resources
+
+- [Vite Documentation](https://vitejs.dev/)
+- [React Documentation](https://react.dev/)
+- [shadcn/ui Documentation](https://ui.shadcn.com/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/)
+
+## 🤝 Contributing
+
+1. Create a feature branch
+2. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+Private/Proprietary
