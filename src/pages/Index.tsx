@@ -517,7 +517,14 @@ const Index = () => {
         console.log(newMessages, 'new messages==>>>')
         setMessages((prev) => [...prev, ...newMessages]);
         const jobIds = newMessages
-          .map((m: any) => m.jobId)
+          .map((m: any) => {
+            if (m.optimized_model_id) {
+              return undefined;
+            } else if (m.jobId) {
+              return m.jobId;
+            }
+            return undefined;
+          })
           .filter((id: string | undefined): id is string => !!id);
         
         if (jobIds.length > 0) {
@@ -532,45 +539,7 @@ const Index = () => {
         // Check if any message is a successful model optimization
         if (data.messages && Array.isArray(data.messages)) {
           for (const msg of data.messages) {
-            if (msg.type === "tool" && 
-                (msg.name === "optimize_single_model_tool" || msg.name === "optimize_multiple_models_tool")) {
-              try {
-                const toolContent = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content;
-                // Check for success and any status that indicates optimization has started
-                const activeStatuses = ["running", "PENDING", "pending", "processing", "PROCESSING", "queued", "QUEUED"];
-                if (toolContent && 
-                    toolContent.success === true && 
-                    toolContent.status && 
-                    activeStatuses.includes(toolContent.status)) {
-                  // If optimized_model_id exists, add placeholder and start polling for the optimized model
-                  if (toolContent.optimized_model_id) {
-                    // Add placeholder message for optimized model
-                    const placeholderMessage: Message = {
-                      role: "assistant",
-                      text: "",
-                      formType: "optimized-model",
-                      status: "listening",
-                      optimizedModelId: toolContent.optimized_model_id,
-                      formData: {
-                        preset_name: "",
-                        optimization_status: "processing",
-                        name: "",
-                        downloads: {}
-                      }
-                    };
-                    setMessages((prev) => [...prev, placeholderMessage]);
-                    
-                    // Start polling
-                    startPollingOptimizedModel(toolContent.optimized_model_id);
-                  }
-                  
-                  console.log("Model optimization started, redirecting to optimization tab and starting polling in 5 seconds", toolContent);
-                  break; // Only handle the first optimization found
-                }
-              } catch (error) {
-                console.error("Error parsing optimization tool content:", error);
-              }
-            }
+            handleOptimizedModelId(msg);
           }
         }
       }
@@ -821,6 +790,103 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
     queryClient.invalidateQueries({ queryKey: ['user-profile'] });
   }, [queryClient]);
 
+  // Helper function to fetch optimized model data and update message
+  const fetchAndDisplayOptimizedModel = useCallback(async (optimizedModelId: number, shouldAddPlaceholder: boolean = false) => {
+    try {
+      const result = await apiFetch<{ data: any }>(
+        `/api/model-optimization/rapidmodels/${optimizedModelId}`,
+        {
+          method: 'GET',
+        }
+      );
+      
+      const modelData = result.data;
+      if (modelData) {
+        if (modelData.optimization_status === "done") {
+          // Model is already done, show it directly
+            // Update existing placeholder message
+            if(shouldAddPlaceholder){
+              const placeholderMessage: Message = {
+                role: "assistant",
+                text: "",
+                formType: "optimized-model",
+                status: "completed",
+                optimizedModelId: optimizedModelId,
+                formData: {
+                  preset_name: modelData.preset_name || "Optimized Model",
+                  optimization_status: modelData.optimization_status,
+                  name: modelData.name,
+                  downloads: modelData.downloads || {}
+                }
+              };
+              setMessages((prev) => [...prev, placeholderMessage]);
+            } else {
+            setMessages((prev) => {
+              return prev.map((msg) => {
+                if (
+                  msg.formType === "optimized-model" && 
+                  msg.optimizedModelId === optimizedModelId
+                ) {
+                  return {
+                    ...msg,
+                    status: "completed",
+                    formData: {
+                      preset_name: modelData.preset_name || "Optimized Model",
+                      optimization_status: modelData.optimization_status,
+                      name: modelData.name,
+                      downloads: modelData.downloads || {}
+                    }
+                  };
+                }
+                return msg;
+              });
+            });
+        }
+        } else {
+          // Model is still processing, add placeholder and start polling
+          if (shouldAddPlaceholder) {
+            const placeholderMessage: Message = {
+              role: "assistant",
+              text: "",
+              formType: "optimized-model",
+              status: "listening",
+              optimizedModelId: optimizedModelId,
+              formData: {
+                preset_name: modelData.preset_name || "",
+                optimization_status: modelData.optimization_status || "processing",
+                name: modelData.name || "",
+                downloads: modelData.downloads || {}
+              }
+            };
+            setMessages((prev) => [...prev, placeholderMessage]);
+          }
+          // Start polling for updates
+          startPollingOptimizedModel(optimizedModelId);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching optimized model:", error);
+      // Still add placeholder if requested, even if fetch fails
+      if (shouldAddPlaceholder) {
+        const placeholderMessage: Message = {
+          role: "assistant",
+          text: "",
+          formType: "optimized-model",
+          status: "listening",
+          optimizedModelId: optimizedModelId,
+          formData: {
+            preset_name: "",
+            optimization_status: "processing",
+            name: "",
+            downloads: {}
+          }
+        };
+        setMessages((prev) => [...prev, placeholderMessage]);
+        startPollingOptimizedModel(optimizedModelId);
+      }
+    }
+  }, [toast]);
+
   // Handle SSE status updates
   const handleSSEStatusUpdate = useCallback((jobId: string, update: SSEStatusUpdate) => {
     console.log(`[SSE] Status update for job ${jobId}:`, update);
@@ -981,6 +1047,34 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
     
     optimizationPollIntervalsRef.current.set(optimizedModelId, pollInterval);
   }, [toast]);
+
+  // Reusable function to check and handle optimized_model_id in tool messages
+  const handleOptimizedModelId = useCallback((msg: any) => {
+    if (msg.type === "tool" && 
+        (msg.name === "optimize_single_model_tool" || msg.name === "optimize_multiple_models_tool")) {
+      try {
+        const toolContent = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content;
+        
+        if (toolContent && toolContent.optimized_model_id) {
+          const optimizedModelId = toolContent.optimized_model_id;
+          
+          // Check if status indicates it's done or still processing
+          const activeStatuses = ["running", "PENDING", "pending", "processing", "PROCESSING", "queued", "QUEUED"];
+          const isDone = toolContent.status === "done" || toolContent.status === "DONE" || toolContent.optimization_status === "done";
+          
+          if (toolContent.success === true && toolContent.status && activeStatuses.includes(toolContent.status)) {
+            // Model is processing, add placeholder and start polling
+            fetchAndDisplayOptimizedModel(optimizedModelId, true);
+          } 
+          
+          return true; // Indicates we handled this message
+        }
+      } catch (error) {
+        console.error("Error parsing optimization tool content:", error);
+      }
+    }
+    return false; // Not an optimization tool message
+  }, [fetchAndDisplayOptimizedModel]);
   
   // Cleanup polling intervals on unmount
   useEffect(() => {
@@ -1184,7 +1278,42 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       // Update session ID
       setSessionId(sessionId);
       localStorage.setItem("mcp_session_id", sessionId);
-      
+      console.log(data.messages,'here is total messages==>>>')
+      // Check for optimized_model_id in tool messages before processing
+      if (data.messages && Array.isArray(data.messages)) {
+        for (const msg of data.messages) {
+          // Check if this is an optimization tool with optimized_model_id
+          if (msg.type === "tool" && 
+              (msg.name === "optimize_single_model_tool" || msg.name === "optimize_multiple_models_tool")) {
+            try {
+              const toolContent = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content;
+              if (toolContent && toolContent.optimized_model_id) {
+
+              //  const placeholderMessage: Message = {
+              //         role: "assistant",
+              //         text: "",
+              //         formType: "optimized-model",
+              //         status: "listening",
+              //         optimizedModelId: toolContent.optimized_model_id,
+              //         formData: {
+              //           preset_name: "",
+              //           optimization_status: "processing",
+              //           name: "",
+              //           downloads: {}
+              //         }
+              //       };
+              //       setMessages((prev) => [...prev, placeholderMessage]);
+
+                // Fetch and display the optimized model (it might be done already)
+                fetchAndDisplayOptimizedModel(toolContent.optimized_model_id, true);
+              }
+            } catch (error) {
+              console.error("Error parsing optimization tool content in session load:", error);
+            }
+          }
+        }
+      }
+
       // Convert messages to the format expected by ChatInterface
       // Filter out system messages only
       const loadedMessages: Message[] = data.messages
@@ -1249,7 +1378,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         variant: "destructive",
       });
     }
-  }, [authToken, userProfile?.email, API, toast]);
+  }, [authToken, userProfile?.email, API, toast, fetchAndDisplayOptimizedModel]);
 
   // Handle when sessions are loaded from sidebar
   // Don't auto-load any session - user must explicitly click to load a chat
