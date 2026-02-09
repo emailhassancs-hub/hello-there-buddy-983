@@ -119,14 +119,14 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             </Card>
 
             {/* Buy More Credits Button */}
-            <Button
+            {process.env.NODE_ENV !== 'production' && <Button
               onClick={() => setIsPurchaseModalOpen(true)}
               className="w-full"
               size="lg"
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
               Buy More Credits
-            </Button>
+            </Button>}
 
             {/* Additional Info */}
             <div className="text-xs text-muted-foreground space-y-1">
