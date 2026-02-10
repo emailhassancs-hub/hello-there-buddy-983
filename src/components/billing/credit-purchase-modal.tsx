@@ -261,7 +261,7 @@ export function CreditPurchaseModal({ isOpen, onClose }: CreditPurchaseModalProp
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Coins className="h-5 w-5 text-yellow-500" />
-                      <span className="text-2xl font-bold">{package_?.credits}</span>
+                      <span className="text-2xl font-bold">{(Number(package_?.credits) ||0).toFixed(0)}</span>
                       <span className="text-sm text-muted-foreground">credits</span>
                     </div>
                     <Button size="sm">
