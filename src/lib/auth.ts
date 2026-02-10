@@ -9,7 +9,7 @@ export async function signin(payload: SigninPayload): Promise<SigninResponse> {
   return apiFetch('/auth/signin', { method: 'POST', body: payload, skipAuth: true })
 }
 
-export async function verifyEmail(token: string): Promise<{ success: boolean }> {
+export async function verifyEmail(token: string): Promise<{ success: boolean, isApproved: boolean }> {
   return apiFetch('/auth/verify-email', { method: 'POST', body: { token }, skipAuth: true })
 }
 

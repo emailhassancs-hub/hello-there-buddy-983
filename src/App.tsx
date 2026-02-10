@@ -16,6 +16,7 @@ import ForgotPasswordPage from "./pages/auth/ForgotPassword";
 import ResetPasswordPage from "./pages/auth/ResetPassword";
 import VerifyEmailPage from "./pages/auth/VerifyEmail";
 import OAuthSuccessPage from "./pages/auth/OAuthSuccess";
+import WaitlistPage from "./pages/auth/Waitlist";
 import PaymentSuccessPage from "./pages/payment/PaymentSuccess";
 import PaymentCancelPage from "./pages/payment/PaymentCancel";
 import Landing from "./pages/Landing";
@@ -100,6 +101,14 @@ const App = () => (
               element={
                 <AuthRoute>
                   <VerifyEmailPage />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/waitlist"
+              element={
+                <AuthRoute>
+                  <WaitlistPage />
                 </AuthRoute>
               }
             />

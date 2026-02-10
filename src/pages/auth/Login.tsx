@@ -56,6 +56,9 @@ export default function LoginPage() {
       setUser(res.user ?? {})
       window.location.href = '/app'
     } catch (e: any) {
+      if (e.message.includes('pending admin approval')) {
+        window.location.href = '/waitlist'
+      }
       toast.error('Sign in failed', { description: e.message })
     }
   }

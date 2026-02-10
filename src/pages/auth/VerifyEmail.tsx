@@ -16,9 +16,13 @@ export default function VerifyEmailPage() {
     ;(async () => {
       try {
         setStatus("verifying")
-        await verifyEmail(token)
+       const result =  await verifyEmail(token)
+       if (!result.isApproved) {
+        window.location.href = '/waitlist'
+       } else {
         setStatus("success")
         setMessage("Email verified successfully. You can now sign in.")
+       }
       } catch (e: any) {
         console.log(e, 'error')
         setStatus("error")
