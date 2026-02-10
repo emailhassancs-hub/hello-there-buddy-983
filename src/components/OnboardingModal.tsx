@@ -157,8 +157,16 @@ const OnboardingModal = () => {
               ))}
             </div>
 
-            {/* Arrows */}
-            <div className="flex items-center gap-2">
+            {/* Skip & Arrows */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-foreground"
+                onClick={handleClose}
+              >
+                Skip
+              </Button>
               <Button
                 variant="outline"
                 size="icon"
