@@ -20,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ErrorBoundary from "@/components/ui/error-boundary";
+import OnboardingModal from "@/components/OnboardingModal";
 
 interface ToolCall {
   id: string;
@@ -1037,6 +1038,7 @@ The process:
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
+      <OnboardingModal />
       {/* Hidden file input for model uploads */}
       <input
         id="model-file-input"
