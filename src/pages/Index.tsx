@@ -25,6 +25,7 @@ import { Image as ImageIcon, Box, Settings, ChevronLeft, ChevronRight } from "lu
 import { useQueryClient } from "@tanstack/react-query";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import { apiFetch } from "@/lib/api";
+import OnboardingModal from "@/components/Onboarding";
 
 // Helper function to extract email from JWT token
 const extractEmailFromToken = (token: string | null): string | null => {
@@ -49,6 +50,7 @@ const Index = () => {
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [activeJobIds, setActiveJobIds] = useState<string[]>([]);
   const optimizationPollIntervalsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // Workflow chain state
   const [workflowChain, setWorkflowChain] = useState<WorkflowChainData | null>(null);
@@ -76,6 +78,14 @@ const Index = () => {
       setAuthToken(storedToken);
     }
   }, []);
+
+  // Show onboarding modal for users who haven't seen the credits bonus / onboarding yet
+  useEffect(() => {
+    if (!userProfile) return;
+    if (userProfile.hasSeenCreditsBonus === false) {
+      setShowOnboarding(true);
+    }
+  }, [userProfile]);
 
   // Start with a new chat on page load/refresh
   // Don't load stored session - always start fresh
@@ -1399,6 +1409,19 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
+      {/* First-time onboarding modal, controlled by backend flag + local storage */}
+    {showOnboarding && <OnboardingModal
+        shouldShow={showOnboarding}
+        onCompleted={async () => {
+          setShowOnboarding(false);
+          try {
+            await apiFetch('/user/profile/mark-credits-bonus-seen', { method: 'POST' });
+            queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+          } catch (err) {
+            console.error('Failed to mark onboarding as seen', err);
+          }
+        }}
+      />}
       {/* SSE Status Listener - listens for real-time updates */}
       <SSEStatusListener
         apiUrl={apiUrl}

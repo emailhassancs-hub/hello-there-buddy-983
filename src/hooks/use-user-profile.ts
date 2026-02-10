@@ -8,6 +8,7 @@ export interface UserProfile {
   credits: number;
   createdAt: string;
   updatedAt: string;
+  hasSeenCreditsBonus?: boolean;
 }
 
 export function useUserProfile(enabled: boolean = true) {
