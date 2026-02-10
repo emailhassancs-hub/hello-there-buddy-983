@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
+import { useEffect } from "react"
 import { AuthCard } from "@/components/auth/auth-card"
 import { AuthForm } from "@/components/auth/auth-form"
 import { SocialAuth } from "@/components/auth/social-auth"
@@ -9,6 +10,42 @@ import { useUser } from "@/hooks/use-user"
 
 export default function LoginPage() {
   const { setUser } = useUser()
+  const [searchParams, setSearchParams] = useSearchParams()
+  
+  // Handle error messages from URL parameters (e.g., from OAuth redirects)
+  useEffect(() => {
+    const error = searchParams.get('error')
+    const message = searchParams.get('message')
+    
+    if (error && message) {
+      const decodedMessage = decodeURIComponent(message)
+      
+      if (error === 'not_approved') {
+        toast.error('Account Pending Approval', { 
+          description: decodedMessage,
+          duration: 10000 // Show for 10 seconds since it's important
+        })
+      } else if (error === 'domain_not_allowed') {
+        toast.error('Domain Not Allowed', { 
+          description: decodedMessage 
+        })
+      } else if (error === 'auth_failed') {
+        toast.error('Authentication Failed', { 
+          description: decodedMessage || 'Please try again.' 
+        })
+      } else {
+        toast.error('Error', { 
+          description: decodedMessage 
+        })
+      }
+      
+      // Clean up URL parameters after showing the error
+      const newSearchParams = new URLSearchParams(searchParams)
+      newSearchParams.delete('error')
+      newSearchParams.delete('message')
+      setSearchParams(newSearchParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
   
   async function handleSignin(values: any) {
     try {
