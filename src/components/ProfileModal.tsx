@@ -119,7 +119,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             </Card>
 
             {/* Buy More Credits Button */}
-            {process.env.VITE_APP_ENV !== 'production' && <Button
+            {import.meta.env.VITE_APP_ENV !== 'production' && <Button
               onClick={() => setIsPurchaseModalOpen(true)}
               className="w-full"
               size="lg"
