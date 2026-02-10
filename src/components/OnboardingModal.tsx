@@ -95,7 +95,7 @@ const OnboardingModal = () => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-2xl mx-4 rounded-2xl border border-border bg-card text-card-foreground shadow-2xl overflow-hidden"
+        className="relative z-10 w-full max-w-2xl mx-4 rounded-2xl border border-border bg-background text-foreground shadow-2xl overflow-hidden"
       >
         {/* Close button */}
         <button
