@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Check, Zap } from "lucide-react";
+import OnboardingModal from "@/components/OnboardingModal";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
@@ -191,6 +192,7 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      <OnboardingModal />
       {/* Header */}
       <motion.header
         initial={{ y: -100 }}
