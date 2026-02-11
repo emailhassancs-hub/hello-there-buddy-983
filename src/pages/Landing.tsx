@@ -206,6 +206,19 @@ const Landing = () => {
               Get Started
               <ArrowRight className="w-4 h-4" />
             </Button>
+            <a
+              href="https://discord.gg/HcBmbYxpet"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Join our Discord"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-4 bg-white text-black hover:bg-black/5 transition-colors"
+            >
+              <img
+                src="https://img.icons8.com/ios-glyphs/30/000000/discord-logo.png"
+                alt="Discord"
+                className="h-5 w-5"
+              />
+            </a>
           </div>
         </div>
       </motion.header>
