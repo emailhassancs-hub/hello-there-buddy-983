@@ -51,6 +51,7 @@ const Index = () => {
   const [activeJobIds, setActiveJobIds] = useState<string[]>([]);
   const optimizationPollIntervalsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showTutorialOnboarding, setShowTutorialOnboarding] = useState(false);
   
   // Workflow chain state
   const [workflowChain, setWorkflowChain] = useState<WorkflowChainData | null>(null);
@@ -1409,19 +1410,31 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden max-h-screen">
-      {/* First-time onboarding modal, controlled by backend flag + local storage */}
-    {showOnboarding && <OnboardingModal
-        shouldShow={showOnboarding}
-        onCompleted={async () => {
-          setShowOnboarding(false);
-          try {
-            await apiFetch('/user/profile/mark-credits-bonus-seen', { method: 'POST' });
-            queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-          } catch (err) {
-            console.error('Failed to mark onboarding as seen', err);
-          }
-        }}
-      />}
+      {/* First-time onboarding modal, controlled by backend flag - calls API */}
+      {showOnboarding && (
+        <OnboardingModal
+          shouldShow={showOnboarding}
+          onCompleted={async () => {
+            setShowOnboarding(false);
+            try {
+              await apiFetch('/user/profile/mark-credits-bonus-seen', { method: 'POST' });
+              queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+            } catch (err) {
+              console.error('Failed to mark onboarding as seen', err);
+            }
+          }}
+        />
+      )}
+      
+      {/* Tutorial onboarding modal - triggered by Tutorial button, does NOT call API */}
+      {showTutorialOnboarding && (
+        <OnboardingModal
+          shouldShow={showTutorialOnboarding}
+          onCompleted={() => {
+            setShowTutorialOnboarding(false);
+          }}
+        />
+      )}
       {/* SSE Status Listener - listens for real-time updates */}
       <SSEStatusListener
         apiUrl={apiUrl}
@@ -1596,6 +1609,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         onNewChat={handleNewChat}
         apiUrl={apiUrl}
         onSessionsLoaded={handleSessionsLoaded}
+        onTutorialClick={() => setShowTutorialOnboarding(true)}
       />
       
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">

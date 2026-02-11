@@ -38,7 +38,15 @@ const OnboardingModal = ({ shouldShow = false, onCompleted }: OnboardingModalPro
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(0);
 
-   if(!shouldShow) return null;
+  // Reset to first step when modal opens
+  useEffect(() => {
+    if (shouldShow) {
+      setCurrentStep(0);
+      setDirection(0);
+    }
+  }, [shouldShow]);
+
+  if(!shouldShow) return null;
 
   const handleClose = () => {
     void onCompleted?.();

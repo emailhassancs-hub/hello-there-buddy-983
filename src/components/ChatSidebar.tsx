@@ -25,9 +25,10 @@ interface ChatSidebarProps {
   onNewChat: () => void;
   apiUrl: string;
   onSessionsLoaded?: (sessions: Session[]) => void;
+  onTutorialClick?: () => void;
 }
 
-export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiUrl, onSessionsLoaded }: ChatSidebarProps) => {
+export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiUrl, onSessionsLoaded, onTutorialClick }: ChatSidebarProps) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -383,7 +384,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
           New
         </Button>
       </div>
-      <UserInfo />
+      <UserInfo onTutorialClick={onTutorialClick} />
     </div>
   );
 };
