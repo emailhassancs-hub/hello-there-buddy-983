@@ -24,7 +24,9 @@ const passwordRequirements = [
 ];
 
 export const loginSchema = z.object({
-  email: z.string().email(),
+  email: z
+    .string()
+    .email({ message: "Please enter your valid email" }),
   password: z
     .string()
     .superRefine((val, ctx) => {
