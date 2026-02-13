@@ -27,14 +27,20 @@ export function AuthForm({ mode, onSubmit, className, submitLabel, footer }: Aut
     resolver: zodResolver(schema),
     defaultValues:
       mode === "signup"
-        ? ({ name: "", email: "", password: "" } as SignupSchema)
+        ? ({ name: "", email: "", password: "", confirmPassword: "" } as SignupSchema)
         : ({ email: "", password: "" } as LoginSchema),
   })
 
   async function handleSubmit(values: SignupSchema | LoginSchema) {
     setLoading(true)
     try {
-      await onSubmit?.(values)
+      // For signup, only send name, email, and password to backend (exclude confirmPassword)
+      if (mode === "signup") {
+        const { confirmPassword, ...signupData } = values as SignupSchema
+        await onSubmit?.(signupData)
+      } else {
+        await onSubmit?.(values)
+      }
     } finally {
       setLoading(false)
     }
@@ -51,7 +57,7 @@ export function AuthForm({ mode, onSubmit, className, submitLabel, footer }: Aut
           <Label htmlFor="name">Name</Label>
           <Input id="name" placeholder="Your name" className="bg-muted border-border text-foreground" {...form.register("name")} />
           {(form.formState.errors as any)?.name ? (
-            <p className="text-sm text-destructive">{(form.formState.errors as any)?.name.message as string}</p>
+            <p className="text-sm text-red-500">{(form.formState.errors as any)?.name.message as string}</p>
           ) : null}
         </div>
       ) : null}
@@ -60,7 +66,7 @@ export function AuthForm({ mode, onSubmit, className, submitLabel, footer }: Aut
         <Label htmlFor="email">Email</Label>
         <Input id="email" className="bg-muted border-border text-foreground" type="email" placeholder="you@example.com" {...form.register("email")} />
         {form.formState.errors.email ? (
-          <p className="text-sm text-destructive">{form.formState.errors.email.message as string}</p>
+          <p className="text-sm text-red-500">{form.formState.errors.email.message as string}</p>
         ) : null}
       </div>
 
@@ -68,9 +74,19 @@ export function AuthForm({ mode, onSubmit, className, submitLabel, footer }: Aut
         <Label htmlFor="password">Password</Label>
         <PasswordInput id="password" className="bg-muted border-border text-foreground" placeholder="••••••••" {...form.register("password")} />
         {form.formState.errors.password ? (
-          <p className="text-sm text-destructive">{form.formState.errors.password.message as string}</p>
+          <p className="text-sm text-red-500">{form.formState.errors.password.message as string}</p>
         ) : null}
       </div>
+
+      {mode === "signup" ? (
+        <div className="grid gap-2">
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <PasswordInput id="confirmPassword" className="bg-muted border-border text-foreground" placeholder="••••••••" {...form.register("confirmPassword")} />
+          {(form.formState.errors as any)?.confirmPassword ? (
+            <p className="text-sm text-red-500">{(form.formState.errors as any)?.confirmPassword.message as string}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       <Button type="submit" disabled={loading} 
       className="w-full h-12 text-lg font-medium bg-black hover:bg-black/90 text-white border-0">
