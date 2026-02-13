@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 type SocialAuthProps = {
   className?: string
@@ -13,6 +13,33 @@ const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:7071
 
 export function SocialAuth({ className }: SocialAuthProps) {
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    setIsLoading(false)
+
+    // Also reset when page becomes visible again (handles browser back button)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setIsLoading(false)
+      }
+    }
+
+    // Handle browser back/forward navigation
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        // Page was loaded from cache (back/forward navigation)
+        setIsLoading(false)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('pageshow', handlePageShow)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('pageshow', handlePageShow)
+    }
+  }, [])
 
   // Simply redirect to backend endpoint - backend handles everything
   // This is a direct browser redirect, not an API call
