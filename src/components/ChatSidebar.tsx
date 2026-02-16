@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -265,7 +266,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   }
 
   return (
-    <div className="w-[170px] h-full glass border-r flex flex-col shadow-soft">
+    <div className="w-[17%] h-full bg-gray-50 border-r flex flex-col shadow-soft">
       {/* Header */}
       <div className="p-2 border-b glass flex items-center justify-between">
         <div className="flex items-center gap-1.5">
@@ -329,41 +330,49 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                           {getChatName(session)}
                         </h3>
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                          <span>{session.message_count ?? session.total_messages ?? 0}</span>
-                          <span>•</span>
+                          
                           <span className="truncate">{formatTimestamp(session.updated_at)}</span>
                         </div>
                       </div>
-                      {currentSessionId === session.session_id && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-1" />
-                      )}
+                     
                     </div>
                     <div
-                      className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-background/80 rounded"
+                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 dark:text-white dark:hover:bg-muted"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRename(session);
-                        }}
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-destructive hover:text-destructive dark:hover:bg-muted"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(session.session_id);
-                        }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 dark:text-white dark:hover:bg-muted"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40 bg-white">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRename(session);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Edit2 className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(session.session_id);
+                            }}
+                            className="cursor-pointer text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </>
                 )}
