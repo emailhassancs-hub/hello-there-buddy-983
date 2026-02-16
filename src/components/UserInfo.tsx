@@ -139,10 +139,10 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
         </DropdownMenu>
         
         {/* Profile Modal */}
-        <ProfileModal 
+       {isProfileModalOpen && <ProfileModal 
           isOpen={isProfileModalOpen} 
           onClose={() => setIsProfileModalOpen(false)} 
-        />
+        />}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Send, Sparkles, BookOpen, Plus, Upload, FileText, X, Box, User } from "lucide-react";
 import toolsIcon from "@/assets/tools-icon.png";
 import { useToast } from "@/hooks/use-toast";
@@ -700,15 +701,22 @@ const ChatInterface = ({
 
         <div className="relative flex items-end glass border border-border rounded-2xl p-2 shadow-soft">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="min-w-lg bg-gray-900 dark:bg-gray-800 border-gray-700 text-white p-2 z-[1000]">
+                <p>Upload Image</p>
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="start" className="w-48 bg-white">
               <DropdownMenuItem onClick={triggerFileUpload}>
                 <Upload className="w-4 h-4 mr-2" />
@@ -742,7 +750,7 @@ const ChatInterface = ({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Describe your image idea..."
-            className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-hidden min-h-[36px] max-h-[200px] px-2"
+            className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-y-auto min-h-[36px] max-h-[100px] px-2"
             disabled={isGenerating}
             rows={1}
           />
