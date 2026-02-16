@@ -3,6 +3,16 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +46,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
   const { toast } = useToast();
   const { data: userProfile } = useUserProfile();
 
@@ -181,10 +192,12 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     setEditingName("");
   };
 
-  const handleDelete = async (sessionId: string) => {
-    if (!confirm("Are you sure you want to delete this chat?")) {
-      return;
-    }
+  const handleDeleteClick = (sessionId: string) => {
+    setDeleteSessionId(sessionId);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteSessionId) return;
 
     try {
       // Get access token from localStorage
@@ -200,8 +213,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
 
       const email = userProfile?.email;
       const deleteUrl = email 
-        ? `${apiUrl}/session/${sessionId}/delete?email=${encodeURIComponent(email)}`
-        : `${apiUrl}/session/${sessionId}/delete`;
+        ? `${apiUrl}/session/${deleteSessionId}/delete?email=${encodeURIComponent(email)}`
+        : `${apiUrl}/session/${deleteSessionId}/delete`;
       
       const response = await fetch(deleteUrl, {
         method: "DELETE",
@@ -213,10 +226,10 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
       }
 
       // Remove from list (also filter out any null session_ids)
-      setSessions(sessions.filter((s) => s.session_id !== sessionId && s.session_id !== null));
+      setSessions(sessions.filter((s) => s.session_id !== deleteSessionId && s.session_id !== null));
 
       // If this was the active chat, create a new one
-      if (sessionId === currentSessionId) {
+      if (deleteSessionId === currentSessionId) {
         onNewChat();
       }
 
@@ -231,6 +244,8 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         description: "Failed to delete chat",
         variant: "destructive",
       });
+    } finally {
+      setDeleteSessionId(null);
     }
   };
 
@@ -364,7 +379,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(session.session_id);
+                              handleDeleteClick(session.session_id);
                             }}
                             className="cursor-pointer text-destructive focus:text-destructive"
                           >
@@ -394,6 +409,27 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         </Button>
       </div>
       <UserInfo onTutorialClick={onTutorialClick} />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteSessionId !== null} onOpenChange={(open) => !open && setDeleteSessionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this chat? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-black text-white hover:bg-black/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

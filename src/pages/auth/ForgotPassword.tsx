@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import { AuthCard } from "@/components/auth/auth-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,9 +7,18 @@ import { Label } from "@/components/ui/label"
 import { forgotPassword } from "@/lib/auth"
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = React.useState("")
+  const [searchParams] = useSearchParams()
+  const emailFromUrl = searchParams.get("email") || ""
+  const [email, setEmail] = React.useState(emailFromUrl)
   const [status, setStatus] = React.useState<"idle" | "loading" | "success" | "error">("idle")
   const [message, setMessage] = React.useState("")
+
+  // Update email if URL param changes
+  React.useEffect(() => {
+    if (emailFromUrl) {
+      setEmail(emailFromUrl)
+    }
+  }, [emailFromUrl])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

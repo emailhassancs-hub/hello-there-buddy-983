@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom"
+import { Link, useSearchParams, useNavigate } from "react-router-dom"
 import { useEffect } from "react"
 import { AuthCard } from "@/components/auth/auth-card"
 import { AuthForm } from "@/components/auth/auth-form"
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const { setUser } = useUser()
   const { toast } = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   
   // Handle error messages from URL parameters (e.g., from OAuth redirects)
   useEffect(() => {
@@ -91,9 +92,17 @@ export default function LoginPage() {
                   </Link>
                 </div>
                 <div>
-                  <Link className="text-black font-medium underline underline-offset-4 hover:text-black/80" to="/forgot-password">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const emailInput = document.querySelector('#email') as HTMLInputElement
+                      const email = emailInput?.value || ""
+                      navigate(`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ""}`)
+                    }}
+                    className="text-black font-medium underline underline-offset-4 hover:text-black/80 bg-transparent border-0 p-0 cursor-pointer"
+                  >
                     Forgot your password?
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
