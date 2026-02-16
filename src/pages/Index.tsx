@@ -1614,7 +1614,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
         {/* Chat Interface - Resizable Left Panel */}
-        <ResizablePanel defaultSize={65} minSize={40} maxSize={75}>
+        <ResizablePanel defaultSize={65} minSize={60} maxSize={75}>
           <ErrorBoundary>
             <ChatInterface
               messages={messages}

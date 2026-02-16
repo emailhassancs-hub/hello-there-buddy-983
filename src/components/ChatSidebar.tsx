@@ -266,7 +266,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   }
 
   return (
-    <div className="w-[17%] h-full bg-gray-50 border-r flex flex-col shadow-soft">
+    <div className="w-[14%] h-full bg-gray-100 border-r flex flex-col shadow-soft">
       {/* Header */}
       <div className="p-2 border-b glass flex items-center justify-between">
         <div className="flex items-center gap-1.5">

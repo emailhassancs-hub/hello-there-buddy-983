@@ -15,7 +15,7 @@ export default function OAuthSuccessPage() {
       const authStatus = searchParams.get('auth')
       const userDataParam = searchParams.get('userData')
       const tokenParam = searchParams.get('token')
-      
+       
       if (authStatus === 'success' && userDataParam && tokenParam) {
         try {
           // Decode user data from URL parameter
@@ -28,10 +28,6 @@ export default function OAuthSuccessPage() {
           localStorage.setItem(LocalStorageKeys.User, JSON.stringify(userData))
           
           setUser(userData)
-          // Show success message
-          toast({
-            title: `Welcome back, ${userData.name}!`,
-          })
           
           // Redirect to app
           navigate('/app')
@@ -53,6 +49,7 @@ export default function OAuthSuccessPage() {
         navigate('/login')
       }
     }
+    console.log('use effect hook called===>>>>>>')
 
     handleOAuthSuccess()
   }, [searchParams, navigate, setUser])
