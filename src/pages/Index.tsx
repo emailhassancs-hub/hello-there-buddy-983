@@ -235,8 +235,8 @@ const Index = () => {
     setIsGenerating(true);
 
     try {
-      // Get user email from profile or extract from auth token
-      const userEmail = userProfile?.email || extractEmailFromToken(authToken);
+      // Get user ID from profile
+      const userId = userProfile?.id;
       
       const payload: any = {
         query: text,
@@ -246,8 +246,8 @@ const Index = () => {
         payload.session_id = sessionId;
       }
 
-      if (userEmail) {
-        payload.email = userEmail;
+      if (userId) {
+        payload.userId = userId;
       }
 
       // Include uploaded image URLs in the payload for agent processing
@@ -404,8 +404,8 @@ const Index = () => {
         payload.confirmation_response.modified_args = modifiedArgs;
       }
 
-      if (userProfile?.email) {
-        payload.email = userProfile.email;
+      if (userProfile?.id) {
+        payload.userId = userProfile.id;
       }
 
       const headers: HeadersInit = {
@@ -1271,12 +1271,12 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      // Get user email from profile or extract from auth token
-      const userEmail = userProfile?.email || extractEmailFromToken(authToken);
+      // Get user ID from profile
+      const userId = userProfile?.id;
       
-      // Build URL with email parameter
-      const exportUrl = userEmail 
-        ? `${API}/session/${sessionId}/export?email=${encodeURIComponent(userEmail)}`
+      // Build URL with userId parameter
+      const exportUrl = userId 
+        ? `${API}/session/${sessionId}/export?userId=${encodeURIComponent(userId)}`
         : `${API}/session/${sessionId}/export`;
 
       const response = await fetch(exportUrl, { headers });

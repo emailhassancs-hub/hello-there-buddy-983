@@ -119,9 +119,9 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const email = userProfile?.email;
-      const url = email 
-        ? `${apiUrl}/sessions?email=${encodeURIComponent(email)}`
+      const userId = userProfile?.id;
+      const url = userId 
+        ? `${apiUrl}/sessions?userId=${encodeURIComponent(userId)}`
         : `${apiUrl}/sessions`;
       
       const response = await fetch(url, { headers });
@@ -211,9 +211,9 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const email = userProfile?.email;
-      const deleteUrl = email 
-        ? `${apiUrl}/session/${deleteSessionId}/delete?email=${encodeURIComponent(email)}`
+      const userId = userProfile?.id;
+      const deleteUrl = userId 
+        ? `${apiUrl}/session/${deleteSessionId}/delete?userId=${encodeURIComponent(userId)}`
         : `${apiUrl}/session/${deleteSessionId}/delete`;
       
       const response = await fetch(deleteUrl, {
