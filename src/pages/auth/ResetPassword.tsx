@@ -8,13 +8,14 @@ import { PasswordInput } from "@/components/ui/password-input"
 import { Label } from "@/components/ui/label"
 import { resetPassword } from "@/lib/auth"
 import { resetPasswordSchema, ResetPasswordSchema } from "@/components/auth/schema/auth.schema"
-import { toast } from "sonner"
+import { useToast } from "@/hooks/use-toast"
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const token = searchParams.get("token")
   const [isLoading, setIsLoading] = React.useState(false)
+  const { toast } = useToast()
 
   const form = useForm<ResetPasswordSchema>({
     resolver: zodResolver(resetPasswordSchema),
@@ -36,13 +37,16 @@ export default function ResetPasswordPage() {
     setIsLoading(true)
     try {
       const res = await resetPassword(token, values.password)
-      toast.success("Password reset successfully", {
+      toast({
+        title: "Password reset successfully",
         description: res.message ?? "Redirecting to login..."
       })
       setTimeout(() => navigate("/login"), 2000)
     } catch (e: any) {
-      toast.error("Failed to reset password", {
-        description: e?.message || "Please try again."
+      toast({
+        title: "Failed to reset password",
+        description: e?.message || "Please try again.",
+        variant: 'destructive',
       })
     } finally {
       setIsLoading(false)

@@ -1,13 +1,14 @@
 import { useEffect } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { LocalStorageKeys } from "@/enums/localstorage"
-import { toast } from "sonner"
+import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/hooks/use-user"
 
 export default function OAuthSuccessPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { setUser } = useUser()
+  const { toast } = useToast()
 
   useEffect(() => {
     const handleOAuthSuccess = () => {
@@ -28,19 +29,27 @@ export default function OAuthSuccessPage() {
           
           setUser(userData)
           // Show success message
-          toast.success(`Welcome back, ${userData.name}!`)
+          toast({
+            title: `Welcome back, ${userData.name}!`,
+          })
           
           // Redirect to app
           navigate('/app')
         } catch (error) {
           console.error('Error parsing OAuth data:', error)
-          toast.error('Authentication failed')
+          toast({
+            title: 'Authentication failed',
+            variant: 'destructive',
+          })
           navigate('/login')
         }
       } else {
         // No success parameters, redirect to login
         console.error('Missing OAuth parameters:', { authStatus, hasUserData: !!userDataParam, hasToken: !!tokenParam })
-        toast.error('Authentication failed')
+        toast({
+          title: 'Authentication failed',
+          variant: 'destructive',
+        })
         navigate('/login')
       }
     }

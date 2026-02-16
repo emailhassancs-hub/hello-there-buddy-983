@@ -3,15 +3,24 @@ import { AuthCard } from "@/components/auth/auth-card"
 import { AuthForm } from "@/components/auth/auth-form"
 import { SocialAuth } from "@/components/auth/social-auth"
 import { signup } from "@/lib/auth"
-import { toast } from "sonner"
+import { useToast } from "@/hooks/use-toast"
 
 export default function SignupPage() {
+  const { toast } = useToast()
+
   async function handleSignup(values: any) {
     try {
       const result = await signup(values)
-      toast.success("Verification required", { description: result?.message })
+      toast({
+        title: "Verification required",
+        description: result?.message,
+      })
     } catch (e: any) {
-      toast.error("Sign up failed", { description: e.message })
+      toast({
+        title: "Sign up failed",
+        description: e.message,
+        variant: 'destructive',
+      })
     }
   }
   

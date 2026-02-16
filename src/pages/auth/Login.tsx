@@ -4,12 +4,13 @@ import { AuthCard } from "@/components/auth/auth-card"
 import { AuthForm } from "@/components/auth/auth-form"
 import { SocialAuth } from "@/components/auth/social-auth"
 import { signin } from "@/lib/auth"
-import { toast } from "sonner"
+import { useToast } from "@/hooks/use-toast"
 import { LocalStorageKeys } from "@/enums/localstorage"
 import { useUser } from "@/hooks/use-user"
 
 export default function LoginPage() {
   const { setUser } = useUser()
+  const { toast } = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   
   // Handle error messages from URL parameters (e.g., from OAuth redirects)
@@ -21,21 +22,28 @@ export default function LoginPage() {
       const decodedMessage = decodeURIComponent(message)
       
       if (error === 'not_approved') {
-        toast.error('Account Pending Approval', { 
+        toast({
+          title: 'Account Pending Approval',
           description: decodedMessage,
-          duration: 10000 // Show for 10 seconds since it's important
+          variant: 'destructive',
         })
       } else if (error === 'domain_not_allowed') {
-        toast.error('Domain Not Allowed', { 
-          description: decodedMessage 
+        toast({
+          title: 'Domain Not Allowed',
+          description: decodedMessage,
+          variant: 'destructive',
         })
       } else if (error === 'auth_failed') {
-        toast.error('Authentication Failed', { 
-          description: decodedMessage || 'Please try again.' 
+        toast({
+          title: 'Authentication Failed',
+          description: decodedMessage || 'Please try again.',
+          variant: 'destructive',
         })
       } else {
-        toast.error('Error', { 
-          description: decodedMessage 
+        toast({
+          title: 'Error',
+          description: decodedMessage,
+          variant: 'destructive',
         })
       }
       
@@ -59,7 +67,11 @@ export default function LoginPage() {
       if (e.message.includes('pending admin approval')) {
         window.location.href = '/waitlist'
       }
-      toast.error('Sign in failed', { description: e.message })
+      toast({
+        title: 'Sign in failed',
+        description: e.message,
+        variant: 'destructive',
+      })
     }
   }
   

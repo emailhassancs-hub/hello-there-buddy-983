@@ -29,6 +29,15 @@ export const loginSchema = z.object({
     .email({ message: "Please enter your valid email" }),
   password: z
     .string()
+    .min(1, { message: "Password is required" }),
+});
+
+export const signupSchema = z.object({
+  email: z
+    .string()
+    .email({ message: "Please enter your valid email" }),
+  password: z
+    .string()
     .superRefine((val, ctx) => {
       for (const rule of passwordRequirements) {
         if (!rule.regex.test(val)) {
@@ -39,9 +48,6 @@ export const loginSchema = z.object({
         }
       }
     }),
-});
-
-export const signupSchema = loginSchema.extend({
   name: z.string().min(6, { message: "Username must be at least 6 characters long" }),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
