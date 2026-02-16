@@ -49,6 +49,26 @@ export const signupSchema = loginSchema.extend({
   path: ["confirmPassword"],
 });
 
+export const resetPasswordSchema = z.object({
+  password: z
+    .string()
+    .superRefine((val, ctx) => {
+      for (const rule of passwordRequirements) {
+        if (!rule.regex.test(val)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: rule.message,
+          });
+        }
+      }
+    }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 export type SignupSchema = z.infer<typeof signupSchema>
 export type LoginSchema = z.infer<typeof loginSchema>
+export type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>
 

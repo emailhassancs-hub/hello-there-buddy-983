@@ -1,22 +1,28 @@
 import * as React from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { AuthCard } from "@/components/auth/auth-card"
 import { Button } from "@/components/ui/button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { Label } from "@/components/ui/label"
 import { resetPassword } from "@/lib/auth"
+import { resetPasswordSchema, ResetPasswordSchema } from "@/components/auth/schema/auth.schema"
+import { toast } from "sonner"
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const token = searchParams.get("token")
+  const [isLoading, setIsLoading] = React.useState(false)
 
-  const [password, setPassword] = React.useState("")
-  const [confirmPassword, setConfirmPassword] = React.useState("")
-  const [status, setStatus] = React.useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle")
-  const [message, setMessage] = React.useState("")
+  const form = useForm<ResetPasswordSchema>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  })
 
   React.useEffect(() => {
     if (!token) {
@@ -24,26 +30,22 @@ export default function ResetPasswordPage() {
     }
   }, [token, navigate])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!token || !password || !confirmPassword) return
-    if (password !== confirmPassword) {
-      setStatus("error")
-      setMessage("Passwords do not match")
-      return
-    }
+  async function handleSubmit(values: ResetPasswordSchema) {
+    if (!token) return
 
-    setStatus("loading")
+    setIsLoading(true)
     try {
-      const res = await resetPassword(token, password)
-      setStatus("success")
-      setMessage(
-        res.message ?? "Password reset successfully. Redirecting to login..."
-      )
+      const res = await resetPassword(token, values.password)
+      toast.success("Password reset successfully", {
+        description: res.message ?? "Redirecting to login..."
+      })
       setTimeout(() => navigate("/login"), 2000)
     } catch (e: any) {
-      setStatus("error")
-      setMessage(e?.message || "Failed to reset password.")
+      toast.error("Failed to reset password", {
+        description: e?.message || "Please try again."
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -58,17 +60,18 @@ export default function ResetPasswordPage() {
           title="Reset your password"
           description="Enter your new password below"
         >
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">New Password</Label>
               <PasswordInput
                 id="password"
                 placeholder="Enter new password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
+                className="bg-muted border-border text-foreground"
+                {...form.register("password")}
               />
+              {form.formState.errors.password ? (
+                <p className="text-sm text-red-500">{form.formState.errors.password.message as string}</p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -76,28 +79,21 @@ export default function ResetPasswordPage() {
               <PasswordInput
                 id="confirmPassword"
                 placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
+                className="bg-muted border-border text-foreground"
+                {...form.register("confirmPassword")}
               />
+              {form.formState.errors.confirmPassword ? (
+                <p className="text-sm text-red-500">{form.formState.errors.confirmPassword.message as string}</p>
+              ) : null}
             </div>
 
             <Button
               type="submit"
-              disabled={status === "loading"}
+              disabled={isLoading}
               className="w-full h-12 text-lg font-medium bg-black hover:bg-black/90 text-white border-0"
             >
-              {status === "loading" ? "Resetting..." : "Reset password"}
+              {isLoading ? "Resetting..." : "Reset password"}
             </Button>
-
-            {status === "success" && (
-              <p className="text-green-500 text-sm text-center">{message}</p>
-            )}
-
-            {status === "error" && (
-              <p className="text-destructive text-sm text-center">{message}</p>
-            )}
           </form>
         </AuthCard>
       </div>
