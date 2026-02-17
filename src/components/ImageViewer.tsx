@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Image as ImageIcon, RefreshCw, X, Download, Pencil } from "lucide-react";
+import { Image as ImageIcon, RefreshCw, X, Download, SquarePen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -405,7 +405,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
                                   }}
                                   title="Remix image"
                                 >
-                                  <Pencil className="h-4 w-4" />
+                                  <SquarePen className="h-4 w-4" />
                                 </button>
                               )}
                               <button
@@ -509,7 +509,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
                                   }}
                                   title="Remix image"
                                 >
-                                  <Pencil className="h-4 w-4" />
+                                  <SquarePen className="h-4 w-4" />
                                 </button>
                               )}
                               <button

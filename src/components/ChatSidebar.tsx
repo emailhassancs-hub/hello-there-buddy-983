@@ -13,13 +13,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu, MoreVertical } from "lucide-react";
+import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu, MoreVertical, Coins, User, BookOpen, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { UserInfo } from "@/components/UserInfo";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { LocalStorageKeys } from "@/enums/localstorage";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ProfileModal } from "@/components/ProfileModal";
+import { useUser } from "@/hooks/use-user";
 
 interface Session {
   session_id: string;
@@ -39,16 +42,31 @@ interface ChatSidebarProps {
   onTutorialClick?: () => void;
 }
 
+const SIDEBAR_COLLAPSE_KEY = "sidebar_collapsed";
+
 export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiUrl, onSessionsLoaded, onTutorialClick }: ChatSidebarProps) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // Initialize collapse state from localStorage
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSE_KEY);
+    return saved === "true";
+  });
+  
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const { toast } = useToast();
   const { data: userProfile } = useUserProfile();
+  const { clearUser } = useUser();
+
+  // Save collapse state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSE_KEY, String(isCollapsed));
+  }, [isCollapsed]);
 
   // Load all sessions on mount and when user profile loads
   useEffect(() => {
@@ -251,11 +269,50 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
 
   const formatTimestamp = (timestamp: string) => {
     try {
-      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+      // Parse the timestamp - if it doesn't have timezone info, treat it as UTC
+      // let date: Date;
+      // if (timestamp.includes('Z') || timestamp.includes('+') || timestamp.includes('-') && timestamp.match(/[+-]\d{2}:\d{2}$/)) {
+      //   // Has timezone info, parse normally
+      //   date = new Date(timestamp);
+      // } else {
+      //   // No timezone info, assume UTC and append 'Z'
+      //   date = new Date(timestamp.endsWith('Z') ? timestamp : timestamp + 'Z');
+      // }
+      
+      // // Validate the date
+      // if (isNaN(date.getTime())) {
+      //   return "Recently";
+      // }
+      
+      // return formatDistanceToNow(date, { addSuffix: true });
+       return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
     } catch {
       return "Recently";
     }
   };
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem(LocalStorageKeys.AccessToken);
+      localStorage.removeItem(LocalStorageKeys.User);
+      clearUser();
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const initials = userProfile?.name
+    ? userProfile.name
+        .trim()
+        .split(/\s+/)
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "U";
 
   if (isCollapsed) {
     return (
@@ -276,6 +333,78 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
         >
           <Plus className="w-4 h-4" />
         </Button>
+        
+        {/* Spacer to push icons to bottom */}
+        <div className="flex-1" />
+        
+        {/* Compact Credits Icon */}
+        {userProfile && (
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center w-8 h-8 rounded-md bg-black cursor-pointer">
+                <Coins className="w-4 h-4 text-yellow-400" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-gray-900 text-white p-2 z-[1000]">
+              <p className="text-xs font-medium">
+                {userProfile.credits?.toLocaleString() || 0} Credits
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+        
+        {/* Compact Profile Icon with Dropdown */}
+        {userProfile && (
+          <DropdownMenu>
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30"
+                  >
+                    <span className="text-[10px] font-medium text-foreground">{initials}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-gray-900 text-white p-2 z-[1000]">
+                <p className="text-xs font-medium">{userProfile.name || "User"}</p>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end" className="w-40 !z-[9999] bg-white ml-2" side="right" sideOffset={5}>
+              <DropdownMenuItem
+                onClick={() => setIsProfileModalOpen(true)}
+                className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+              >
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </DropdownMenuItem>
+              {onTutorialClick && (
+                <DropdownMenuItem
+                  onClick={onTutorialClick}
+                  className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Tutorial
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        {/* Profile Modal */}
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+        />
       </div>
     );
   }
