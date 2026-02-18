@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import ChatInterface from "@/components/ChatInterface";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
@@ -52,6 +53,8 @@ const Index = () => {
   const optimizationPollIntervalsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTutorialOnboarding, setShowTutorialOnboarding] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const hasCheckedUrlParamsRef = useRef(false);
   
   // Workflow chain state
   const [workflowChain, setWorkflowChain] = useState<WorkflowChainData | null>(null);
@@ -88,14 +91,7 @@ const Index = () => {
     }
   }, [userProfile]);
 
-  // Start with a new chat on page load/refresh
-  // Don't load stored session - always start fresh
-  useEffect(() => {
-    // Clear any stored session on mount to ensure fresh start
-    localStorage.removeItem("mcp_session_id");
-    setSessionId(null);
-    setMessages([]);
-  }, []);
+  // Note: URL param check moved after handleLoadSession is defined
 
   // Cleanup workflow SSE on unmount
   useEffect(() => {
@@ -173,7 +169,10 @@ const Index = () => {
 
   const updateSessionId = (newSessionId: string) => {
     setSessionId(newSessionId);
-    localStorage.setItem("mcp_session_id", newSessionId);
+    // Update URL with session_id query param
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("session_id", newSessionId);
+    setSearchParams(newSearchParams, { replace: true });
   };
 
   const handleAddDirectMessage = (role: "user" | "assistant", text: string, formType?: string, formData?: any) => {
@@ -1286,9 +1285,12 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       
       const data = await response.json();
       
-      // Update session ID
+      // Update session ID and URL
       setSessionId(sessionId);
-      localStorage.setItem("mcp_session_id", sessionId);
+      // Update URL with session_id query param
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set("session_id", sessionId);
+      setSearchParams(newSearchParams, { replace: true });
       console.log(data.messages,'here is total messages==>>>')
       // Check for optimized_model_id in tool messages before processing
       if (data.messages && Array.isArray(data.messages)) {
@@ -1389,7 +1391,38 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         variant: "destructive",
       });
     }
-  }, [authToken, userProfile?.email, API, toast, fetchAndDisplayOptimizedModel]);
+  }, [authToken, userProfile?.id, API, toast, fetchAndDisplayOptimizedModel, searchParams, setSearchParams]);
+
+  // Check URL params on mount to restore session or start new chat
+  // This runs after handleLoadSession is defined
+  useEffect(() => {
+    // Only proceed if we have authToken and userProfile, and haven't checked yet
+    if (!authToken || !userProfile?.id || hasCheckedUrlParamsRef.current) {
+      return;
+    }
+
+    const sessionIdFromUrl = searchParams.get("session_id");
+    
+    if (sessionIdFromUrl) {
+      // Mark as checked to prevent multiple loads
+      hasCheckedUrlParamsRef.current = true;
+      // Load the session from URL param
+      handleLoadSession(sessionIdFromUrl).catch((error) => {
+        console.error("Failed to restore session from URL:", error);
+        // If restoration fails, remove the param and start fresh
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("session_id");
+        setSearchParams(newSearchParams, { replace: true });
+        setSessionId(null);
+        setMessages([]);
+      });
+    } else {
+      // No session_id in URL - start fresh chat
+      hasCheckedUrlParamsRef.current = true;
+      setSessionId(null);
+      setMessages([]);
+    }
+  }, [userProfile?.id, authToken, handleLoadSession, searchParams, setSearchParams]);
 
   // Handle when sessions are loaded from sidebar
   // Don't auto-load any session - user must explicitly click to load a chat
@@ -1400,7 +1433,10 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
 
   const handleNewChat = () => {
     setSessionId(null);
-    localStorage.removeItem("mcp_session_id");
+    // Remove session_id from URL
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("session_id");
+    setSearchParams(newSearchParams, { replace: true });
     setMessages([]);
     toast({
       title: "New Chat Started",
