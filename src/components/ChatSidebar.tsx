@@ -59,6 +59,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null); // Track which dropdown is open
   const { toast } = useToast();
   const { data: userProfile } = useUserProfile();
   const { clearUser } = useUser();
@@ -190,6 +191,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   };
 
   const handleRename = (session: Session) => {
+    setOpenDropdownId(null); // Close dropdown first
     const currentName = getChatName(session);
     setEditingSessionId(session.session_id);
     setEditingName(currentName);
@@ -210,8 +212,10 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
     setEditingName("");
   };
 
-  const handleDeleteClick = (sessionId: string) => {
-    setDeleteSessionId(sessionId);
+  const handleDeleteClick = (sessionId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation(); // Prevent event bubbling
+    setOpenDropdownId(null); // Close dropdown first
+    setDeleteSessionId(sessionId); // Then open delete dialog
   };
 
   const handleDeleteConfirm = async () => {
@@ -484,12 +488,22 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                       className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <DropdownMenu>
+                      <DropdownMenu 
+                        open={openDropdownId === session.session_id} 
+                        onOpenChange={(open) => {
+                          if (open) {
+                            setOpenDropdownId(session.session_id);
+                          } else {
+                            setOpenDropdownId(null);
+                          }
+                        }}
+                      >
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 dark:text-white dark:hover:bg-muted"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <MoreVertical className="w-3.5 h-3.5" />
                           </Button>
@@ -498,6 +512,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
+                              setOpenDropdownId(null); // Close dropdown first
                               handleRename(session);
                             }}
                             className="cursor-pointer"
@@ -508,7 +523,7 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteClick(session.session_id);
+                              handleDeleteClick(session.session_id, e);
                             }}
                             className="cursor-pointer text-destructive focus:text-destructive"
                           >

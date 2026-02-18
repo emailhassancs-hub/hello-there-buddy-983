@@ -23,6 +23,7 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
   const { data: userProfile, isLoading } = useUserProfile();
   const { clearUser } = useUser();
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
   const handleLogout = () => {
     try {
@@ -98,7 +99,7 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
             </div>
           )}
         </div>
-        <DropdownMenu>
+        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
@@ -115,7 +116,10 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
             sideOffset={5}
           >
             <DropdownMenuItem 
-              onClick={() => setIsProfileModalOpen(true)}
+              onClick={() => {
+                setIsDropdownOpen(false); // Close dropdown first
+                setIsProfileModalOpen(true); // Then open dialog
+              }}
               className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
             >
               <User className="h-4 w-4 mr-2" />
