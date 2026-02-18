@@ -271,6 +271,12 @@ const ChatInterface = ({
     adjustTextareaHeight();
   }, [inputValue, adjustTextareaHeight]);
 
+  // Reset input state when switching chats (new chat or different session)
+  useEffect(() => {
+    setInputValue("");
+    clearUploads();
+  }, [sessionId]);
+
   // Handle sending messages
   const handleSend = useCallback(async () => {
     if (!inputValue.trim() || isGenerating) return;
