@@ -11,6 +11,8 @@ interface ImageItem {
   name: string;
   url: string;
   timestamp?: number;
+  modelName?: string;
+  creditsConsumed?: number;
 }
 
 interface EditedImageItem {
@@ -25,6 +27,7 @@ interface EditedImageItem {
   modelName?: string;
   status: string;
   timestamp?: number;
+  creditsConsumed?: number;
 }
 
 interface ImageViewerProps {
@@ -110,6 +113,8 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
         name: item.prompt || item.id || 'generated-image.png',
         url: item.imagePath || item.img_url || '',
         timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
+        modelName: item.modelName,
+        creditsConsumed: item.creditsUsed,
       })).filter((item: ImageItem) => item.url);
 
       // Sort by timestamp (newest first)
@@ -209,6 +214,7 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
           modelName: item.modelName,
           status: item.status,
           timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
+          creditsConsumed: item.creditsUsed,
         }))
         .filter((item: EditedImageItem) => item.outputImagePath);
 
@@ -587,8 +593,16 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
                   }}
                 />
               </div>
-              <div className="p-4 border-t border-border/50 bg-card">
+              <div className="p-4 border-t border-border/50 bg-card space-y-2">
                 <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words">{selectedImage.name}</p>
+                {(selectedImage.modelName || selectedImage.creditsConsumed !== undefined) && (
+                  <div className="flex gap-2 text-xs text-muted-foreground">
+                    {selectedImage.modelName && <span><b>Model:</b> {selectedImage.modelName}</span>}
+                    {selectedImage.creditsConsumed !== undefined && (
+                      <span><b>Credits Used:</b> {selectedImage.creditsConsumed}</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -685,10 +699,12 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
               </div>
               <div className="p-4 border-t border-border/50 bg-card space-y-2">
                 <p className="text-sm font-medium text-foreground">{selectedEditedImage.prompt}</p>
-                {(selectedEditedImage.technique || selectedEditedImage.modelName) && (
+                {( selectedEditedImage.modelName || selectedEditedImage.creditsConsumed !== undefined) && (
                   <div className="flex gap-2 text-xs text-muted-foreground">
-                    {selectedEditedImage.technique && <span>Technique: {selectedEditedImage.technique}</span>}
-                    {selectedEditedImage.modelName && <span>Model: {selectedEditedImage.modelName}</span>}
+                    {selectedEditedImage.modelName && <span><b>Model:</b> {selectedEditedImage.modelName}</span>}
+                    {selectedEditedImage.creditsConsumed !== undefined && (
+                      <span><b>Credits Used:</b> {selectedEditedImage.creditsConsumed}</span>
+                    )}
                   </div>
                 )}
               </div>

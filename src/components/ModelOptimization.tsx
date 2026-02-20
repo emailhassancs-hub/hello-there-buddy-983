@@ -33,6 +33,7 @@ interface ModelInfo {
   tags: string
   createdAt: string
   thumbnailUrl?: string
+  creditsUsed?: number
 }
 
 interface AssociatedModelInfo {
@@ -195,6 +196,7 @@ function convertApiModelToComponentModel(apiModel: ModelInfo, associatedModels: 
     name: apiModel.fileName,
     image: apiModel.thumbnailUrl || "/placeholder.svg?height=100&width=100",
     creationDate: new Date(apiModel.createdAt).toLocaleDateString(),
+    creditsUsed: apiModel.creditsUsed,
     optimizedVersions: associatedModels.map(model => ({
       id: parseInt(model.id),
       name: `${model.preset_name} - ${model.optimization_status}`,
@@ -1088,6 +1090,11 @@ Be friendly and instructive. Use short explanations and examples where needed.`
                                   <Calendar className="h-3 w-3" />
                                   {model.creationDate}
                                 </div>
+                                {model.creditsUsed !== undefined && model.creditsUsed > 0 && (
+                                  <div className="text-black/60 text-xs mt-1">
+                                    <b>Credits Used:</b> {model.creditsUsed}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </CardContent>

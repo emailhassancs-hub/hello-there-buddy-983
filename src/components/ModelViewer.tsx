@@ -386,29 +386,40 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrig
         {/* 3D Viewer Panel */}
         <ResizablePanel defaultSize={60} minSize={30}>
           <Collapsible open={isViewerOpen} onOpenChange={setIsViewerOpen} className="h-full flex flex-col">
-            <div className="border-b border-border/50 p-3 flex items-center justify-between bg-background shrink-0">
-              <div className="flex items-center gap-2">
-                <Box className="w-4 h-4 text-primary" />
-                <h2 className="text-base font-semibold">3D Viewer</h2>
+            <div className="border-b border-border/50 bg-background shrink-0">
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Box className="w-4 h-4 text-primary" />
+                  <h2 className="text-base font-semibold">3D Viewer</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  {selectedModel && selectedModel.modelUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(selectedModel.modelUrl!)}
+                      className="h-8 gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </Button>
+                  )}
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      {isViewerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                {selectedModel && selectedModel.modelUrl && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(selectedModel.modelUrl!)}
-                    className="h-8 gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </Button>
-                )}
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    {isViewerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </Button>
-                </CollapsibleTrigger>
-              </div>
+              {selectedModel && (
+                <div className="px-3 pb-3 space-y-1">
+                  {selectedModel.creditsUsed !== undefined && selectedModel.creditsUsed > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      <b>Credits Used:</b> {selectedModel.creditsUsed}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             
             <CollapsibleContent className="flex-1 min-h-0">
