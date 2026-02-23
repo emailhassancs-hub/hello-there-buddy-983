@@ -64,12 +64,6 @@ const ProjectCard = ({
           </div>
         )}
 
-        {/* Permission badge */}
-        {permission && (
-          <span className="absolute top-2 left-2 px-1.5 py-0.5 text-[9px] font-semibold rounded bg-primary/20 text-primary">
-            {permission}
-          </span>
-        )}
 
         {/* Hover actions */}
         {hovered && (
