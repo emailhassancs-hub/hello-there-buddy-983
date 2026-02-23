@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useUser } from "@/hooks/use-user";
-import { Coins, MoreVertical, LogOut, User, BookOpen } from "lucide-react";
+import { Coins, MoreVertical, LogOut, User, BookOpen, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LocalStorageKeys } from "@/enums/localstorage";
 import { ProfileModal } from "@/components/ProfileModal";
+import { useNavigate } from "react-router-dom";
 
 interface UserInfoProps {
   className?: string;
@@ -22,6 +23,7 @@ interface UserInfoProps {
 export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
   const { data: userProfile, isLoading } = useUserProfile();
   const { clearUser } = useUser();
+  const navigate = useNavigate();
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
@@ -131,6 +133,16 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
             >
               <BookOpen className="h-4 w-4 mr-2" />
               Tutorial
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => {
+                setIsDropdownOpen(false);
+                navigate("/usage");
+              }}
+              className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+            >
+              <Receipt className="h-4 w-4 mr-2" />
+              Usage
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={handleLogout}

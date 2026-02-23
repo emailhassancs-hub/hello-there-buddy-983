@@ -20,6 +20,7 @@ import WaitlistPage from "./pages/auth/Waitlist";
 import PaymentSuccessPage from "./pages/payment/PaymentSuccess";
 import PaymentCancelPage from "./pages/payment/PaymentCancel";
 import Landing from "./pages/Landing";
+import CreditUsageHistoryPage from "./pages/CreditUsageHistory";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <GameDesignPro />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/usage"
+              element={
+                <ProtectedRoute>
+                  <CreditUsageHistoryPage />
                 </ProtectedRoute>
               }
             />
