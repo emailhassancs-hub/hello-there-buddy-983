@@ -208,7 +208,7 @@ const Landing = () => {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button onClick={() => navigate("/app")} className="gap-2">
+            <Button onClick={() => navigate("/home")} className="gap-2">
               Get Started
               <ArrowRight className="w-4 h-4" />
             </Button>
@@ -276,7 +276,7 @@ const Landing = () => {
               <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
                 AI for production ready visuals and 3D assets.
               </p>
-              <Button size="lg" onClick={() => navigate("/app")} className="text-lg px-8 py-6 gap-2">
+              <Button size="lg" onClick={() => navigate("/home")} className="text-lg px-8 py-6 gap-2">
                 Start Creating
                 <Sparkles className="w-5 h-5" />
               </Button>
