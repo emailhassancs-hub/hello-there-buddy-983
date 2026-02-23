@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, FolderOpen } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import ProjectCard from "@/components/home/ProjectCard";
@@ -29,8 +30,15 @@ const filterTabs = ["All", "My Projects", "Shared with Me"] as const;
 type FilterTab = (typeof filterTabs)[number];
 
 const Projects = () => {
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterTab>("All");
+
+  useEffect(() => {
+    if (searchParams.get("filter") === "shared") {
+      setFilter("Shared with Me");
+    }
+  }, [searchParams]);
 
   const sourceProjects = filter === "Shared with Me" ? sharedProjects : allProjects;
 
