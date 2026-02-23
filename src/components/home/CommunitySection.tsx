@@ -17,9 +17,6 @@ const CommunitySection = () => {
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-bold">Community Creations</h2>
-          <span className="text-xs text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
-            Explore all →
-          </span>
         </div>
 
         {/* Filter tabs - disabled coming soon */}
