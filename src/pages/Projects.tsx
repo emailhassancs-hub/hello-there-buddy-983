@@ -25,27 +25,17 @@ const sharedProjects = [
   },
 ];
 
-const filterTabs = ["All", "Images", "3D Models", "Textures"] as const;
+const filterTabs = ["All", "My Projects", "Shared with Me"] as const;
 type FilterTab = (typeof filterTabs)[number];
-
-const filterMap: Record<FilterTab, string | null> = {
-  All: null,
-  Images: "IMG",
-  "3D Models": "3D",
-  Textures: "TEX",
-};
 
 const Projects = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterTab>("All");
-  const [view, setView] = useState<"my" | "shared">("my");
 
-  const sourceProjects = view === "my" ? allProjects : sharedProjects;
+  const sourceProjects = filter === "Shared with Me" ? sharedProjects : allProjects;
 
   const filtered = sourceProjects.filter((p) => {
-    const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filterMap[filter] === null || p.assetType === filterMap[filter];
-    return matchesSearch && matchesFilter;
+    return p.title.toLowerCase().includes(search.toLowerCase());
   });
 
   return (
@@ -81,34 +71,11 @@ const Projects = () => {
               </button>
             ))}
           </div>
-
-          <div className="flex rounded-full border border-border overflow-hidden">
-            <button
-              onClick={() => setView("my")}
-              className={`px-4 py-1.5 text-xs font-medium transition-colors ${
-                view === "my"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              My Projects
-            </button>
-            <button
-              onClick={() => setView("shared")}
-              className={`px-4 py-1.5 text-xs font-medium transition-colors ${
-                view === "shared"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Shared with Me
-            </button>
-          </div>
         </div>
 
         {/* Grid */}
         {filtered.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {filtered.map((p, i) => (
               <ProjectCard key={i} {...p} />
             ))}
