@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Bell } from "lucide-react";
+import NotificationMenu from "./NotificationMenu";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 interface SidebarLayoutProps {
@@ -20,9 +20,7 @@ const UserAvatarBell = () => {
 
   return (
     <div className="flex items-center gap-2">
-      <button className="relative w-8 h-8 rounded-full bg-muted hover:bg-accent flex items-center justify-center transition-colors">
-        <Bell className="w-4 h-4 text-muted-foreground" />
-      </button>
+      <NotificationMenu />
       <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
         {initials}
       </div>
