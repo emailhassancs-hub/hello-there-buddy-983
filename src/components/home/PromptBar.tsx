@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SuggestionChips from "./SuggestionChips";
 
@@ -35,7 +35,15 @@ const PromptBar = () => {
           className="w-full resize-none bg-transparent px-4 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
         <div className="flex items-end justify-between gap-3 px-4 pb-3">
-          <SuggestionChips onSelect={(p) => setPrompt(p)} />
+          <div className="flex items-end gap-3 flex-1 min-w-0">
+            <button
+              className="shrink-0 w-8 h-8 rounded-md border border-border bg-background hover:bg-accent flex items-center justify-center transition-colors"
+              title="Upload image"
+            >
+              <Plus className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <SuggestionChips onSelect={(p) => setPrompt(p)} />
+          </div>
           <Button onClick={handleGenerate} className="shrink-0 gap-2">
             <Sparkles className="w-4 h-4" />
             Generate
