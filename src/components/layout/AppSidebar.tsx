@@ -20,7 +20,7 @@ import UserProfileBlock from "./UserProfileBlock";
 const navItems = [
   { title: "Home", icon: Home, path: "/home" },
   { title: "All Projects", icon: FolderOpen, path: "/projects" },
-  { title: "Shared with Me", icon: Users, path: "/shared", hasNotification: true },
+  { title: "Shared with Me", icon: Users, path: "/projects?filter=shared", hasNotification: true },
   { title: "Community", icon: Globe, path: "/community", comingSoon: true },
 ];
 
