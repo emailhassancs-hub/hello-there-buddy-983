@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LocalStorageKeys } from "@/enums/localstorage";
 import { ProfileModal } from "@/components/ProfileModal";
-import { useNavigate } from "react-router-dom";
+import { CreditUsageModal } from "@/components/credit-usage/CreditUsageModal";
 
 interface UserInfoProps {
   className?: string;
@@ -23,8 +23,8 @@ interface UserInfoProps {
 export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
   const { data: userProfile, isLoading } = useUserProfile();
   const { clearUser } = useUser();
-  const navigate = useNavigate();
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
+  const [isCreditUsageModalOpen, setIsCreditUsageModalOpen] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
   const handleLogout = () => {
@@ -137,7 +137,7 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
             <DropdownMenuItem 
               onClick={() => {
                 setIsDropdownOpen(false);
-                navigate("/usage");
+                setIsCreditUsageModalOpen(true);
               }}
               className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
             >
@@ -154,12 +154,18 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
           </DropdownMenuContent>
         </DropdownMenu>
         
-        {/* Profile Modal */}
-       {isProfileModalOpen && <ProfileModal 
-          isOpen={isProfileModalOpen} 
-          onClose={() => setIsProfileModalOpen(false)} 
-        />}
-      </div>
-    </div>
-  );
-};
+            {/* Profile Modal */}
+            <ProfileModal 
+              isOpen={isProfileModalOpen} 
+              onClose={() => setIsProfileModalOpen(false)} 
+            />
+            
+            {/* Credit Usage Modal */}
+            <CreditUsageModal
+              isOpen={isCreditUsageModalOpen}
+              onClose={() => setIsCreditUsageModalOpen(false)}
+            />
+          </div>
+        </div>
+      );
+    };

@@ -140,7 +140,7 @@ export function CreditHistoryTab({ limit = 10 }: CreditHistoryTabProps) {
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            { import.meta.env.VITE_APP_ENV !=='production'&&<div className="flex items-center gap-2">
                                 <div className="pt-1">
                                     <Gift className="h-5 w-5 text-muted-foreground" />
                                 </div>
@@ -150,7 +150,7 @@ export function CreditHistoryTab({ limit = 10 }: CreditHistoryTabProps) {
                                 >
                                     Purchase
                                 </Button>
-                            </div>
+                            </div>}
                         </div>
                     </CardContent>
                 </Card>

@@ -171,7 +171,7 @@ export function CreditPricingTab() {
                     <CardContent className="p-6">
                         <div className="mb-4">
                             <h2 className="text-xl font-semibold text-foreground mb-2">
-                                {category.category} Pricing
+                                {category.category}
                             </h2>
                             <p className="text-sm text-muted-foreground">
                                 {category.description}
