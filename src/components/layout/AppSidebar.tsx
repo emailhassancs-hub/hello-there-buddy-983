@@ -54,7 +54,7 @@ const AppSidebar = () => {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    isActive={location.pathname === item.path}
+                    isActive={item.path.includes("?") ? location.pathname + location.search === item.path : location.pathname === item.path}
                     tooltip={item.title}
                     onClick={() => {
                       if (!item.comingSoon) navigate(item.path);
