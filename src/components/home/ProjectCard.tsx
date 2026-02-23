@@ -51,10 +51,6 @@ const ProjectCard = ({
     >
       {/* Thumbnail */}
       <div className={`relative h-[120px] bg-gradient-to-br ${gradientFrom} ${gradientTo}`}>
-        {/* Asset type badge */}
-        <span className="absolute top-2 right-2 px-1.5 py-0.5 text-[9px] font-semibold rounded bg-background/80 text-foreground backdrop-blur-sm">
-          {assetType}
-        </span>
 
         {/* Sharer info overlay */}
         {sharerName && sharerInitials && (

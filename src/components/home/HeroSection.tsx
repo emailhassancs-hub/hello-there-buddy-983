@@ -10,19 +10,12 @@ const HeroSection = () => {
         transition={{ duration: 0.6 }}
         className="text-center max-w-3xl mx-auto mb-10"
       >
-        <p className="text-xs font-mono text-muted-foreground tracking-widest uppercase mb-4">
-          // RAPID ASSETS STUDIO
-        </p>
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
-          Generate Assets
-          <br />
+          Generate Assets{" "}
           <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
             Rapidly.
           </span>
         </h1>
-        <p className="text-lg text-muted-foreground leading-relaxed">
-          Describe it. Generate it. Ship it. From concept to game-ready asset in seconds.
-        </p>
       </motion.div>
 
       <motion.div
