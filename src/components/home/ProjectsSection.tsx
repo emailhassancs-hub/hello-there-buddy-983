@@ -58,10 +58,10 @@ const ProjectsSection = () => {
         </div>
 
         {projects.length === 0 && !view ? null : (
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {view === "my" && <div className="min-w-[200px] w-[200px] shrink-0"><ProjectCard isNew /></div>}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {view === "my" && <ProjectCard isNew />}
             {projects.map((p, i) => (
-              <div key={i} className="min-w-[200px] w-[200px] shrink-0"><ProjectCard {...p} /></div>
+              <ProjectCard key={i} {...p} />
             ))}
           </div>
         )}
