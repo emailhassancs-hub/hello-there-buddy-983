@@ -8,6 +8,7 @@ const myProjects = [
   { title: "Dark Fantasy Pack", lastModified: "2h ago", assetCount: 12, assetType: "IMG" as const, gradientFrom: "from-muted", gradientTo: "to-accent" },
   { title: "Sci-fi Props", lastModified: "1d ago", assetCount: 8, assetType: "3D" as const, gradientFrom: "from-accent", gradientTo: "to-muted" },
   { title: "Stone Textures", lastModified: "3d ago", assetCount: 24, assetType: "TEX" as const, gradientFrom: "from-muted", gradientTo: "to-background" },
+  { title: "Character Concepts", lastModified: "1w ago", assetCount: 5, assetType: "IMG" as const, gradientFrom: "from-accent", gradientTo: "to-muted" },
 ];
 
 const sharedProjects = [
