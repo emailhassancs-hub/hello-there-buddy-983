@@ -37,11 +37,11 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-12 flex items-center justify-between border-b border-border px-4 shrink-0">
+            <SidebarTrigger />
             <div className="flex items-center gap-3">
-              <SidebarTrigger />
+              <ThemeToggle />
               <UserAvatarBell />
             </div>
-            <ThemeToggle />
           </header>
           <main className="flex-1 overflow-y-auto">
             {children}
