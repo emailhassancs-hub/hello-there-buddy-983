@@ -58,7 +58,7 @@ const ProjectsSection = () => {
                   : "bg-background text-muted-foreground hover:text-foreground"
               }`}
             >
-              Shared with You
+              Shared with Me
             </button>
           </div>
         </div>
