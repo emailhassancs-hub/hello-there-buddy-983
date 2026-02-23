@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import NotificationMenu from "./NotificationMenu";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 interface SidebarLayoutProps {
@@ -34,6 +35,7 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
             <SidebarTrigger />
             <div className="flex items-center gap-3">
               <ThemeToggle />
+              <NotificationMenu />
               <UserAvatar />
             </div>
           </header>
