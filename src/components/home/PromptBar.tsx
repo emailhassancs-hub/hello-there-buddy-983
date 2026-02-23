@@ -35,9 +35,9 @@ const PromptBar = () => {
           className="w-full resize-none bg-transparent px-4 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
         <div className="flex items-end justify-between gap-3 px-4 pb-3">
-          <div className="flex items-end gap-3 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
             <button
-              className="shrink-0 w-8 h-8 rounded-md border border-border bg-background hover:bg-accent flex items-center justify-center transition-colors"
+              className="shrink-0 w-8 h-8 rounded-full border border-border bg-background hover:bg-accent flex items-center justify-center transition-colors"
               title="Upload image"
             >
               <Plus className="w-4 h-4 text-muted-foreground" />
