@@ -14,19 +14,19 @@ const PromptBar = () => {
 
   return (
     <div className="w-full max-w-[700px] mx-auto">
-      <div className="relative rounded-lg bg-background shadow-card overflow-hidden">
+      <div className="relative rounded-lg p-[1px] shadow-card">
         {/* Rotating shine border */}
-        <div className="absolute -inset-[1px] rounded-lg overflow-hidden">
+        <div className="absolute inset-0 rounded-lg overflow-hidden">
           <div
-            className="absolute inset-[-200%] animate-[border-shine_4s_linear_infinite]"
+            className="absolute inset-[-300%] animate-border-shine"
             style={{
               background:
-                "conic-gradient(from 0deg, transparent 0%, transparent 70%, hsl(var(--primary) / 0.4) 80%, hsl(var(--foreground)) 85%, hsl(var(--primary) / 0.4) 90%, transparent 100%)",
+                "conic-gradient(from 0deg, transparent 0%, transparent 75%, hsl(var(--foreground)) 85%, transparent 95%)",
             }}
           />
         </div>
         {/* Inner content */}
-        <div className="relative rounded-lg border border-border bg-background overflow-hidden">
+        <div className="relative rounded-lg bg-background overflow-hidden">
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
