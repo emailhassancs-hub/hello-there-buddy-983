@@ -21,7 +21,7 @@ const PromptBar = () => {
             className="absolute inset-[-300%] animate-border-shine"
             style={{
               background:
-                "conic-gradient(from 0deg, transparent 0%, transparent 75%, hsl(var(--foreground) / 0.3) 85%, transparent 95%)",
+                "conic-gradient(from 0deg, transparent 0%, transparent 70%, hsl(var(--muted-foreground) / 0.15) 75%, hsl(var(--foreground) / 0.3) 82%, hsl(var(--primary-glow) / 0.2) 88%, hsl(var(--muted-foreground) / 0.15) 93%, transparent 97%)",
             }}
           />
         </div>
