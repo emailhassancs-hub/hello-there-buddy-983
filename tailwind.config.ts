@@ -109,11 +109,20 @@ export default {
             transform: "translateX(200%) skewX(-20deg)",
           },
         },
+        "border-shine": {
+          "0%": {
+            transform: "rotate(0deg)",
+          },
+          "100%": {
+            transform: "rotate(360deg)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         shine: "shine 10s ease-in-out infinite",
+        "border-shine": "border-shine 4s linear infinite",
       },
     },
   },
