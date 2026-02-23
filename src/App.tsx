@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Landing from "./pages/Landing";
+import Home from "./pages/Home";
+import Projects from "./pages/Projects";
 import Index from "./pages/Index";
 import VideoGallery from "./pages/VideoGallery";
 import GameDesignPro from "./pages/GameDesignPro";
@@ -22,6 +24,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/projects" element={<Projects />} />
             <Route path="/app" element={<Index />} />
             <Route path="/videos" element={<VideoGallery />} />
             <Route path="/game-design-pro" element={<GameDesignPro />} />
