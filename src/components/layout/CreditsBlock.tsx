@@ -1,61 +1,32 @@
-import { Progress } from "@/components/ui/progress";
+import { Coins } from "lucide-react";
 
 interface CreditsBlockProps {
   collapsed?: boolean;
   credits?: number;
-  maxCredits?: number;
-  resetDate?: string;
 }
 
 const CreditsBlock = ({
   collapsed = false,
-  credits = 342,
-  maxCredits = 500,
-  resetDate = "Mar 1, 2026",
+  credits = 106.506,
 }: CreditsBlockProps) => {
-  const percentage = (credits / maxCredits) * 100;
-
   if (collapsed) {
     return (
       <div className="flex items-center justify-center p-2">
-        <svg width="32" height="32" viewBox="0 0 36 36" className="rotate-[-90deg]">
-          <circle
-            cx="18"
-            cy="18"
-            r="14"
-            fill="none"
-            stroke="hsl(var(--border))"
-            strokeWidth="3"
-          />
-          <circle
-            cx="18"
-            cy="18"
-            r="14"
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth="3"
-            strokeDasharray={`${(percentage / 100) * 87.96} 87.96`}
-            strokeLinecap="round"
-          />
-        </svg>
+        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+          <Coins className="w-4 h-4 text-primary" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="px-3 py-3 space-y-2">
-      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        Credits
-      </span>
-      <Progress value={percentage} className="h-1.5" />
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-mono text-foreground">
-          {credits} / {maxCredits} remaining
+    <div className="mx-3 my-2">
+      <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-foreground text-background">
+        <Coins className="w-4 h-4 text-yellow-400 shrink-0" />
+        <span className="text-sm font-medium">
+          {credits.toLocaleString()} Credits
         </span>
       </div>
-      <span className="text-[10px] text-muted-foreground">
-        Resets {resetDate}
-      </span>
     </div>
   );
 };
