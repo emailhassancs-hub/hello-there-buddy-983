@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FolderOpen } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ProjectCard from "./ProjectCard";
 
@@ -25,8 +26,12 @@ const sharedProjects = [
 
 const ProjectsSection = () => {
   const [view, setView] = useState<"my" | "shared">("my");
+  const navigate = useNavigate();
 
-  const projects = view === "my" ? myProjects : sharedProjects;
+  const allItems = view === "my" ? myProjects : sharedProjects;
+  const maxVisible = view === "my" ? 3 : 4; // 3 projects + New Project card = 4 grid items
+  const projects = allItems.slice(0, maxVisible);
+  const hasMore = allItems.length > maxVisible;
 
   return (
     <section className="px-6 py-10">
@@ -63,6 +68,17 @@ const ProjectsSection = () => {
             {projects.map((p, i) => (
               <ProjectCard key={i} {...p} />
             ))}
+          </div>
+        )}
+
+        {hasMore && (
+          <div className="mt-3 text-right">
+            <button
+              onClick={() => navigate("/projects")}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View all →
+            </button>
           </div>
         )}
 
