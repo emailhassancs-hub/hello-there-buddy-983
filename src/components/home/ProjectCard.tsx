@@ -45,7 +45,7 @@ const ProjectCard = ({
 
   return (
     <div
-      className="relative min-w-[200px] w-[200px] rounded-lg border border-border bg-background overflow-hidden group"
+      className="relative rounded-lg border border-border bg-background overflow-hidden group"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
