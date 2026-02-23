@@ -10,10 +10,10 @@ const HeroSection = () => {
         transition={{ duration: 0.6 }}
         className="text-center max-w-3xl mx-auto mb-10"
       >
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
+        <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
           Generate Assets{" "}
           <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-            Rapidly.
+            Rapidly
           </span>
         </h1>
       </motion.div>
