@@ -26,7 +26,7 @@ const PromptBar = () => {
           <SuggestionChips onSelect={(p) => setPrompt(p)} />
           <Button onClick={handleGenerate} className="shrink-0 gap-2">
             <Sparkles className="w-4 h-4" />
-            Generate · 3 credits
+            Generate
           </Button>
         </div>
       </div>
