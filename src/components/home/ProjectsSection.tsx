@@ -58,7 +58,7 @@ const ProjectsSection = () => {
         </div>
 
         {projects.length === 0 && !view ? null : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {view === "my" && <ProjectCard isNew />}
             {projects.map((p, i) => (
               <ProjectCard key={i} {...p} />
