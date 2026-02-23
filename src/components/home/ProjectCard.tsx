@@ -35,7 +35,7 @@ const ProjectCard = ({
     return (
       <button
         onClick={() => navigate("/app")}
-        className="flex flex-col items-center justify-center min-w-[200px] h-[220px] rounded-lg border-2 border-dashed border-border hover:border-primary/40 bg-background hover:bg-accent/50 transition-colors gap-2"
+        className="flex flex-col items-center justify-center w-full h-full rounded-lg border-2 border-dashed border-border hover:border-primary/40 bg-background hover:bg-accent/50 transition-colors gap-2"
       >
         <Plus className="w-6 h-6 text-muted-foreground" />
         <span className="text-sm font-medium text-muted-foreground">New Project</span>
