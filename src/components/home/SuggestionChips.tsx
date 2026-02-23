@@ -1,3 +1,5 @@
+import { Plus } from "lucide-react";
+
 const suggestions = [
   {
     label: "Game Character",
@@ -42,7 +44,13 @@ interface SuggestionChipsProps {
 
 const SuggestionChips = ({ onSelect }: SuggestionChipsProps) => {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-1.5 items-center">
+      <button
+        className="shrink-0 w-7 h-7 rounded-full border border-border bg-background hover:bg-accent flex items-center justify-center transition-colors"
+        title="Upload image"
+      >
+        <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+      </button>
       {suggestions.map((s) => (
         <button
           key={s.label}
