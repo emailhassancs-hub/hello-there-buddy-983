@@ -1,14 +1,13 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AppSidebar from "./AppSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import NotificationMenu from "./NotificationMenu";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
 }
 
-const UserAvatarBell = () => {
+const UserAvatar = () => {
   const { data: profile } = useUserProfile(true);
   const name = profile?.name || "User";
   const initials = name
@@ -19,11 +18,8 @@ const UserAvatarBell = () => {
     .slice(0, 2);
 
   return (
-    <div className="flex items-center gap-2">
-      <NotificationMenu />
-      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
-        {initials}
-      </div>
+    <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
+      {initials}
     </div>
   );
 };
@@ -38,7 +34,7 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
             <SidebarTrigger />
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              <UserAvatarBell />
+              <UserAvatar />
             </div>
           </header>
           <main className="flex-1 overflow-y-auto">
