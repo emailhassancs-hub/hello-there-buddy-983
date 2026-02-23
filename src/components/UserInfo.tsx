@@ -64,12 +64,15 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
 
   return (
     <div className={cn("p-2 border-t border-border space-y-2 relative", className)}>
-      <div className="flex items-center justify-center gap-2 px-2 py-1.5 bg-black rounded-md border border-border relative z-0">
+      <button
+        onClick={() => setIsCreditUsageModalOpen(true)}
+        className="flex items-center justify-center gap-2 px-2 py-1.5 bg-black rounded-md border border-border relative z-0 w-full hover:bg-black/90 transition-colors cursor-pointer"
+      >
         <Coins className="h-3.5 w-3.5 text-yellow-400" />
         <span className="text-xs font-medium text-white">
           {userProfile.credits?.toLocaleString() || 0} Credits
         </span>
-      </div>
+      </button>
       
       <div className="flex items-center gap-2 px-2 py-1.5 relative z-10">
         <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
