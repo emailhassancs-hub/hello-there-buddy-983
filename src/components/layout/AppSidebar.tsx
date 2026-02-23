@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, FolderOpen, Users, Globe, Settings, Sparkles, Bell } from "lucide-react";
+import { Home, FolderOpen, Users, Globe, Settings, Sparkles } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,7 +21,6 @@ const navItems = [
   { title: "Home", icon: Home, path: "/home" },
   { title: "All Projects", icon: FolderOpen, path: "/projects" },
   { title: "Shared with Me", icon: Users, path: "/projects?filter=shared", hasNotification: true },
-  { title: "Notifications", icon: Bell, path: "/notifications", comingSoon: true },
   { title: "Community", icon: Globe, path: "/community", comingSoon: true },
 ];
 
