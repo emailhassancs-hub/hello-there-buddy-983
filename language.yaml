@@ -1,0 +1,460 @@
+- displayName: Verify navigation to Language Screen
+  id: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Launch the application
+    hint: Tap the app icon to launch the application
+    successCriteria: The splash screen is displayed
+  - goal: Wait for the Language Selection screen
+    hint: Wait for the splash screen to disappear and the Language Selection screen
+      to load
+    successCriteria: The Language Selection screen is visible with a list of available
+      languages
+- displayName: Verify English is pre-selected by default
+  id: language_verify_english_is_pre_selected_by_default
+  prerequisiteTestCaseId: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Observe the default language selection
+    hint: 'Check the state of the ''English'' option in the language list (ID: @id/language_list)'
+    successCriteria: The 'English' language option is checked or highlighted by default
+- displayName: Verify only one language can be selected
+  id: language_verify_only_one_language_can_be_selected
+  prerequisiteTestCaseId: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Attempt to select multiple languages
+    hint: Tap on 'Urdu', then tap on 'English', then tap on another language in the
+      list
+    successCriteria: Only the most recently tapped language is selected; previous
+      selections are automatically deselected
+- displayName: Verify 'Done' button is enabled after selection
+  id: language_verify_done_button_is_enabled_after_selection
+  prerequisiteTestCaseId: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Select a language other than default
+    hint: Tap on 'Urdu' in the language list
+    successCriteria: The 'Urdu' option is highlighted
+  - goal: Verify the confirmation button state
+    hint: 'Check the state of the ''Done'' button (ID: @id/btn_done)'
+    successCriteria: The 'Done' button is enabled and clickable
+- displayName: Verify 'Done' button navigation
+  id: language_verify_done_button_navigation
+  prerequisiteTestCaseId: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Confirm language selection
+    hint: 'Select ''Urdu'' and tap the ''Done'' button (ID: @id/btn_done)'
+    successCriteria: The Language Selection screen closes and the user is navigated
+      to the main Home screen or Onboarding screen
+- displayName: Verify app content translation after Urdu selection
+  id: language_verify_app_content_translation_after_urdu_selection
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Verify content localization
+    hint: Observe the text on the Home screen (e.g., headers, button labels)
+    successCriteria: The application text is displayed in Urdu characters instead
+      of English
+- displayName: Verify UI layout for RTL (Right-to-Left) languages
+  id: language_verify_ui_layout_for_rtl_right_to_left_languages
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Check screen layout direction
+    hint: Observe the alignment of UI elements like the navigation drawer icon, headers,
+      and lists
+    successCriteria: The UI layout is mirrored (Right-to-Left); the navigation menu
+      icon is on the right, and text aligns to the right
+- displayName: Verify font rendering for Urdu
+  id: language_verify_font_rendering_for_urdu
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Inspect text rendering
+    hint: Examine the Urdu text on the screen for legibility and correct character
+      joining
+    successCriteria: Urdu text is rendered correctly with the appropriate font, without
+      broken characters or boxes
+- displayName: Verify that button labels change to Urdu
+  id: language_verify_that_button_labels_change_to_urdu
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Check button text localization
+    hint: Observe the labels on primary action buttons (e.g., 'Next', 'Open', 'Save')
+    successCriteria: Button labels are translated into Urdu
+- displayName: Verify that app messages are translated to Urdu
+  id: language_verify_that_app_messages_are_translated_to_urdu
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Trigger an in-app message
+    hint: Perform an action that triggers a toast message or dialog (e.g., tap a disabled
+      feature or save a file)
+    successCriteria: The resulting toast message or dialog text is displayed in Urdu
+- displayName: Verify all menu items are localized
+  id: language_verify_all_menu_items_are_localized
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Open the main menu
+    hint: Tap the menu icon (hamburger icon) or navigate to the Settings tab
+    successCriteria: The menu opens displaying a list of options
+  - goal: Verify menu item translation
+    hint: Scroll through the menu items
+    successCriteria: All menu item labels are displayed in Urdu
+- displayName: Verify numeric values and symbols remain unchanged
+  id: language_verify_numeric_values_and_symbols_remain_unchanged
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Check numeric data display
+    hint: Navigate to a screen displaying numbers (e.g., dates, file sizes, or version
+      numbers)
+    successCriteria: Numeric values (0-9) and symbols (e.g., %, $) remain in their
+      standard format or are localized correctly according to locale rules
+- displayName: Verify persistence of Urdu selection after relaunch
+  id: language_verify_persistence_of_urdu_selection_after_relaunch
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Close the application
+    hint: Close the app completely (remove from recent apps)
+    successCriteria: App is closed
+  - goal: Relaunch the application
+    hint: Tap the app icon to open it again
+    successCriteria: The app launches directly to the Home screen (skipping language
+      selection if previously set)
+  - goal: Verify language persistence
+    hint: Observe the UI text language
+    successCriteria: The UI remains in Urdu, confirming the selection was saved
+- displayName: Verify switching back to English
+  id: language_verify_switching_back_to_english
+  prerequisiteTestCaseId: language_verify_persistence_of_urdu_selection_after_relaunch
+  steps:
+  - goal: Navigate to Language Settings
+    hint: Go to Settings and tap on the 'Language' option
+    successCriteria: The Language Selection screen is displayed
+  - goal: Select English
+    hint: Tap 'English' from the list and tap 'Done'
+    successCriteria: The app reverts to English layout (LTR) and English text
+- displayName: Verify translation accuracy for key screens
+  id: language_verify_translation_accuracy_for_key_screens
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Navigate to key app screens
+    hint: Visit the Home screen, Settings screen, and File List screen sequentially
+    successCriteria: Key terminology on all visited screens is accurately translated
+      into Urdu
+- displayName: Verify no untranslated text appears after switching to Urdu
+  id: language_verify_no_untranslated_text_appears_after_switching_to
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Audit UI for English text
+    hint: Browse through various sections of the app
+    successCriteria: No English text placeholders or untranslated strings are visible
+      in the Urdu UI
+- displayName: Verify app behavior on rapid language switching
+  id: language_verify_app_behavior_on_rapid_language_switching
+  prerequisiteTestCaseId: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Rapidly switch languages
+    hint: Select 'English' -> 'Done', then immediately go back to Settings -> 'Urdu'
+      -> 'Done', then 'Arabic' -> 'Done'
+    successCriteria: The app updates the language each time without crashing or freezing
+- displayName: Verify layout consistency after Urdu selection
+  id: language_verify_layout_consistency_after_urdu_selection
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Check for layout issues
+    hint: Observe the spacing, padding, and alignment of UI elements in Urdu mode
+    successCriteria: Elements are not overlapping, cut off, or misaligned due to the
+      RTL layout change
+- displayName: Verify text direction of labels and paragraphs
+  id: language_verify_text_direction_of_labels_and_paragraphs
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Verify paragraph alignment
+    hint: Find a screen with a block of text (e.g., About page or Terms of Service)
+    successCriteria: Multi-line text is right-aligned and reads from right to left
+- displayName: Verify app restart not required for language change
+  id: language_verify_app_restart_not_required_for_language_change
+  prerequisiteTestCaseId: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Change language and confirm immediate update
+    hint: Select 'Urdu' and tap 'Done'
+    successCriteria: The app UI updates to Urdu immediately without requiring a manual
+      force restart
+- displayName: Verify no crash when selecting unsupported locale
+  id: language_verify_no_crash_when_selecting_unsupported_locale
+  steps:
+  - goal: Set device system language to an unsupported locale
+    hint: Go to Device Settings -> System -> Languages and set it to a language not
+      supported by the app (e.g., Vietnamese)
+    successCriteria: Device language is changed
+  - goal: Launch the app
+    hint: Open the application
+    successCriteria: The app launches successfully (likely defaulting to English)
+      without crashing
+- displayName: Verify text wrapping for long Urdu strings
+  id: language_verify_text_wrapping_for_long_urdu_strings
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Check long text handling
+    hint: Navigate to a screen with long labels or descriptions
+    successCriteria: Long Urdu strings wrap to the next line correctly and do not
+      overflow their containers
+- displayName: Verify app font consistency across languages
+  id: language_verify_app_font_consistency_across_languages
+  prerequisiteTestCaseId: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Switch between languages
+    hint: Change language from English to Urdu and back
+    successCriteria: The font style remains consistent with the app's design system
+      across both languages
+- displayName: Verify language setting stored locally
+  id: language_verify_language_setting_stored_locally
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Force stop the application
+    hint: Go to App Info and tap 'Force Stop', or swipe away from recent apps
+    successCriteria: App process is terminated
+  - goal: Relaunch and verify language
+    hint: Open the app again
+    successCriteria: The app opens in Urdu, confirming the preference is stored locally
+      on the device
+- displayName: Verify localization of app name (if applicable)
+  id: language_verify_localization_of_app_name_if_applicable
+  prerequisiteTestCaseId: language_verify_done_button_navigation
+  steps:
+  - goal: Minimize the app
+    hint: Press the Home button to return to the device launcher
+    successCriteria: Device home screen is visible
+  - goal: Check app icon label
+    hint: Locate the app icon on the home screen or app drawer
+    successCriteria: The app name under the icon is displayed in Urdu (if the app
+      supports localized app names)
+- displayName: Verify LTR layout for English
+  id: language_verify_ltr_layout_for_english
+  steps:
+  - goal: Launch the app and verify default language state
+    hint: Launch the application and ensure the default language is set to English
+    successCriteria: The application loads with English text visible throughout the
+      interface
+  - goal: Verify Left-to-Right (LTR) layout alignment
+    hint: Observe the alignment of text paragraphs, list items, and icons on the home
+      screen
+    successCriteria: Text is aligned to the left, and icons appear on the left side
+      of text labels (standard LTR layout)
+- displayName: Verify RTL layout for Urdu
+  id: language_verify_rtl_layout_for_urdu
+  prerequisiteTestCaseId: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Select Urdu as the application language
+    hint: Navigate to the Language selection screen, tap on 'Urdu', and tap the 'Done'
+      button
+    successCriteria: The app applies the language change and returns to the previous
+      screen
+  - goal: Verify Right-to-Left (RTL) layout transformation
+    hint: Observe the overall screen layout, including navigation bars and content
+      alignment
+    successCriteria: 'The entire UI is mirrored: text aligns to the right, and navigation
+      elements are reversed (RTL layout)'
+- displayName: Verify alignment of headers in RTL
+  id: language_verify_alignment_of_headers_in_rtl
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Ensure Urdu language is active
+    hint: Verify that the app is currently in Urdu mode (RTL)
+    successCriteria: The UI is displayed in Urdu with RTL layout
+  - goal: Verify screen header text alignment
+    hint: Navigate through main screens and observe the title text in the top action
+      bar
+    successCriteria: Screen titles and headers are aligned to the right side of the
+      screen
+- displayName: Verify back navigation icon flips in RTL
+  id: language_verify_back_navigation_icon_flips_in_rtl
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Navigate to a sub-screen to view the back button
+    hint: Open any document or settings submenu that shows a back navigation arrow
+      in the toolbar
+    successCriteria: The back navigation button is visible in the toolbar
+  - goal: Verify the direction of the back navigation arrow
+    hint: Observe the orientation and position of the back arrow icon
+    successCriteria: The back arrow icon is mirrored (pointing right) and is positioned
+      on the top-right corner of the screen
+- displayName: Verify list item alignment in RTL
+  id: language_verify_list_item_alignment_in_rtl
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: View a list of items in Urdu mode
+    hint: Navigate to the Language selection screen or any settings list
+    successCriteria: A list of items (e.g., languages, settings options) is displayed
+  - goal: Verify alignment of list text and icons
+    hint: Observe the alignment of the text labels and any associated checkboxes or
+      icons in the list rows
+    successCriteria: Text labels are right-aligned, and leading icons/checkboxes appear
+      to the right of the text
+- displayName: Verify button position in RTL
+  id: language_verify_button_position_in_rtl
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Locate action buttons in the UI
+    hint: Navigate to a screen with primary action buttons (e.g., the Language selection
+      screen with a 'Done' button)
+    successCriteria: Action buttons are visible on the screen
+  - goal: Verify the placement of the 'Done' or primary action button
+    hint: Observe the horizontal position of the 'Done' button relative to the screen
+      edges
+    successCriteria: The 'Done' button (or primary positive action) is positioned
+      according to RTL conventions (typically mirrored from its English position)
+- displayName: Verify that LTR layout restores when switching back to English
+  id: language_verify_that_ltr_layout_restores_when_switching_back_to
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Switch language from Urdu back to English
+    hint: Navigate to the Language settings, select 'English', and tap 'Done'
+    successCriteria: The application updates the language setting and refreshes the
+      UI
+  - goal: Verify layout restoration to LTR
+    hint: Observe the text alignment and UI directionality after the switch
+    successCriteria: The UI layout returns to Left-to-Right (LTR), with text left-aligned
+      and navigation icons in their original positions
+- displayName: Verify text clipping in RTL languages
+  id: language_verify_text_clipping_in_rtl_languages
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Inspect Urdu text elements for visibility issues
+    hint: Navigate through various screens and observe labels, buttons, and headers
+      in Urdu
+    successCriteria: All Urdu text is fully visible with no truncation, clipping,
+      or overlapping with other UI elements
+- displayName: Verify scrolling behavior in RTL
+  id: language_verify_scrolling_behavior_in_rtl
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Access a scrollable list in Urdu mode
+    hint: Open the Language list or a file list that requires scrolling
+    successCriteria: A scrollable view is active
+  - goal: Verify vertical scrolling mechanics
+    hint: Scroll the list up and down and observe the scrollbar position (if visible)
+      and content movement
+    successCriteria: Content scrolls smoothly, and if a scrollbar is visible, it appears
+      on the left side (standard for RTL) or remains consistent with system RTL norms
+- displayName: Verify animations direction after switching to RTL
+  id: language_verify_animations_direction_after_switching_to_rtl
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Trigger screen transition animations
+    hint: Navigate forward to a new screen and then navigate back
+    successCriteria: Screen transitions occur
+  - goal: Verify animation direction mirrors RTL
+    hint: Observe the direction from which new screens slide in
+    successCriteria: New screens slide in from the left (mirrored) instead of the
+      right, consistent with RTL navigation flow
+- displayName: Verify text readability in RTL (font weight and spacing)
+  id: language_verify_text_readability_in_rtl_font_weight_and_spacing
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Assess Urdu font rendering
+    hint: Observe the thickness, line spacing, and character spacing of the Urdu text
+      on the home screen
+    successCriteria: The Urdu text is legible, with appropriate font weight and spacing
+      between characters and lines
+- displayName: Verify LTR and RTL coexistence on bilingual UI elements
+  id: language_verify_ltr_and_rtl_coexistence_on_bilingual_ui_elements
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Locate mixed-language text elements
+    hint: Find a UI element that contains both Urdu text and English terms (e.g.,
+      'PDF Reader' inside an Urdu sentence)
+    successCriteria: Bilingual text elements are visible
+  - goal: Verify bidirectional text rendering
+    hint: Observe the flow of the English words within the Urdu sentence
+    successCriteria: The English words remain LTR (left-to-right) while the surrounding
+      Urdu text flows RTL, displaying correctly without jumbled word order
+- displayName: Verify layout of numeric text in RTL
+  id: language_verify_layout_of_numeric_text_in_rtl
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Locate numeric values in the UI
+    hint: Find screens displaying dates, file sizes, or counts while in Urdu mode
+    successCriteria: Numeric values are visible
+  - goal: Verify numeric alignment and format
+    hint: Observe the direction and alignment of the numbers
+    successCriteria: Numbers are displayed correctly (typically remaining LTR '123'
+      or using localized numerals if applicable) and are aligned correctly within
+      the RTL layout
+- displayName: Verify alert dialogs alignment in RTL
+  id: language_verify_alert_dialogs_alignment_in_rtl
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Trigger a system alert dialog
+    hint: Perform an action that triggers a popup/alert (e.g., delete confirmation
+      or unsaved changes warning)
+    successCriteria: An alert dialog appears on screen
+  - goal: Verify alert dialog text alignment
+    hint: Observe the alignment of the title, message body, and action buttons within
+      the dialog
+    successCriteria: The dialog title and message are right-aligned, and action buttons
+      (e.g., Cancel/OK) are positioned according to RTL standards
+- displayName: Verify toast/snackbar messages alignment in RTL
+  id: language_verify_toast_snackbar_messages_alignment_in_rtl
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Trigger a toast or snackbar message
+    hint: Perform a quick action that shows a temporary confirmation message (e.g.,
+      'Settings Saved')
+    successCriteria: A toast or snackbar message appears
+  - goal: Verify toast message alignment
+    hint: Observe the text alignment within the toast/snackbar container
+    successCriteria: The text inside the toast/snackbar is right-aligned
+- displayName: Verify that icons remain logical after RTL flip
+  id: language_verify_that_icons_remain_logical_after_rtl_flip
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Inspect directional and universal icons
+    hint: Observe icons like arrows, chevrons, and standard action icons (trash, edit,
+      share)
+    successCriteria: Directional icons (arrows) are mirrored to point correctly in
+      RTL, while universal icons (trash, share) retain their original orientation
+      if direction-neutral
+- displayName: Verify that LTR text (like file names) remains left-aligned in RTL
+    layout
+  id: language_verify_that_ltr_text_like_file_names_remains_left_align
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: View a list containing English filenames or URLs
+    hint: Navigate to a file list or view displaying URLs while the app language is
+      Urdu
+    successCriteria: English filenames or URLs are visible
+  - goal: Verify alignment of strictly LTR content
+    hint: Observe the alignment of the English filenames within the RTL list item
+      container
+    successCriteria: While the list item itself may be right-oriented, the English
+      text (filenames/URLs) retains its LTR readability and structure
+- displayName: Verify app stability while switching between LTR and RTL rapidly
+  id: language_verify_app_stability_while_switching_between_ltr_rtl_ra
+  prerequisiteTestCaseId: language_verify_navigation_to_language_screen
+  steps:
+  - goal: Perform rapid language switching
+    hint: Repeatedly switch between English and Urdu, tapping 'Done' each time, for
+      at least 3 cycles
+    successCriteria: The app changes language and layout each time without freezing
+      or crashing
+  - goal: Verify final state stability
+    hint: Stop on one language and navigate to the home screen
+    successCriteria: The app remains stable and responsive after the stress test
+- displayName: Verify persistent RTL layout after relaunch
+  id: language_verify_persistent_rtl_layout_after_relaunch
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Ensure Urdu is selected and close the app
+    hint: Verify Urdu is active, then fully close/kill the application from the background
+    successCriteria: App is closed
+  - goal: Relaunch the app and verify layout
+    hint: Open the application again and observe the language and layout
+    successCriteria: The app launches directly into Urdu with RTL layout, preserving
+      the user's selection
+- displayName: Verify accessibility of RTL content (screen readers)
+  id: language_verify_accessibility_of_rtl_content_screen_readers
+  prerequisiteTestCaseId: language_verify_rtl_layout_for_urdu
+  steps:
+  - goal: Enable screen reader with Urdu active
+    hint: Ensure the device screen reader (e.g., TalkBack) is active and the app is
+      in Urdu mode
+    successCriteria: Screen reader focus highlights are visible
+  - goal: Navigate UI using screen reader
+    hint: Swipe to move focus through UI elements on the screen
+    successCriteria: The screen reader navigation order follows the RTL layout (moving
+      logically from right to left, top to bottom)
