@@ -30,7 +30,7 @@ export default function OAuthSuccessPage() {
           setUser(userData)
           
           // Redirect to app
-          navigate('/app')
+          navigate('/home')
         } catch (error) {
           console.error('Error parsing OAuth data:', error)
           toast({
