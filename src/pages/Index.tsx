@@ -189,7 +189,14 @@ const Index = () => {
     );
   }, []);
 
-  const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
+  const handleSendMessage = async (
+    text: string,
+    imageUrls?: string[],
+    blobPaths?: string[],
+    aiResponse?: any,
+    uploadSessionId?: string,
+    responseMode: "thinking" | "fast" = "thinking",
+  ) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
     const previousMessageCount = messages.length;
@@ -239,6 +246,7 @@ const Index = () => {
       
       const payload: any = {
         query: text,
+        mode: responseMode, // 'thinking' | 'fast' for backend /ask endpoint
       };
       
       if (sessionId) {
