@@ -207,7 +207,7 @@ export function CreditHistoryTab({ limit = 10 }: CreditHistoryTabProps) {
                                                 </TableCell>
                                                 <TableCell className="text-right font-medium">
                                                     <span className={isDeduction ? "text-destructive" : "text-green-500"}>
-                                                        {isDeduction ? "-" : "+"}{amount.toFixed(0)}
+                                                        {isDeduction ? "-" : "+"}{amount.toFixed(3)}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-right font-medium">

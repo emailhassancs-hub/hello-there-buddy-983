@@ -535,11 +535,6 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
                           <p className="text-sm font-medium text-foreground line-clamp-2" title={image.prompt}>
                             {image.prompt}
                           </p>
-                          {image.technique && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {image.technique}
-                            </p>
-                          )}
                         </div>
                       </div>
                     ))}
