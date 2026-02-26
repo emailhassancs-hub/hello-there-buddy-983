@@ -7,7 +7,7 @@ const Home = () => {
     <SidebarLayout>
       <HeroSection />
       <ProjectsSection />
-      <CommunitySection />
+      {/* <CommunitySection /> */}
     </SidebarLayout>
   );
 };
