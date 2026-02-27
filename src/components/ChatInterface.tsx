@@ -643,7 +643,7 @@ const ChatInterface = ({
                   <div className="w-2 h-2 bg-primary rounded-full typing-indicator" style={{ animationDelay: "0.4s" }}></div>
                 </div>
                 <span className="text-sm shimmer-text">
-                  Processing request...
+                  Thinking...
                 </span>
               </div>
             </div>
