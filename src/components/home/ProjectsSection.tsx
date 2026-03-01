@@ -1,38 +1,48 @@
 import { useState } from "react";
 import { FolderOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import ProjectCard from "./ProjectCard";
+import { useProjects } from "@/hooks/use-projects";
 
-const myProjects = [
-  { title: "Dark Fantasy Pack", lastModified: "2h ago", assetCount: 12, assetType: "IMG" as const, gradientFrom: "from-muted", gradientTo: "to-accent" },
-  { title: "Sci-fi Props", lastModified: "1d ago", assetCount: 8, assetType: "3D" as const, gradientFrom: "from-accent", gradientTo: "to-muted" },
-  { title: "Stone Textures", lastModified: "3d ago", assetCount: 24, assetType: "TEX" as const, gradientFrom: "from-muted", gradientTo: "to-background" },
-  { title: "Character Concepts", lastModified: "1w ago", assetCount: 5, assetType: "IMG" as const, gradientFrom: "from-accent", gradientTo: "to-muted" },
-];
-
-const sharedProjects = [
-  {
-    title: "Team Environment",
-    lastModified: "5h ago",
-    assetCount: 6,
-    assetType: "IMG" as const,
-    sharerName: "Alex",
-    sharerInitials: "AK",
-    permission: "EDIT" as const,
-    gradientFrom: "from-accent",
-    gradientTo: "to-muted",
-  },
-];
+function getInitials(name?: string, email?: string) {
+  const source = name || email || "";
+  if (!source) return "";
+  const [first, second] = source.split(" ");
+  if (first && second) {
+    return `${first[0]}${second[0]}`.toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase();
+}
 
 const ProjectsSection = () => {
   const [view, setView] = useState<"my" | "shared">("my");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const allItems = view === "my" ? myProjects : sharedProjects;
-  const maxVisible = view === "my" ? 3 : 4; // 3 projects + New Project card = 4 grid items
-  const projects = allItems.slice(0, maxVisible);
-  const hasMore = allItems.length > maxVisible;
+  // Fetch projects using backend filters
+  const {
+    data: myProjectsData = [],
+    isLoading: isLoadingMy,
+    isError: isErrorMy,
+  } = useProjects("my");
+
+  const {
+    data: sharedProjectsData = [],
+    isLoading: isLoadingShared,
+    isError: isErrorShared,
+  } = useProjects("shared");
+
+  const isMyView = view === "my";
+  const projectsAll = isMyView ? myProjectsData : sharedProjectsData;
+  const isLoading = isMyView ? isLoadingMy : isLoadingShared;
+  const isError = isMyView ? isErrorMy : isErrorShared;
+
+  const maxVisible = isMyView ? 3 : 4; // 3 projects + New Project card = 4 grid items
+  const projects = projectsAll.slice(0, maxVisible);
+  const hasMore = projectsAll.length > maxVisible;
 
   return (
     <section className="px-6 py-10">
@@ -63,16 +73,48 @@ const ProjectsSection = () => {
           </div>
         </div>
 
-        {projects.length === 0 && !view ? null : (
+        {isLoading && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="h-[140px] rounded-lg border border-dashed border-border bg-muted/30 animate-pulse col-span-2 sm:col-span-3 md:col-span-4" />
+          </div>
+        )}
+
+        {!isLoading && !isError && projects.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {view === "my" && <ProjectCard isNew />}
             {projects.map((p, i) => (
-              <ProjectCard key={i} {...p} />
+              <ProjectCard
+                key={p.id ?? i}
+                id={p.id}
+                title={p.name}
+                lastModified={formatDistanceToNow(new Date(p.updatedAt), {
+                  addSuffix: true,
+                })}
+                assetCount={0}
+                assetType="IMG"
+                sharerName={view === "shared" ? p.creator?.name : undefined}
+                sharerInitials={
+                  view === "shared"
+                    ? getInitials(p.creator?.name, p.creator?.email)
+                    : undefined
+                }
+                permission={view === "shared" ? "VIEW" : undefined}
+                canDelete={view === "my"}
+                canEdit={view === "my"}
+                onDeleted={() => {
+                  queryClient.invalidateQueries({ queryKey: ["projects", "my"] });
+                  queryClient.invalidateQueries({ queryKey: ["projects", "shared"] });
+                }}
+                onUpdated={() => {
+                  queryClient.invalidateQueries({ queryKey: ["projects", "my"] });
+                  queryClient.invalidateQueries({ queryKey: ["projects", "shared"] });
+                }}
+              />
             ))}
           </div>
         )}
 
-        {hasMore && (
+        {!isLoading && hasMore && (
           <div className="mt-3 text-right">
             <button
               onClick={() => navigate("/projects")}
@@ -83,7 +125,7 @@ const ProjectsSection = () => {
           </div>
         )}
 
-        {projects.length === 0 && (
+        {!isLoading && !isError && projects.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <FolderOpen className="w-10 h-10 text-muted-foreground mb-3" />
             <p className="text-sm text-muted-foreground mb-3">

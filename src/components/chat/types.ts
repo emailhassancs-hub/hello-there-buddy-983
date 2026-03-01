@@ -40,7 +40,14 @@ export interface Message {
 
 export interface ChatInterfaceProps {
   messages: Message[];
-  onSendMessage: (message: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: unknown, uploadSessionId?: string) => void;
+  onSendMessage: (
+    message: string,
+    imageUrls?: string[],
+    blobPaths?: string[],
+    aiResponse?: unknown,
+    uploadSessionId?: string,
+    responseMode?: "thinking" | "fast"
+  ) => void;
   onToolConfirmation?: (action: "confirm" | "modify" | "cancel", modifiedArgs?: Record<string, Record<string, unknown>>) => void;
   isGenerating?: boolean;
   apiUrl: string;

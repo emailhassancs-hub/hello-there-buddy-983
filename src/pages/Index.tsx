@@ -55,6 +55,7 @@ const Index = () => {
   const [showTutorialOnboarding, setShowTutorialOnboarding] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const hasCheckedUrlParamsRef = useRef(false);
+  const hasSentInitialPromptRef = useRef(false);
   
   // Workflow chain state
   const [workflowChain, setWorkflowChain] = useState<WorkflowChainData | null>(null);
@@ -189,7 +190,14 @@ const Index = () => {
     );
   }, []);
 
-  const handleSendMessage = async (text: string, imageUrls?: string[], blobPaths?: string[], aiResponse?: any, uploadSessionId?: string) => {
+  const handleSendMessage = async (
+    text: string,
+    imageUrls?: string[],
+    blobPaths?: string[],
+    aiResponse?: any,
+    uploadSessionId?: string,
+    responseMode: "thinking" | "fast" = "thinking",
+  ) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
     const previousMessageCount = messages.length;
@@ -239,6 +247,7 @@ const Index = () => {
       
       const payload: any = {
         query: text,
+        mode: responseMode, // 'thinking' | 'fast' for backend /ask endpoint
       };
       
       if (sessionId) {
@@ -247,6 +256,12 @@ const Index = () => {
 
       if (userId) {
         payload.userId = userId;
+      }
+
+      // Attach current project (if any) from URL
+      const projectIdFromUrl = searchParams.get("projectId");
+      if (projectIdFromUrl) {
+        payload.projectId = projectIdFromUrl;
       }
 
       // Include uploaded image URLs in the payload for agent processing
@@ -1423,6 +1438,30 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       setMessages([]);
     }
   }, [userProfile?.id, authToken, handleLoadSession, searchParams, setSearchParams]);
+
+  // If we arrive with an initial_prompt (from Home), auto-send it once
+  useEffect(() => {
+    if (!authToken || !userProfile?.id || hasSentInitialPromptRef.current) {
+      return;
+    }
+
+    const initialPrompt = searchParams.get("initial_prompt");
+    if (!initialPrompt) return;
+
+    hasSentInitialPromptRef.current = true;
+
+    // Start a fresh chat for this prompt
+    setSessionId(null);  
+
+    // Fire and forget; any errors will be logged
+    handleSendMessage(initialPrompt).catch((err) => {
+      console.error("Failed to send initial prompt from Home:", err);
+    });
+
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("initial_prompt");
+    setSearchParams(newSearchParams, { replace: true });
+  }, [authToken, userProfile?.id, searchParams, setSearchParams, handleSendMessage]);
 
   // Handle when sessions are loaded from sidebar
   // Don't auto-load any session - user must explicitly click to load a chat
