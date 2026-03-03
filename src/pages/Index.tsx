@@ -330,9 +330,24 @@ const Index = () => {
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => {
+            let jobId: string | undefined;
+            let contentParsed: any = undefined;
+            let isJSONParsed = false;
+            try {
+              if (msg.content) {
+                contentParsed = JSON.parse(msg.content);
+                isJSONParsed = true;
+                if (contentParsed && typeof contentParsed === 'object' && contentParsed.job_id) {
+                  jobId = contentParsed.job_id;
+                }
+              }
+            } catch {
+              // Not JSON, ignore
+            }
+
             const content = msg.content || "";
             const role = msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user";
-            
+
             // Extract image URLs from content for user messages
             let imagePaths: string[] | undefined;
             if (role === "user" && content) {
@@ -341,16 +356,48 @@ const Index = () => {
                 imagePaths = extractedUrls;
               }
             }
-            
-            return {
-              role,
-              text: content,
-              toolName: msg.type === "tool" ? msg.name : undefined,
-              imagePaths,
-            };
+
+            if (isJSONParsed && typeof contentParsed === 'object' && contentParsed !== null) {
+              return {
+                role,
+                ...contentParsed,
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                jobId,
+                imagePaths,
+              };
+            } else {
+              return {
+                role,
+                text: content,
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                jobId,
+                imagePaths,
+              };
+            }
           })
-          .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+          .filter((m: any) => (typeof m.text === "string" ? !isToolInvocation(m.text) : true));
         setMessages((prev) => [...prev, ...newMessages]);
+
+        // Extract job IDs and trigger SSE connections
+        const jobIds = newMessages
+          .map((m: any) => {
+            if (m.optimized_model_id) return undefined;
+            if (m.jobId) return m.jobId;
+            return undefined;
+          })
+          .filter((id: string | undefined): id is string => !!id);
+
+        if (jobIds.length > 0) {
+          setActiveJobIds((prev) => {
+            const combined = [...prev, ...jobIds];
+            return Array.from(new Set(combined));
+          });
+        }
+
+        // Check for optimized model responses
+        for (const msg of data.messages) {
+          handleOptimizedModelId(msg);
+        }
       }
 
       if (data.status === "awaiting_confirmation") {
