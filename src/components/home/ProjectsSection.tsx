@@ -27,13 +27,13 @@ const ProjectsSection = () => {
     data: myProjectsData = [],
     isLoading: isLoadingMy,
     isError: isErrorMy,
-  } = useProjects("my");
+  } = useProjects({ type: "my" });
 
   const {
     data: sharedProjectsData = [],
     isLoading: isLoadingShared,
     isError: isErrorShared,
-  } = useProjects("shared");
+  } = useProjects({ type: "shared" });
 
   const isMyView = view === "my";
   const projectsAll = isMyView ? myProjectsData : sharedProjectsData;

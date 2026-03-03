@@ -8,17 +8,17 @@ import onboardingStep3 from "@/assets/onboarding-step3.jpg";
 
 const steps = [
   {
-    image:'https://resources.rapidassets.ai/api/v1/image-editing/onboard1.png',
+    image:'https://resources.rapidassets.ai/api/v1/image-editing/splash1.png',
     heading: "Generate Images with AI",
     description: "Type a prompt and watch AI bring your ideas to life. Create concept art, characters, environments, and props in seconds — all from a simple chat interface.",
   },
   {
-    image:'https://resources.rapidassets.ai/api/v1/image-editing/onboard2.png',
+    image:'https://resources.rapidassets.ai/api/v1/image-editing/splash2.png',
     heading: "Edit & Enhance Instantly",
     description: "Refine your creations with powerful editing tools. Merge two or more images, change expressions and pose, remove backgrounds, adjust colors, upscale resolution, and apply style transfers.",
   },
   {
-     image:'https://resources.rapidassets.ai/api/v1/image-editing/onboard3.png',
+     image:'https://resources.rapidassets.ai/api/v1/image-editing/splash3.png',
     heading: "Create Production-Ready 3D",
     description: "Create 3D models from text prompts or convert your 2D images into 3D assets ready for any game engine. Adjust topology, control polygon count, optimize, and export in industry-standard formats.",
   },

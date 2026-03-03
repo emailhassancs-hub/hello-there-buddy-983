@@ -17,11 +17,30 @@ export interface Project {
   members?: ProjectMember[];
 }
 
-export function useProjects(type?: 'my' | 'shared', enabled: boolean = true) {
+interface UseProjectsOptions {
+  type?: 'my' | 'shared';
+  search?: string;
+  enabled?: boolean;
+}
+
+export function useProjects(options?: UseProjectsOptions) {
+  const { type, search, enabled = true } = options || {};
+
+  const queryKey = ["projects", type ?? "all", search ?? ""];
+
+  const queryStringParts: string[] = [];
+  if (type) {
+    queryStringParts.push(`type=${encodeURIComponent(type)}`);
+  }
+  if (search && search.trim()) {
+    queryStringParts.push(`search=${encodeURIComponent(search.trim())}`);
+  }
+  const queryString = queryStringParts.length ? `?${queryStringParts.join("&")}` : "";
+
   return useQuery<Project[]>({
-    queryKey: ["projects", type ?? "all"],
+    queryKey,
     queryFn: () =>
-      apiFetch<Project[]>(`/api/projects${type ? `?type=${type}` : ""}`, {
+      apiFetch<Project[]>(`/api/projects${queryString}`, {
         method: "GET",
       }),
     enabled,
@@ -30,5 +49,4 @@ export function useProjects(type?: 'my' | 'shared', enabled: boolean = true) {
     retry: 1,
   });
 }
-
 
