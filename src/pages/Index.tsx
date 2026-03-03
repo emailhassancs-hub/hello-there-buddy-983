@@ -996,23 +996,23 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
   // Handle SSE job completion
   const handleSSEJobComplete = useCallback((jobId: string, finalStatus: SSEStatusUpdate) => {
     console.log(`[SSE] Job ${jobId} completed:`, finalStatus);
-    
+
     // Remove from active jobs
     setActiveJobIds((prev) => prev.filter((id) => id !== jobId));
-    
+
     // Update message with final status
     console.log(messages,'here is prev message before update')
     setMessages((prev: Message[]) =>
       prev.map((msg: any) => {
         if ((msg as any).jobId === jobId) {
           let updatedText: any ={}
-          
+
               updatedText ={
                 ...msg,
                 ...finalStatus.data,
                 status: finalStatus.status
               };
-          
+
           return {
             ...msg,
             ...updatedText,
@@ -1023,13 +1023,40 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         return msg;
       })
     );
-    
+
+    // ── Intent Loop: if backend sent next_job_id, open SSE for it ──
+    const nextJobId = (finalStatus as any).next_job_id;
+    if (nextJobId) {
+      console.log(`[SSE] 🔄 Intent loop continuation — next job: ${nextJobId}`);
+      const nextContext = (finalStatus as any).next_job_context || "Processing next task...";
+
+      // Create a placeholder message for the next generation
+      const placeholderMsg: Message = {
+        role: "assistant",
+        text: "",
+        jobId: nextJobId,
+        job_id: nextJobId,
+        status: "listening",
+        type: "tool_generation",
+      } as any;
+      setMessages((prev: Message[]) => [...prev, placeholderMsg]);
+
+      // Add to activeJobIds so SSEStatusListener opens a connection
+      setActiveJobIds((prev) => {
+        const combined = [...prev, nextJobId];
+        return Array.from(new Set(combined));
+      });
+    }
+
     // Show completion toast
     if (finalStatus.status.toLocaleLowerCase() === 'completed') {
-      toast({
-        title: "Completed",
-        description: finalStatus.message || "Your request has been completed!",
-      });
+      // Only show toast if there's no next job (avoid spamming toasts for chain steps)
+      if (!nextJobId) {
+        toast({
+          title: "Completed",
+          description: finalStatus.message || "Your request has been completed!",
+        });
+      }
       // Refresh images when job completes
       handleImageGenerated();
       // Also refresh models if this is a model generation job
