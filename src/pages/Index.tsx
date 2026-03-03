@@ -196,6 +196,7 @@ const Index = () => {
     aiResponse?: any,
     uploadSessionId?: string,
     responseMode: "thinking" | "fast" = "thinking",
+    humanInLoop?: boolean,
   ) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
@@ -255,6 +256,10 @@ const Index = () => {
 
       if (userId) {
         payload.userId = userId;
+      }
+
+      if (typeof humanInLoop === "boolean") {
+        payload.humanInLoop = humanInLoop;
       }
 
       // Include uploaded image URLs in the payload for agent processing

@@ -290,7 +290,7 @@ const ChatInterface = ({
       });
     }
 
-    onSendMessage(messageText, uploadedImageUrls, [], undefined, sessionId, responseMode);
+    onSendMessage(messageText, uploadedImageUrls, [], undefined, sessionId, responseMode, humanInLoop);
     clearUploads();
     setInputValue("");
 
@@ -299,7 +299,7 @@ const ChatInterface = ({
         textareaRef.current.style.height = 'auto';
       }
     }, 0);
-  }, [inputValue, isGenerating, uploadedImageUrls, onSendMessage, sessionId, clearUploads]);
+  }, [inputValue, isGenerating, uploadedImageUrls, onSendMessage, sessionId, clearUploads, responseMode, humanInLoop]);
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
