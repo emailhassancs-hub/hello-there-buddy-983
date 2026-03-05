@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, FolderOpen, Pencil, Share2, Trash2 } from "lucide-react";
+import { Plus, FolderOpen, Pencil, Share2, Trash2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ProjectMembersModal } from "@/components/home/ProjectMembersModal";
 
 interface ProjectCardProps {
   id?: string;
@@ -34,6 +35,7 @@ interface ProjectCardProps {
   onDeleted?: (id: string) => void;
   canEdit?: boolean;
   onUpdated?: (id: string, name: string) => void;
+  projectCreatorId: string;
 }
 
 const ProjectCard = ({
@@ -52,6 +54,7 @@ const ProjectCard = ({
   onDeleted,
   canEdit = false,
   onUpdated,
+  projectCreatorId,
 }: ProjectCardProps) => {
   const [hovered, setHovered] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -59,6 +62,7 @@ const ProjectCard = ({
   const [newName, setNewName] = useState(title);
   const [shareEmail, setShareEmail] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -151,15 +155,16 @@ const ProjectCard = ({
   }
 
   return (
-    <div
-      className="relative rounded-lg border border-border bg-background overflow-hidden group"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {/* Thumbnail */}
-      <div className={`relative h-[120px] bg-gradient-to-br ${gradientFrom} ${gradientTo}`}>
+    <>
+      <div
+        className="relative rounded-lg border border-border bg-background overflow-hidden group"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        {/* Thumbnail */}
+        <div className={`relative h-[120px] bg-gradient-to-br ${gradientFrom} ${gradientTo}`}>
 
-        {/* Sharer info overlay */}
+          {/* Sharer info overlay */}
         {sharerName && sharerInitials && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
             <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[8px] font-semibold">
@@ -172,9 +177,9 @@ const ProjectCard = ({
         )}
 
 
-        {/* Hover actions */}
-        {hovered && (
-          <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center gap-2">
+          {/* Hover actions */}
+          {hovered && (
+            <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center gap-2">
             <button
               className="p-1.5 rounded-md bg-background border border-border hover:bg-accent"
               title="Open"
@@ -186,7 +191,19 @@ const ProjectCard = ({
             >
               <FolderOpen className="w-3.5 h-3.5" />
             </button>
-            {canEdit ? (
+            {id && (
+              <button
+                className="p-1.5 rounded-md bg-background border border-border hover:bg-accent"
+                title="Members"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMembersModalOpen(true);
+                }}
+              >
+                <Users className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {canEdit && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <button
@@ -225,16 +242,8 @@ const ProjectCard = ({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            ) : (
-              <button
-                className="p-1.5 rounded-md bg-background border border-border"
-                title="Rename"
-                disabled
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
             )}
-            {canEdit ? (
+            {canEdit && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <button
@@ -274,16 +283,8 @@ const ProjectCard = ({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            ) : (
-              <button
-                className="p-1.5 rounded-md bg-background border border-border"
-                title="Share"
-                disabled
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
             )}
-            {canDelete && (
+              {canDelete && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <button
@@ -315,19 +316,30 @@ const ProjectCard = ({
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="p-3">
+          <p className="text-sm font-medium truncate">{title}</p>
+          <p className="text-[11px] font-mono text-muted-foreground mt-1">
+            {lastModified} · {assetCount} asset{assetCount !== 1 ? "s" : ""}
+          </p>
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="p-3">
-        <p className="text-sm font-medium truncate">{title}</p>
-        <p className="text-[11px] font-mono text-muted-foreground mt-1">
-          {lastModified} · {assetCount} asset{assetCount !== 1 ? "s" : ""}
-        </p>
-      </div>
-    </div>
+      {id && (
+        <ProjectMembersModal
+          projectCreatorId={projectCreatorId ?? ""}
+          projectId={id}
+          open={isMembersModalOpen}
+          onOpenChange={setIsMembersModalOpen}
+          canManageMembers={canEdit}
+        />
+      )}
+    </>
   );
 };
 

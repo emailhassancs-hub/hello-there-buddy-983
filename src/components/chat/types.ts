@@ -46,7 +46,8 @@ export interface ChatInterfaceProps {
     blobPaths?: string[],
     aiResponse?: unknown,
     uploadSessionId?: string,
-    responseMode?: "thinking" | "fast"
+    responseMode?: "thinking" | "fast",
+    humanInLoop?: boolean
   ) => void;
   onToolConfirmation?: (action: "confirm" | "modify" | "cancel", modifiedArgs?: Record<string, Record<string, unknown>>) => void;
   isGenerating?: boolean;

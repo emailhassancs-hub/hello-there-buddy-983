@@ -149,7 +149,7 @@ const Projects = () => {
         </div>
         {/* Grid */}
         {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
@@ -159,12 +159,13 @@ const Projects = () => {
           </div>
         )}
         {!isLoading && !isError && projectsData.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {/* {filter === "My Projects" && <ProjectCard isNew />} */}
             {projectsData.map((p) => {
               const isMyProject = p.creatorId === currentUserId;
               return (
                 <ProjectCard
+                  projectCreatorId={p.creatorId}
                   key={p.id}
                   id={p.id}
                   title={p.name}

@@ -12,8 +12,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu, MoreVertical, Coins, User, BookOpen, LogOut } from "lucide-react";
+import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu, MoreVertical, Coins, User, BookOpen, LogOut, Home, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -23,6 +24,12 @@ import { LocalStorageKeys } from "@/enums/localstorage";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ProfileModal } from "@/components/ProfileModal";
 import { useUser } from "@/hooks/use-user";
+import { useProject } from "@/hooks/use-project";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useNavigate } from "react-router-dom";
+import { ProjectMembersModal } from "@/components/home/ProjectMembersModal";
 
 interface Session {
   session_id: string;
@@ -40,11 +47,22 @@ interface ChatSidebarProps {
   apiUrl: string;
   onSessionsLoaded?: (sessions: Session[]) => void;
   onTutorialClick?: () => void;
+  projectName?: string;
+  projectId?: string | null;
 }
 
 const SIDEBAR_COLLAPSE_KEY = "sidebar_collapsed";
 
-export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiUrl, onSessionsLoaded, onTutorialClick }: ChatSidebarProps) => {
+export const ChatSidebar = ({
+  currentSessionId,
+  onSelectSession,
+  onNewChat,
+  apiUrl,
+  onSessionsLoaded,
+  onTutorialClick,
+  projectName,
+  projectId,
+}: ChatSidebarProps) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -63,6 +81,42 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
   const { toast } = useToast();
   const { data: userProfile } = useUserProfile();
   const { clearUser } = useUser();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { data: project } = useProject(projectId);
+  const canEditProject = !!projectId && project?.creatorId === userProfile?.id;
+  const [projectNameDraft, setProjectNameDraft] = useState(projectName ?? "");
+  const [isSavingProjectName, setIsSavingProjectName] = useState(false);
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+
+  useEffect(() => {
+    setProjectNameDraft(projectName ?? "");
+  }, [projectName]);
+
+  const handleProjectRename = async () => {
+    if (!projectId || !projectNameDraft.trim()) return;
+    try {
+      setIsSavingProjectName(true);
+      await apiFetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        body: { name: projectNameDraft.trim() },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      toast({
+        title: "Project updated",
+        description: "Project name has been updated.",
+      });
+    } catch (error) {
+      console.error("Error updating project name:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update project name.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingProjectName(false);
+    }
+  };
 
   // Save collapse state to localStorage whenever it changes
   useEffect(() => {
@@ -415,6 +469,78 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
 
   return (
     <div className="w-[14%] h-full bg-gray-100 border-r flex flex-col shadow-soft">
+      {/* Project Name Accordion */}
+      {projectName && (
+        <Accordion type="single" collapsible className="border-b glass">
+          <AccordionItem value="project" className="border-none">
+            <AccordionTrigger className="px-2 py-2 hover:no-underline">
+              <h3
+                className="font-semibold text-sm text-foreground dark:text-white truncate flex-1 text-left min-w-0 max-w-[calc(100%-2rem)]"
+                title={projectName}
+              >
+                {projectName && projectName.length > 30 ? `${projectName.substring(0, 30)}...` : projectName}
+              </h3>
+            </AccordionTrigger>
+            <AccordionContent className="px-2 pb-2">
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => navigate("/home")}
+                  className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md transition-colors text-left"
+                >
+                  <Home className="w-4 h-4" />
+                  Go to home page
+                </button>
+                {canEditProject && (
+                  <>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md transition-colors text-left w-full">
+                          <Edit2 className="w-4 h-4" />
+                          Rename
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Edit project name</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Update the name of this project. This will be visible to all members.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="space-y-2">
+                          <Input
+                            value={projectNameDraft}
+                            onChange={(e) => setProjectNameDraft(e.target.value)}
+                            placeholder="Project name"
+                            autoFocus
+                          />
+                        </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              handleProjectRename();
+                            }}
+                            className="bg-black text-white hover:bg-black/90"
+                          >
+                            {isSavingProjectName ? "Saving..." : "Save"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <button
+                      onClick={() => setIsMembersModalOpen(true)}
+                      className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md transition-colors text-left"
+                    >
+                      <Users className="w-4 h-4" />
+                      Members
+                    </button>
+                  </>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
       {/* Header */}
       <div className="p-2 border-b glass flex items-center justify-between">
         <div className="flex items-center gap-1.5">
@@ -574,6 +700,17 @@ export const ChatSidebar = ({ currentSessionId, onSelectSession, onNewChat, apiU
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Project Members Modal */}
+      {projectId && (
+        <ProjectMembersModal
+          projectId={projectId}
+          projectCreatorId={project?.creatorId || ""}
+          open={isMembersModalOpen}
+          onOpenChange={setIsMembersModalOpen}
+          canManageMembers={canEditProject}
+        />
+      )}
     </div>
   );
 };

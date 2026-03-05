@@ -74,14 +74,14 @@ const ProjectsSection = () => {
         </div>
 
         {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            <div className="h-[140px] rounded-lg border border-dashed border-border bg-muted/30 animate-pulse col-span-2 sm:col-span-3 md:col-span-4" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="h-[140px] rounded-lg border border-dashed border-border bg-muted/30 animate-pulse col-span-1 sm:col-span-2 md:col-span-3" />
           </div>
         )}
 
         {!isLoading && !isError && projects.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {view === "my" && <ProjectCard isNew />}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {/* {view === "my" && <ProjectCard isNew />} */}
             {projects.map((p, i) => (
               <ProjectCard
                 key={p.id ?? i}
@@ -98,6 +98,7 @@ const ProjectsSection = () => {
                     ? getInitials(p.creator?.name, p.creator?.email)
                     : undefined
                 }
+                projectCreatorId={p.creatorId}
                 permission={view === "shared" ? "VIEW" : undefined}
                 canDelete={view === "my"}
                 canEdit={view === "my"}

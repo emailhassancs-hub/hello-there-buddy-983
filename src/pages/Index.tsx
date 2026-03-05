@@ -6,6 +6,7 @@ import ModelViewer from "@/components/ModelViewer";
 import ModelOptimization from "@/components/ModelOptimization";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { useProject } from "@/hooks/use-project";
 import { LocalStorageKeys } from "@/enums/localstorage";
 import { SSEStatusListener } from "@/components/SSEStatusListener";
 import { SSEStatusUpdate } from "@/hooks/useSSE";
@@ -69,6 +70,8 @@ const Index = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
+  const projectIdFromUrl = searchParams.get("projectId");
+  const { data: currentProject } = useProject(projectIdFromUrl);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -197,6 +200,7 @@ const Index = () => {
     aiResponse?: any,
     uploadSessionId?: string,
     responseMode: "thinking" | "fast" = "thinking",
+    humanInLoop?: boolean,
   ) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
@@ -262,6 +266,10 @@ const Index = () => {
       const projectIdFromUrl = searchParams.get("projectId");
       if (projectIdFromUrl) {
         payload.projectId = projectIdFromUrl;
+      }
+
+      if (typeof humanInLoop === "boolean") {
+        payload.humanInLoop = humanInLoop;
       }
 
       // Include uploaded image URLs in the payload for agent processing
@@ -337,9 +345,24 @@ const Index = () => {
         const newMessages = data.messages
           .filter((msg: any) => msg.type !== "system")
           .map((msg: any) => {
+            let jobId: string | undefined;
+            let contentParsed: any = undefined;
+            let isJSONParsed = false;
+            try {
+              if (msg.content) {
+                contentParsed = JSON.parse(msg.content);
+                isJSONParsed = true;
+                if (contentParsed && typeof contentParsed === 'object' && contentParsed.job_id) {
+                  jobId = contentParsed.job_id;
+                }
+              }
+            } catch {
+              // Not JSON, ignore
+            }
+
             const content = msg.content || "";
             const role = msg.type === "ai" ? "assistant" : msg.type === "tool" ? "assistant" : "user";
-            
+
             // Extract image URLs from content for user messages
             let imagePaths: string[] | undefined;
             if (role === "user" && content) {
@@ -348,16 +371,48 @@ const Index = () => {
                 imagePaths = extractedUrls;
               }
             }
-            
-            return {
-              role,
-              text: content,
-              toolName: msg.type === "tool" ? msg.name : undefined,
-              imagePaths,
-            };
+
+            if (isJSONParsed && typeof contentParsed === 'object' && contentParsed !== null) {
+              return {
+                role,
+                ...contentParsed,
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                jobId,
+                imagePaths,
+              };
+            } else {
+              return {
+                role,
+                text: content,
+                toolName: msg.type === "tool" ? msg.name : undefined,
+                jobId,
+                imagePaths,
+              };
+            }
           })
-          .filter((m: any) => typeof m.text === "string" && !isToolInvocation(m.text));
+          .filter((m: any) => (typeof m.text === "string" ? !isToolInvocation(m.text) : true));
         setMessages((prev) => [...prev, ...newMessages]);
+
+        // Extract job IDs and trigger SSE connections
+        const jobIds = newMessages
+          .map((m: any) => {
+            if (m.optimized_model_id) return undefined;
+            if (m.jobId) return m.jobId;
+            return undefined;
+          })
+          .filter((id: string | undefined): id is string => !!id);
+
+        if (jobIds.length > 0) {
+          setActiveJobIds((prev) => {
+            const combined = [...prev, ...jobIds];
+            return Array.from(new Set(combined));
+          });
+        }
+
+        // Check for optimized model responses
+        for (const msg of data.messages) {
+          handleOptimizedModelId(msg);
+        }
       }
 
       if (data.status === "awaiting_confirmation") {
@@ -951,23 +1006,23 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
   // Handle SSE job completion
   const handleSSEJobComplete = useCallback((jobId: string, finalStatus: SSEStatusUpdate) => {
     console.log(`[SSE] Job ${jobId} completed:`, finalStatus);
-    
+
     // Remove from active jobs
     setActiveJobIds((prev) => prev.filter((id) => id !== jobId));
-    
+
     // Update message with final status
     console.log(messages,'here is prev message before update')
     setMessages((prev: Message[]) =>
       prev.map((msg: any) => {
         if ((msg as any).jobId === jobId) {
           let updatedText: any ={}
-          
+
               updatedText ={
                 ...msg,
                 ...finalStatus.data,
                 status: finalStatus.status
               };
-          
+
           return {
             ...msg,
             ...updatedText,
@@ -978,13 +1033,40 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         return msg;
       })
     );
-    
+
+    // ── Intent Loop: if backend sent next_job_id, open SSE for it ──
+    const nextJobId = (finalStatus as any).next_job_id;
+    if (nextJobId) {
+      console.log(`[SSE] 🔄 Intent loop continuation — next job: ${nextJobId}`);
+      const nextContext = (finalStatus as any).next_job_context || "Processing next task...";
+
+      // Create a placeholder message for the next generation
+      const placeholderMsg: Message = {
+        role: "assistant",
+        text: "",
+        jobId: nextJobId,
+        job_id: nextJobId,
+        status: "listening",
+        type: "tool_generation",
+      } as any;
+      setMessages((prev: Message[]) => [...prev, placeholderMsg]);
+
+      // Add to activeJobIds so SSEStatusListener opens a connection
+      setActiveJobIds((prev) => {
+        const combined = [...prev, nextJobId];
+        return Array.from(new Set(combined));
+      });
+    }
+
     // Show completion toast
     if (finalStatus.status.toLocaleLowerCase() === 'completed') {
-      toast({
-        title: "Completed",
-        description: finalStatus.message || "Your request has been completed!",
-      });
+      // Only show toast if there's no next job (avoid spamming toasts for chain steps)
+      if (!nextJobId) {
+        toast({
+          title: "Completed",
+          description: finalStatus.message || "Your request has been completed!",
+        });
+      }
       // Refresh images when job completes
       handleImageGenerated();
       // Also refresh models if this is a model generation job
@@ -1450,16 +1532,28 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
 
     hasSentInitialPromptRef.current = true;
 
+    // Parse any initial image URLs passed from Home
+    let initialImages: string[] | undefined;
+    const encodedImages = searchParams.get("image_urls");
+    if (encodedImages) {
+      try {
+        initialImages = JSON.parse(decodeURIComponent(encodedImages));
+      } catch (err) {
+        console.error("Failed to parse initial image URLs:", err);
+      }
+    }
+
     // Start a fresh chat for this prompt
-    setSessionId(null);  
+    setSessionId(null);
 
     // Fire and forget; any errors will be logged
-    handleSendMessage(initialPrompt).catch((err) => {
+    handleSendMessage(initialPrompt, initialImages).catch((err) => {
       console.error("Failed to send initial prompt from Home:", err);
     });
 
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.delete("initial_prompt");
+    newSearchParams.delete("image_urls");
     setSearchParams(newSearchParams, { replace: true });
   }, [authToken, userProfile?.id, searchParams, setSearchParams, handleSendMessage]);
 
@@ -1685,6 +1779,8 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         apiUrl={apiUrl}
         onSessionsLoaded={handleSessionsLoaded}
         onTutorialClick={() => setShowTutorialOnboarding(true)}
+        projectName={currentProject?.name}
+        projectId={projectIdFromUrl}
       />
       
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
