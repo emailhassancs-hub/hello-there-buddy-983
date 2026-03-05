@@ -912,11 +912,11 @@ const ChatInterface = ({
         </div>
 
         {/* AI Disclaimer Message */}
-        <div className="mt-2 px-2">
+        {/* <div className="mt-2 px-2">
           <p className="text-xs text-muted-foreground text-center">
            AI-generated content may be inaccurate.
           </p>
-        </div>
+        </div> */}
       {/* </div> */}
 
       {/* Image Zoom Dialog */}

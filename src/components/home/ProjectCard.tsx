@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, FolderOpen, Pencil, Share2, Trash2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
@@ -38,6 +38,19 @@ interface ProjectCardProps {
   projectCreatorId: string;
 }
 
+const PROJECT_COLOR_GRADIENTS: Array<{ from: string; to: string }> = [
+  { from: "from-orange-50", to: "to-orange-100" },
+  { from: "from-amber-50", to: "to-amber-100" },
+  { from: "from-yellow-50", to: "to-yellow-100" },
+  { from: "from-lime-50", to: "to-lime-100" },
+  { from: "from-emerald-50", to: "to-emerald-100" },
+  { from: "from-teal-50", to: "to-teal-100" },
+  { from: "from-sky-50", to: "to-sky-100" },
+  { from: "from-indigo-50", to: "to-indigo-100" },
+  { from: "from-fuchsia-50", to: "to-fuchsia-100" },
+  { from: "from-rose-50", to: "to-rose-100" },
+];
+
 const ProjectCard = ({
   id,
   isNew = false,
@@ -65,6 +78,28 @@ const ProjectCard = ({
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Pick a stable "random" gradient based on project id or title
+  const { effectiveGradientFrom, effectiveGradientTo } = useMemo(() => {
+    // If explicit gradients are passed, respect them
+    if (gradientFrom && gradientTo && (gradientFrom !== "from-muted" || gradientTo !== "to-accent")) {
+      return { effectiveGradientFrom: gradientFrom, effectiveGradientTo: gradientTo };
+    }
+
+    const key = (id || title || "").toString();
+    if (!key) {
+      const fallback = PROJECT_COLOR_GRADIENTS[0];
+      return { effectiveGradientFrom: fallback.from, effectiveGradientTo: fallback.to };
+    }
+
+    let hash = 0;
+    for (let i = 0; i < key.length; i += 1) {
+      hash = (hash + key.charCodeAt(i)) % PROJECT_COLOR_GRADIENTS.length;
+    }
+
+    const picked = PROJECT_COLOR_GRADIENTS[hash];
+    return { effectiveGradientFrom: picked.from, effectiveGradientTo: picked.to };
+  }, [gradientFrom, gradientTo, id, title]);
 
   const handleDelete = async () => {
     if (!id || isDeleting) return;
@@ -162,7 +197,7 @@ const ProjectCard = ({
         onMouseLeave={() => setHovered(false)}
       >
         {/* Thumbnail */}
-        <div className={`relative h-[120px] bg-gradient-to-br ${gradientFrom} ${gradientTo}`}>
+        <div className={`relative h-[120px] bg-gradient-to-br ${effectiveGradientFrom} ${effectiveGradientTo}`}>
 
           {/* Sharer info overlay */}
         {sharerName && sharerInitials && (
@@ -325,7 +360,7 @@ const ProjectCard = ({
         <div className="p-3">
           <p className="text-sm font-medium truncate">{title}</p>
           <p className="text-[11px] font-mono text-muted-foreground mt-1">
-            {lastModified} · {assetCount} asset{assetCount !== 1 ? "s" : ""}
+            {lastModified} 
           </p>
         </div>
       </div>
