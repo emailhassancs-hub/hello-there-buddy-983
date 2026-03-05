@@ -706,61 +706,65 @@ const ChatInterface = ({
           </div>
         )}
 
-        <div className="relative flex items-end glass border border-border rounded-2xl p-2 shadow-soft">
-          <DropdownMenu>
-            <Tooltip delayDuration={200}>
-              <TooltipTrigger asChild>
+        <div className="glass border border-border rounded-2xl p-2 shadow-soft">
+          {/* Desktop/Tablet Layout: All in one row */}
+          <div className="hidden sm:flex items-end gap-2">
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <DropdownMenu>
+                <Tooltip delayDuration={200}>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="min-w-lg bg-gray-900 dark:bg-gray-800 border-gray-700 text-white p-2 z-[1000]">
+                    <p>Upload Image</p>
+                  </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="start" className="w-48 bg-white">
+                  <DropdownMenuItem onClick={triggerFileUpload}>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Image
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
+                    size="sm"
+                    className="flex-shrink-0 h-9 gap-1.5 px-2 rounded-lg hover:bg-muted/50"
                   >
-                    <Plus className="w-4 h-4" />
+                    <img src={toolsIcon} alt="Tools" className="w-5 h-5" />
+                    <span className="text-xs">Tools</span>
                   </Button>
                 </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="min-w-lg bg-gray-900 dark:bg-gray-800 border-gray-700 text-white p-2 z-[1000]">
-                <p>Upload Image</p>
-              </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent align="start" className="w-48 bg-white">
-              <DropdownMenuItem onClick={triggerFileUpload}>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Image
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuContent align="start" className="w-56 bg-white">
+                  <DropdownMenuItem onClick={triggerModelUpload}>
+                    <Box className="w-4 h-4 mr-2" />
+                    Model Optimization
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-shrink-0 h-9 gap-1.5 px-2 rounded-lg hover:bg-muted/50"
-              >
-                <img src={toolsIcon} alt="Tools" className="w-5 h-5" />
-                <span className="text-xs">Tools</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 bg-white">
-              <DropdownMenuItem onClick={triggerModelUpload}>
-                <Box className="w-4 h-4 mr-2" />
-                Model Optimization
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Describe your image idea..."
-            className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-y-auto min-h-[36px] max-h-[100px] px-2"
-            disabled={isGenerating}
-            rows={1}
-          />
+            <Textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Describe your image idea..."
+              className="flex-1 min-w-0 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-y-auto min-h-[46px] max-h-[200px] px-2"
+              disabled={isGenerating}
+              rows={1}
+            />
 
           {/* Response mode toggle: Thinking / Fast */}
           <div className="flex items-center gap-2 mx-2">
@@ -810,23 +814,110 @@ const ChatInterface = ({
             </Button>
           </div>
 
-          <Button
-            onClick={handleSend}
-            disabled={!inputValue.trim() || isGenerating || isUploading}
-            size="icon"
-            className="flex-shrink-0 h-9 w-9 rounded-lg"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
+              <Button
+                onClick={handleSend}
+                disabled={!inputValue.trim() || isGenerating || isUploading}
+                size="icon"
+                className="flex-shrink-0 h-9 w-9 rounded-lg"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile Layout: Input on top, buttons below */}
+          <div className="flex sm:hidden flex-col gap-2">
+            <Textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Describe your image idea..."
+              className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-y-auto min-h-[36px] max-h-[200px] px-2"
+              disabled={isGenerating}
+              rows={1}
+            />
+            
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <DropdownMenu>
+                  <Tooltip delayDuration={200}>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="min-w-lg bg-gray-900 dark:bg-gray-800 border-gray-700 text-white p-2 z-[1000]">
+                      <p>Upload Image</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <DropdownMenuContent align="start" className="w-48 bg-white">
+                    <DropdownMenuItem onClick={triggerFileUpload}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Image
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-shrink-0 h-9 gap-1.5 px-2 rounded-lg hover:bg-muted/50"
+                    >
+                      <img src={toolsIcon} alt="Tools" className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56 bg-white">
+                    <DropdownMenuItem onClick={triggerModelUpload}>
+                      <Box className="w-4 h-4 mr-2" />
+                      Model Optimization
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <Button
+                  variant={humanInLoop ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setHumanInLoop(!humanInLoop)}
+                  className={cn(
+                    "flex-shrink-0 h-9 w-9 rounded-lg transition-all",
+                    humanInLoop ? "bg-primary text-primary-foreground" : "bg-muted/50"
+                  )}
+                  title={humanInLoop ? "Human in the loop: ON" : "Human in the loop: OFF"}
+                >
+                  <User className="w-4 h-4" />
+                </Button>
+
+                <Button
+                  onClick={handleSend}
+                  disabled={!inputValue.trim() || isGenerating || isUploading}
+                  size="icon"
+                  className="flex-shrink-0 h-9 w-9 rounded-lg"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* AI Disclaimer Message */}
-        <div className="mt-2 px-2">
+        {/* <div className="mt-2 px-2">
           <p className="text-xs text-muted-foreground text-center">
            AI-generated content may be inaccurate.
           </p>
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
 
       {/* Image Zoom Dialog */}
       <Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>

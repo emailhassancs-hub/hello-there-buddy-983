@@ -21,6 +21,8 @@ import PaymentSuccessPage from "./pages/payment/PaymentSuccess";
 import PaymentCancelPage from "./pages/payment/PaymentCancel";
 import Landing from "./pages/Landing";
 import CreditUsageHistoryPage from "./pages/CreditUsageHistory";
+import Home from "./components/home/Home"
+import Projects from "./components/home/Projects"
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <VideoGallery />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute>
+                  <Projects/>
                 </ProtectedRoute>
               }
             />

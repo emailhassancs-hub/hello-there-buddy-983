@@ -63,7 +63,7 @@ export default function LoginPage() {
       localStorage.setItem(LocalStorageKeys.AccessToken, res.access_token)
       localStorage.setItem(LocalStorageKeys.User, JSON.stringify(res.user ?? {}))
       setUser(res.user ?? {})
-      window.location.href = '/app'
+      window.location.href = '/home'
     } catch (e: any) {
       if (e.message.includes('pending admin approval')) {
         window.location.href = '/waitlist'

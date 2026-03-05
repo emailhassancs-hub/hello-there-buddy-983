@@ -6,6 +6,7 @@ import ModelViewer from "@/components/ModelViewer";
 import ModelOptimization from "@/components/ModelOptimization";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { useProject } from "@/hooks/use-project";
 import { LocalStorageKeys } from "@/enums/localstorage";
 import { SSEStatusListener } from "@/components/SSEStatusListener";
 import { SSEStatusUpdate } from "@/hooks/useSSE";
@@ -55,6 +56,7 @@ const Index = () => {
   const [showTutorialOnboarding, setShowTutorialOnboarding] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const hasCheckedUrlParamsRef = useRef(false);
+  const hasSentInitialPromptRef = useRef(false);
   
   // Workflow chain state
   const [workflowChain, setWorkflowChain] = useState<WorkflowChainData | null>(null);
@@ -68,6 +70,8 @@ const Index = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: userProfile } = useUserProfile();
+  const projectIdFromUrl = searchParams.get("projectId");
+  const { data: currentProject } = useProject(projectIdFromUrl);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -258,6 +262,12 @@ const Index = () => {
         payload.userId = userId;
       }
 
+      // Attach current project (if any) from URL
+      const projectIdFromUrl = searchParams.get("projectId");
+      if (projectIdFromUrl) {
+        payload.projectId = projectIdFromUrl;
+      }
+
       if (typeof humanInLoop === "boolean") {
         payload.humanInLoop = humanInLoop;
       }
@@ -276,6 +286,10 @@ const Index = () => {
       
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      if (projectIdFromUrl) {
+        headers["x-project-id"] = projectIdFromUrl;
       }
 
       const response = await fetch(`${API}/ask`, {
@@ -473,6 +487,11 @@ const Index = () => {
       
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const projectIdFromUrl = searchParams.get("projectId");
+      if (projectIdFromUrl) {
+        headers["x-project-id"] = projectIdFromUrl;
       }
 
       const response = await fetch(`${API}/ask`, {
@@ -1511,6 +1530,42 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
     }
   }, [userProfile?.id, authToken, handleLoadSession, searchParams, setSearchParams]);
 
+  // If we arrive with an initial_prompt (from Home), auto-send it once
+  useEffect(() => {
+    if (!authToken || !userProfile?.id || hasSentInitialPromptRef.current) {
+      return;
+    }
+
+    const initialPrompt = searchParams.get("initial_prompt");
+    if (!initialPrompt) return;
+
+    hasSentInitialPromptRef.current = true;
+
+    // Parse any initial image URLs passed from Home
+    let initialImages: string[] | undefined;
+    const encodedImages = searchParams.get("image_urls");
+    if (encodedImages) {
+      try {
+        initialImages = JSON.parse(decodeURIComponent(encodedImages));
+      } catch (err) {
+        console.error("Failed to parse initial image URLs:", err);
+      }
+    }
+
+    // Start a fresh chat for this prompt
+    setSessionId(null);
+
+    // Fire and forget; any errors will be logged
+    handleSendMessage(initialPrompt, initialImages).catch((err) => {
+      console.error("Failed to send initial prompt from Home:", err);
+    });
+
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("initial_prompt");
+    newSearchParams.delete("image_urls");
+    setSearchParams(newSearchParams, { replace: true });
+  }, [authToken, userProfile?.id, searchParams, setSearchParams, handleSendMessage]);
+
   // Handle when sessions are loaded from sidebar
   // Don't auto-load any session - user must explicitly click to load a chat
   const handleSessionsLoaded = useCallback((sessions: Array<{ session_id: string }>) => {
@@ -1733,6 +1788,8 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         apiUrl={apiUrl}
         onSessionsLoaded={handleSessionsLoaded}
         onTutorialClick={() => setShowTutorialOnboarding(true)}
+        projectName={currentProject?.name}
+        projectId={projectIdFromUrl}
       />
       
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">

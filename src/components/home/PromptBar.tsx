@@ -1,0 +1,240 @@
+import { useRef, useState } from "react";
+import { Lightbulb, Plus, Sparkles, Upload, User, X, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import SuggestionChips from "./SuggestionChips";
+import { useNavigate } from "react-router-dom";
+import { apiFetch } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import type { Project } from "@/hooks/use-projects";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useFileUpload } from "@/components/chat/useFileUpload";
+
+const PromptBar = () => {
+  const [prompt, setPrompt] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [responseMode, setResponseMode] = useState<"thinking" | "fast">("thinking");
+  const [humanInLoop, setHumanInLoop] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Reuse the same upload behavior as the /app chat input
+  const {
+    handleFileSelect: handleUploadFiles,
+    uploadedImageUrls,
+    uploadedImagePreviews,
+    removeUploadedUrl,
+    isUploading,
+  } = useFileUpload({
+    apiUrl: "",
+  } as any);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    // Delegate to shared upload hook (validations + /api/v1/upload-image)
+    handleUploadFiles(e.target.files);
+  };
+
+  const handleGenerate = async () => {
+    const trimmed = prompt.trim();
+    if (!trimmed || isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+
+      // 1) Create a new project with this prompt as the name
+      const project = await apiFetch<Project>("/api/projects", {
+        method: "POST",
+        body: { name: trimmed },
+      });
+
+      // 2) Redirect to /app with projectId and initial prompt in query params
+      const params = new URLSearchParams();
+      if (project.id) {
+        params.set("projectId", project.id);
+      }
+      params.set("initial_prompt", trimmed);
+      if (uploadedImageUrls && uploadedImageUrls.length > 0) {
+        params.set("image_urls", encodeURIComponent(JSON.stringify(uploadedImageUrls)));
+      }
+
+      navigate(`/app?${params.toString()}`);
+    } catch (error: any) {
+      console.error("Failed to create project from prompt:", error);
+      toast({
+        title: "Unable to start project",
+        description: error?.message || "Something went wrong while creating your project.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-[700px] mx-auto">
+      <div className="relative rounded-lg p-[1px] shadow-card">
+        {/* Rotating shine border */}
+        <div className="absolute inset-0 rounded-lg overflow-hidden">
+          <div
+            className="absolute inset-[-300%] animate-border-shine"
+            style={{
+              background:
+                "conic-gradient(from 0deg, transparent 0%, transparent 70%, hsl(var(--muted-foreground) / 0.15) 75%, hsl(var(--foreground) / 0.3) 82%, hsl(var(--primary-glow) / 0.2) 88%, hsl(var(--muted-foreground) / 0.15) 93%, transparent 97%)",
+            }}
+          />
+        </div>
+        {/* Inner content */}
+        <div className="relative rounded-xl bg-background overflow-hidden px-3 py-2 md:px-4 md:py-3">
+          {/* Hidden file input for uploads */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+
+          {/* Uploading indicator */}
+          {isUploading && (
+            <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border border-border mb-2">
+              <div className="animate-spin rounded-full h-3 w-3 border-2 border-primary border-t-transparent" />
+              <span className="text-xs text-muted-foreground">Uploading...</span>
+            </div>
+          )}
+
+          {/* Thumbnails */}
+          {uploadedImagePreviews.length > 0 && !isUploading && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {uploadedImagePreviews.map((preview, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={preview}
+                    alt={`Upload ${index + 1}`}
+                    className="w-10 h-10 md:w-12 md:h-12 object-cover rounded-lg border border-border/50"
+                  />
+                  <button
+                    onClick={() => removeUploadedUrl(index)}
+                    className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove image"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Top row: upload + main input */}
+          <div className="flex items-center gap-2">
+            {/* Left: upload */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex-shrink-0 h-8 w-8 rounded-lg hover:bg-muted/50"
+                    onClick={handleUploadClick}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="min-w-lg bg-gray-900 dark:bg-gray-800 border-gray-700 text-white p-2 z-[1000]"
+                >
+                  <p>Upload Image</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* Center: textarea */}
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe your asset…"
+              rows={1}
+              className="flex-1 min-w-0 resize-none bg-transparent px-2 py-2 text-sm md:text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+          </div>
+
+          {/* Second row: suggestions + actions */}
+          <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-1">
+            {/* Suggestions row */}
+            <div className="flex flex-wrap gap-2">
+              <SuggestionChips onSelect={(p) => setPrompt(p)} />
+            </div>
+
+            {/* Action row: response mode, HITL, Generate */}
+            <div className="flex items-center gap-2 md:justify-end">
+              {/* Thinking / Fast */}
+              <div className="flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setResponseMode("thinking")}
+                  className={`flex items-center justify-center h-7 w-7 rounded-full text-xs transition-all ${
+                    responseMode === "thinking"
+                      ? "bg-primary text-primary-foreground shadow-md scale-105"
+                      : "bg-transparent text-muted-foreground hover:bg-muted/60"
+                  }`}
+                  title="Thinking (better quality, slower)"
+                >
+                  <Lightbulb className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResponseMode("fast")}
+                  className={`flex items-center justify-center h-7 w-7 rounded-full text-xs transition-all ${
+                    responseMode === "fast"
+                      ? "bg-primary text-primary-foreground shadow-md scale-105"
+                      : "bg-transparent text-muted-foreground hover:bg-muted/60"
+                  }`}
+                  title="Fast (quicker, lighter thinking)"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* HITL toggle */}
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[10px] font-medium text-muted-foreground">HITL</span>
+                <Button
+                  variant={humanInLoop ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setHumanInLoop(!humanInLoop)}
+                  className={`flex-shrink-0 h-8 w-8 rounded-lg transition-all ${
+                    humanInLoop ? "bg-primary text-primary-foreground" : "bg-muted/50"
+                  }`}
+                  title={humanInLoop ? "Human in the loop: ON" : "Human in the loop: OFF"}
+                >
+                  <User className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+
+              {/* Generate */}
+              <Button
+                onClick={handleGenerate}
+                className="shrink-0 gap-2 h-9 rounded-lg"
+                disabled={isSubmitting || !prompt.trim()}
+              >
+                <Sparkles className="w-4 h-4" />
+                {isSubmitting ? "Starting..." : "Generate"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PromptBar;
