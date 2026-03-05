@@ -552,6 +552,11 @@ Be friendly and instructive. Use short explanations and examples where needed.`
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
+      const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
+      if (projectIdFromUrl) {
+        headers["x-project-id"] = projectIdFromUrl;
+      }
+
       const payload: any = {
         query: systemPrompt,
         session_id: localStorage.getItem("mcp_session_id")

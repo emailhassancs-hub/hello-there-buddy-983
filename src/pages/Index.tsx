@@ -288,6 +288,10 @@ const Index = () => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
+      if (projectIdFromUrl) {
+        headers["x-project-id"] = projectIdFromUrl;
+      }
+
       const response = await fetch(`${API}/ask`, {
         method: "POST",
         headers,
@@ -483,6 +487,11 @@ const Index = () => {
       
       if (authToken) {
         headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const projectIdFromUrl = searchParams.get("projectId");
+      if (projectIdFromUrl) {
+        headers["x-project-id"] = projectIdFromUrl;
       }
 
       const response = await fetch(`${API}/ask`, {
