@@ -134,9 +134,9 @@ const ProjectsSection = () => {
                 ? "No projects yet. Start creating!"
                 : "Nothing shared with you yet."}
             </p>
-            <Button variant="outline" size="sm">
+            {/* <Button variant="outline" size="sm">
               {view === "my" ? "Create Project" : "Explore Community"}
-            </Button>
+            </Button> */}
           </div>
         )}
       </div>
