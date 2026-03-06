@@ -16,8 +16,6 @@ import { useFileUpload } from "@/components/chat/useFileUpload";
 const PromptBar = () => {
   const [prompt, setPrompt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [responseMode, setResponseMode] = useState<"thinking" | "fast">("thinking");
-  const [humanInLoop, setHumanInLoop] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -176,49 +174,6 @@ const PromptBar = () => {
 
             {/* Action row: response mode, HITL, Generate */}
             <div className="flex items-center gap-2 md:justify-end">
-              {/* Thinking / Fast */}
-              <div className="flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => setResponseMode("thinking")}
-                  className={`flex items-center justify-center h-7 w-7 rounded-full text-xs transition-all ${
-                    responseMode === "thinking"
-                      ? "bg-primary text-primary-foreground shadow-md scale-105"
-                      : "bg-transparent text-muted-foreground hover:bg-muted/60"
-                  }`}
-                  title="Thinking (better quality, slower)"
-                >
-                  <Lightbulb className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setResponseMode("fast")}
-                  className={`flex items-center justify-center h-7 w-7 rounded-full text-xs transition-all ${
-                    responseMode === "fast"
-                      ? "bg-primary text-primary-foreground shadow-md scale-105"
-                      : "bg-transparent text-muted-foreground hover:bg-muted/60"
-                  }`}
-                  title="Fast (quicker, lighter thinking)"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* HITL toggle */}
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] font-medium text-muted-foreground">HITL</span>
-                <Button
-                  variant={humanInLoop ? "default" : "outline"}
-                  size="icon"
-                  onClick={() => setHumanInLoop(!humanInLoop)}
-                  className={`flex-shrink-0 h-8 w-8 rounded-lg transition-all ${
-                    humanInLoop ? "bg-primary text-primary-foreground" : "bg-muted/50"
-                  }`}
-                  title={humanInLoop ? "Human in the loop: ON" : "Human in the loop: OFF"}
-                >
-                  <User className="w-3.5 h-3.5" />
-                </Button>
-              </div>
 
               {/* Generate */}
               <Button

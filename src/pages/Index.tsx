@@ -200,7 +200,7 @@ const Index = () => {
     aiResponse?: any,
     uploadSessionId?: string,
     responseMode: "thinking" | "fast" = "thinking",
-    humanInLoop?: boolean,
+    humanInLoop: boolean = false,
   ) => {
     if (!text.trim() && (!imageUrls || imageUrls.length === 0)) return;
 
@@ -251,7 +251,8 @@ const Index = () => {
       
       const payload: any = {
         query: text,
-        mode: responseMode, // 'thinking' | 'fast' for backend /ask endpoint
+        mode: responseMode, 
+        humanInLoop
       };
       
       if (sessionId) {
@@ -266,10 +267,6 @@ const Index = () => {
       const projectIdFromUrl = searchParams.get("projectId");
       if (projectIdFromUrl) {
         payload.projectId = projectIdFromUrl;
-      }
-
-      if (typeof humanInLoop === "boolean") {
-        payload.humanInLoop = humanInLoop;
       }
 
       // Include uploaded image URLs in the payload for agent processing
