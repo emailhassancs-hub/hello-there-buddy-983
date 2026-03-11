@@ -189,9 +189,15 @@ export const useFileUpload = (options: UploadOptions) => {
       });
       return;
     }
-    // Add the image URL directly (no upload needed since it's already on the server)
-    setUploadedImageUrls(prev => [...prev, imageUrl]);
-    setUploadedImagePreviews(prev => [...prev, imageUrl]);
+    // Avoid duplicates (e.g. remix event fired multiple times)
+    setUploadedImageUrls(prev => {
+      if (prev.includes(imageUrl)) return prev;
+      return [...prev, imageUrl];
+    });
+    setUploadedImagePreviews(prev => {
+      if (prev.includes(imageUrl)) return prev;
+      return [...prev, imageUrl];
+    });
   }, [uploadedImageUrls.length, toast]);
 
   return {

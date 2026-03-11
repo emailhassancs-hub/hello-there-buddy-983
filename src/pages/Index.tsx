@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ChatInterface from "@/components/ChatInterface";
 import ImageViewer from "@/components/ImageViewer";
 import ModelViewer from "@/components/ModelViewer";
@@ -55,6 +55,7 @@ const Index = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTutorialOnboarding, setShowTutorialOnboarding] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const hasCheckedUrlParamsRef = useRef(false);
   const hasSentInitialPromptRef = useRef(false);
   
@@ -74,6 +75,13 @@ const Index = () => {
   const { data: currentProject } = useProject(projectIdFromUrl);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+  // If /app is opened without a projectId, redirect to home
+  useEffect(() => {
+    if (!projectIdFromUrl) {
+      navigate("/home", { replace: true });
+    }
+  }, [navigate, projectIdFromUrl]);
 
 
   //const apiUrl = "http://localhost:8080";

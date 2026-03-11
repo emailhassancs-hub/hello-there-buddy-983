@@ -57,6 +57,8 @@ const ChatInterface = ({
   const modelFileInputRef = useRef<HTMLInputElement>(null);
   const lastProcessedImageKeyRef = useRef<string | null>(null);
   const lastAutoConfirmedKeyRef = useRef<string | null>(null);
+  const dragCounterRef = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { toast } = useToast();
 
@@ -304,9 +306,12 @@ const ChatInterface = ({
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      // Only send on Enter when there's text; avoid re-triggering image attach behavior
+      if (inputValue.trim().length > 0) {
+        handleSend();
+      }
     }
-  }, [handleSend]);
+  }, [handleSend, inputValue]);
 
   // Tool confirmation handlers
   const handleConfirm = useCallback((toolCalls: ToolCall[]) => {
@@ -369,6 +374,57 @@ const ChatInterface = ({
     await handleFileSelectFromHook(e.target.files);
     e.target.value = '';
   }, [handleFileSelectFromHook, uploadedImageUrls, toast]);
+
+  // Drag-and-drop file upload handlers
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounterRef.current = 0;
+      setIsDragging(false);
+
+      const files = e.dataTransfer.files;
+      if (!files?.length) return;
+
+      const MAX_FILES = 4;
+      if (files.length + uploadedImageUrls.length > MAX_FILES) {
+        toast({
+          title: "Upload limit reached",
+          description: `You can upload a maximum of ${MAX_FILES} files. Please remove some files before uploading more.`,
+        });
+        return;
+      }
+
+      await handleFileSelectFromHook(files);
+    },
+    [handleFileSelectFromHook, uploadedImageUrls.length, toast]
+  );
 
   // Model optimization handler
   const handleModelOptimization = useCallback(async (file: File) => {
@@ -706,7 +762,25 @@ const ChatInterface = ({
           </div>
         )}
 
-        <div className="glass border border-border rounded-2xl p-2 shadow-soft">
+        <div
+          className={cn(
+            "glass border rounded-2xl p-2 shadow-soft relative transition-colors",
+            isDragging ? "border-primary border-2 border-dashed bg-primary/5" : "border-border"
+          )}
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {isDragging && (
+            <div className="absolute inset-0 rounded-2xl flex items-center justify-center bg-background/80 z-10 pointer-events-none">
+              <div className="flex flex-col items-center gap-2 text-primary">
+                <Upload className="w-10 h-10" />
+                <span className="text-sm font-medium">Drop images here</span>
+                <span className="text-xs text-muted-foreground">PNG, JPEG up to 4 files</span>
+              </div>
+            </div>
+          )}
           {/* Desktop/Tablet Layout: All in one row */}
           <div className="hidden sm:flex items-end gap-2">
             <div className="flex items-center gap-1 flex-shrink-0">
