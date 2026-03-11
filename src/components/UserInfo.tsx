@@ -31,12 +31,19 @@ import {
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
+const formatCredits = (credits: unknown): string => {
+  const n = typeof credits === "number" ? credits : Number(credits);
+  if (!Number.isFinite(n) || n === 0) return "0";
+  return n.toFixed(3).replace(/\.?0+$/, "");
+};
+
 interface UserInfoProps {
   className?: string;
   onTutorialClick?: () => void;
+  collapsed?: boolean;
 }
 
-export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
+export const UserInfo = ({ className, onTutorialClick, collapsed }: UserInfoProps) => {
   const { data: userProfile, isLoading } = useUserProfile();
   const { clearUser } = useUser();
   const { toast } = useToast();
@@ -111,6 +118,96 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
         .slice(0, 2)
     : "U";
 
+  if (collapsed) {
+    return (
+      <div className={cn("p-2 border-t border-border flex flex-col items-center gap-2", className)}>
+        {/* Credits icon */}
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setIsCreditUsageModalOpen(true)}
+              className="flex items-center justify-center w-8 h-8 rounded-md bg-black cursor-pointer hover:bg-black/90 transition-colors"
+              aria-label="Credits"
+            >
+              <Coins className="w-4 h-4 text-yellow-400" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-gray-900 text-white p-2 z-[1000]">
+            <p className="text-xs font-medium">{formatCredits(userProfile.credits)} Credits</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Profile icon + dropdown */}
+        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="w-8 h-8 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center"
+                  aria-label="User menu"
+                >
+                  <span className="text-[10px] font-medium text-foreground">{initials}</span>
+                </button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-gray-900 text-white p-2 z-[1000]">
+              <p className="text-xs font-medium">{userProfile.name || "User"}</p>
+            </TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent
+            align="end"
+            className="w-40 !z-[9999] bg-white ml-2"
+            side="right"
+            sideOffset={6}
+          >
+            <DropdownMenuItem
+              onClick={() => {
+                setIsDropdownOpen(false);
+                setIsProfileModalOpen(true);
+              }}
+              className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onTutorialClick?.()}
+              className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
+              Tutorial
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setIsDropdownOpen(false);
+                setIsCreditUsageModalOpen(true);
+              }}
+              className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+            >
+              <Receipt className="h-4 w-4 mr-2" />
+              Usage
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <ProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+        <CreditUsageModal
+          isOpen={isCreditUsageModalOpen}
+          onClose={() => setIsCreditUsageModalOpen(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("p-2 border-t border-border space-y-2 relative", className)}>
       {isProjectCreator && (
@@ -158,7 +255,7 @@ export const UserInfo = ({ className, onTutorialClick }: UserInfoProps) => {
       >
         <Coins className="h-3.5 w-3.5 text-yellow-400" />
         <span className="text-xs font-medium text-white">
-          {userProfile.credits?.toLocaleString() || 0} Credits
+          {formatCredits(userProfile.credits)} Credits
         </span>
       </button>
       

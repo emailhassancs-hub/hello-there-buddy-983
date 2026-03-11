@@ -31,6 +31,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useNavigate } from "react-router-dom";
 import { ProjectMembersModal } from "@/components/home/ProjectMembersModal";
 
+const formatCredits = (credits: unknown): string => {
+  const n = typeof credits === "number" ? credits : Number(credits);
+  if (!Number.isFinite(n) || n === 0) return "0";
+  return n.toFixed(3).replace(/\.?0+$/, "");
+};
+
 interface Session {
   session_id: string;
   created_at: string;
@@ -405,7 +411,7 @@ export const ChatSidebar = ({
             </TooltipTrigger>
             <TooltipContent side="right" className="bg-gray-900 text-white p-2 z-[1000]">
               <p className="text-xs font-medium">
-                {userProfile.credits?.toLocaleString() || 0} Credits
+                {formatCredits(userProfile.credits)} Credits
               </p>
             </TooltipContent>
           </Tooltip>

@@ -105,7 +105,7 @@ const AppSidebar = () => {
       </SidebarContent>
 
       <SidebarFooter>
-        <UserInfo />
+        <UserInfo collapsed={collapsed} />
       </SidebarFooter>
     </Sidebar>
   );
