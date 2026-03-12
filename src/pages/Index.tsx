@@ -76,7 +76,7 @@ const Index = () => {
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
-  // If /app is opened without a projectId, redirect to home
+  // If /studio is opened without a projectId, redirect to home
   useEffect(() => {
     if (!projectIdFromUrl) {
       navigate("/home", { replace: true });

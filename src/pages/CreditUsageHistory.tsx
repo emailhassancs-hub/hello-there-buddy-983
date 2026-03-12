@@ -20,7 +20,7 @@ export default function CreditUsageHistoryPage() {
                 <div className="max-w-7xl mx-auto">
                     <Button
                         variant="ghost"
-                        onClick={() => navigate("/app")}
+                        onClick={() => navigate("/studio")}
                         className="mb-6"
                     >
                         <ArrowLeft className="h-4 w-4 mr-2" />
@@ -46,7 +46,7 @@ export default function CreditUsageHistoryPage() {
                 <div className="mb-6">
                     <Button
                         variant="ghost"
-                        onClick={() => navigate("/app")}
+                        onClick={() => navigate("/studio")}
                         className="mb-4"
                     >
                         <ArrowLeft className="h-4 w-4 mr-2" />

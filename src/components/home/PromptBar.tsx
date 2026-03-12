@@ -20,7 +20,7 @@ const PromptBar = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Reuse the same upload behavior as the /app chat input
+  // Reuse the same upload behavior as the /studio chat input
   const {
     handleFileSelect: handleUploadFiles,
     uploadedImageUrls,
@@ -54,7 +54,7 @@ const PromptBar = () => {
         body: { name: trimmed },
       });
 
-      // 2) Redirect to /app with projectId and initial prompt in query params
+      // 2) Redirect to /studio with projectId and initial prompt in query params
       const params = new URLSearchParams();
       if (project.id) {
         params.set("projectId", project.id);
@@ -64,7 +64,7 @@ const PromptBar = () => {
         params.set("image_urls", encodeURIComponent(JSON.stringify(uploadedImageUrls)));
       }
 
-      navigate(`/app?${params.toString()}`);
+      navigate(`/studio?${params.toString()}`);
     } catch (error: any) {
       console.error("Failed to create project from prompt:", error);
       toast({

@@ -494,7 +494,7 @@ export const ChatSidebar = ({
                   className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md transition-colors text-left"
                 >
                   <Home className="w-4 h-4" />
-                  Go to home page
+                  Home page
                 </button>
                 {canEditProject && (
                   <>

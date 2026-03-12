@@ -36,7 +36,7 @@ const App = () => (
           <Routes>
             {/* Protected Routes - require authentication */}
             <Route
-              path="/app"
+              path="/studio"
               element={
                 <ProtectedRoute>
                   <Index />
