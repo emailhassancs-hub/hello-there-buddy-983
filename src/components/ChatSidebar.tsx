@@ -198,10 +198,7 @@ export const ChatSidebar = ({
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const userId = userProfile?.id;
-      const url = userId 
-        ? `${apiUrl}/sessions?userId=${encodeURIComponent(userId)}`
-        : `${apiUrl}/sessions`;
+      const url = `${apiUrl}/project/${projectId}/sessions`
       
       const response = await fetch(url, { headers });
       if (!response.ok) {

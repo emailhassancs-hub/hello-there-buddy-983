@@ -297,8 +297,9 @@ const ModelViewer = ({ apiUrl, selectedModel: externalSelectedModel, refreshTrig
 
     try {
       const currentOffset = append ? offset : 0;
+      const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
       const data = await apiFetch<any>(
-        `/api/model-generate-3d/history?limit=${LIMIT}&offset=${currentOffset}`
+        `/api/model-generate-3d/history?limit=${LIMIT}&offset=${currentOffset}${projectIdFromUrl ? `&projectId=${encodeURIComponent(projectIdFromUrl)}` : ""}`
       );
       // Handle different response structures: items, data, or direct array
       const rawModels = data.items || data.data || data || [];

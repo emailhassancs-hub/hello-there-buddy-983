@@ -134,13 +134,17 @@ const Index = () => {
       try {
         const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
         const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
+        const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
         
-        const response = await fetch(`${backendUrl}/api/model-optimization/models`, {
+        const response = await fetch(
+          `${backendUrl}/api/model-optimization/models${projectIdFromUrl ? `?projectId=${encodeURIComponent(projectIdFromUrl)}` : ""}`,
+          {
           headers: {
             "Authorization": currentToken ? `Bearer ${currentToken}` : "",
             "Content-Type": "application/json"
           }
-        });
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -1322,13 +1326,17 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       try {
         const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
         const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
+        const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
         
-        const response = await fetch(`${backendUrl}/api/model-optimization/models`, {
+        const response = await fetch(
+          `${backendUrl}/api/model-optimization/models${projectIdFromUrl ? `?projectId=${encodeURIComponent(projectIdFromUrl)}` : ""}`,
+          {
           headers: {
             "Authorization": currentToken ? `Bearer ${currentToken}` : "",
             "Content-Type": "application/json"
           }
-        });
+          }
+        );
 
         if (!response.ok) throw new Error("Failed to fetch models");
 

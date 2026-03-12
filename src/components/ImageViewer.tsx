@@ -87,8 +87,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
 
       const currentOffset = append ? offset : 0;
       const backendUrl = import.meta.env.VITE_API_BACKEND_URL;
+      const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
       const response = await fetch(
-        `${backendUrl}/api/image-generation/history?limit=${LIMIT}&offset=${currentOffset}`,
+        `${backendUrl}/api/image-generation/history?limit=${LIMIT}&offset=${currentOffset}${projectIdFromUrl ? `&projectId=${encodeURIComponent(projectIdFromUrl)}` : ""}`,
         {
           method: "GET",
           headers: {
@@ -179,8 +180,9 @@ const ImageViewer = ({ apiUrl, refreshTrigger, onRemixImage }: ImageViewerProps)
 
       const currentOffset = append ? offsetEdited : 0;
       const backendUrl = import.meta.env.VITE_API_BACKEND_URL || "http://localhost:8000";
+      const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
       const response = await fetch(
-        `${backendUrl}/api/image-editing/history?limit=${LIMIT}&offset=${currentOffset}`,
+        `${backendUrl}/api/image-editing/history?limit=${LIMIT}&offset=${currentOffset}${projectIdFromUrl ? `&projectId=${encodeURIComponent(projectIdFromUrl)}` : ""}`,
         {
           method: "GET",
           headers: {

@@ -105,7 +105,10 @@ interface RunningJobsResponse {
 
 // API functions
 async function fetchModels(page: number = 1, perPage: number = 10): Promise<ModelsResponse> {
-  return apiFetch<ModelsResponse>(`/api/model-optimization/models?page=${page}&per_page=${perPage}`)
+  const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
+  return apiFetch<ModelsResponse>(
+    `/api/model-optimization/models?page=${page}&per_page=${perPage}${projectIdFromUrl ? `&projectId=${encodeURIComponent(projectIdFromUrl)}` : ""}`
+  )
 }
 
 async function fetchAssociatedModels(baseModelId: string): Promise<AssociatedModelsResponse> {
