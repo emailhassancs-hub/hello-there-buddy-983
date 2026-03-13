@@ -136,13 +136,17 @@ const Index = () => {
       try {
         const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
         const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
+        const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
         
-        const response = await fetch(`${backendUrl}/api/model-optimization/models`, {
+        const response = await fetch(
+          `${backendUrl}/api/model-optimization/models${projectIdFromUrl ? `?projectId=${encodeURIComponent(projectIdFromUrl)}` : ""}`,
+          {
           headers: {
             "Authorization": currentToken ? `Bearer ${currentToken}` : "",
             "Content-Type": "application/json"
           }
-        });
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -1324,13 +1328,17 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       try {
         const currentToken = authToken || localStorage.getItem(LocalStorageKeys.AccessToken);
         const backendUrl = import.meta.env.VITE_API_BACKEND_URL || apiUrl;
+        const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
         
-        const response = await fetch(`${backendUrl}/api/model-optimization/models`, {
+        const response = await fetch(
+          `${backendUrl}/api/model-optimization/models${projectIdFromUrl ? `?projectId=${encodeURIComponent(projectIdFromUrl)}` : ""}`,
+          {
           headers: {
             "Authorization": currentToken ? `Bearer ${currentToken}` : "",
             "Content-Type": "application/json"
           }
-        });
+          }
+        );
 
         if (!response.ok) throw new Error("Failed to fetch models");
 
@@ -1373,7 +1381,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
     setActiveTab("models");
   };
 
-  const handleLoadSession = useCallback(async (sessionId: string) => {
+  const handleLoadSession = useCallback(async (sessionId: string, sessionUserId?: string) => {
     try {
       const headers: HeadersInit = {
         "Content-Type": "application/json",
@@ -1383,13 +1391,13 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      // Get user ID from profile
-      const userId = userProfile?.id;
+      const userId = sessionUserId || userProfile?.id;
+      const projectId = searchParams.get("projectId");
       
-      // Build URL with userId parameter
-      const exportUrl = userId 
-        ? `${API}/session/${sessionId}/export?userId=${encodeURIComponent(userId)}`
-        : `${API}/session/${sessionId}/export`;
+      const params = new URLSearchParams();
+      if (userId) params.set("userId", userId);
+      if (projectId) params.set("projectId", projectId);
+      const exportUrl = `${API}/session/${sessionId}/export${params.toString() ? `?${params.toString()}` : ""}`;
 
       const response = await fetch(exportUrl, { headers });
       if (!response.ok) {
@@ -1398,11 +1406,10 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       
       const data = await response.json();
       
-      // Update session ID and URL
       setSessionId(sessionId);
-      // Update URL with session_id query param
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.set("session_id", sessionId);
+        newSearchParams.set("session_user_id", userId);
       setSearchParams(newSearchParams, { replace: true });
       console.log(data.messages,'here is total messages==>>>')
       // Check for optimized_model_id in tool messages before processing
@@ -1515,12 +1522,11 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
     }
 
     const sessionIdFromUrl = searchParams.get("session_id");
+    const sessionUserIdFromUrl = searchParams.get("session_user_id");
     
     if (sessionIdFromUrl) {
-      // Mark as checked to prevent multiple loads
       hasCheckedUrlParamsRef.current = true;
-      // Load the session from URL param
-      handleLoadSession(sessionIdFromUrl).catch((error) => {
+      handleLoadSession(sessionIdFromUrl, sessionUserIdFromUrl || undefined).catch((error) => {
         console.error("Failed to restore session from URL:", error);
         // If restoration fails, remove the param and start fresh
         const newSearchParams = new URLSearchParams(searchParams);
