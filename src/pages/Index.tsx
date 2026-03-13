@@ -58,6 +58,8 @@ const Index = () => {
   const navigate = useNavigate();
   const hasCheckedUrlParamsRef = useRef(false);
   const hasSentInitialPromptRef = useRef(false);
+  const pendingInitialPromptRef = useRef<string | null>(null);
+  const pendingInitialImagesRef = useRef<string[] | undefined>(undefined);
   
   // Workflow chain state
   const [workflowChain, setWorkflowChain] = useState<WorkflowChainData | null>(null);
@@ -1535,27 +1537,50 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
     }
   }, [userProfile?.id, authToken, handleLoadSession, searchParams, setSearchParams]);
 
-  // If we arrive with an initial_prompt (from Home), auto-send it once
+  // Phase 1: On mount, immediately capture and strip initial_prompt from the URL.
+  // This runs once regardless of auth state, so a page refresh will find a clean URL
+  // and never re-trigger the ask endpoint.
+  useEffect(() => {
+    const initialPrompt = searchParams.get("initial_prompt");
+    if (!initialPrompt) return;
+
+    // Stash the prompt and optional images for Phase 2
+    pendingInitialPromptRef.current = initialPrompt;
+
+    const encodedImages = searchParams.get("image_urls");
+    if (encodedImages) {
+      try {
+        pendingInitialImagesRef.current = JSON.parse(decodeURIComponent(encodedImages));
+      } catch (err) {
+        console.error("Failed to parse initial image URLs:", err);
+      }
+    }
+
+    // Remove the params from the URL immediately so a refresh won't re-invoke the ask endpoint
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("initial_prompt");
+    newSearchParams.delete("image_urls");
+    setSearchParams(newSearchParams, { replace: true });
+    // Also update history synchronously in case React batches the state update
+    const newUrl = window.location.pathname + (newSearchParams.toString() ? `?${newSearchParams.toString()}` : "");
+    window.history.replaceState(null, "", newUrl);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run only once on mount
+
+  // Phase 2: Once auth is ready, send the captured prompt (stored in ref, not URL)
   useEffect(() => {
     if (!authToken || !userProfile?.id || hasSentInitialPromptRef.current) {
       return;
     }
 
-    const initialPrompt = searchParams.get("initial_prompt");
+    const initialPrompt = pendingInitialPromptRef.current;
     if (!initialPrompt) return;
 
     hasSentInitialPromptRef.current = true;
+    pendingInitialPromptRef.current = null;
 
-    // Parse any initial image URLs passed from Home
-    let initialImages: string[] | undefined;
-    const encodedImages = searchParams.get("image_urls");
-    if (encodedImages) {
-      try {
-        initialImages = JSON.parse(decodeURIComponent(encodedImages));
-      } catch (err) {
-        console.error("Failed to parse initial image URLs:", err);
-      }
-    }
+    const initialImages = pendingInitialImagesRef.current;
+    pendingInitialImagesRef.current = undefined;
 
     // Start a fresh chat for this prompt
     setSessionId(null);
@@ -1564,12 +1589,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
     handleSendMessage(initialPrompt, initialImages).catch((err) => {
       console.error("Failed to send initial prompt from Home:", err);
     });
-
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.delete("initial_prompt");
-    newSearchParams.delete("image_urls");
-    setSearchParams(newSearchParams, { replace: true });
-  }, [authToken, userProfile?.id, searchParams, setSearchParams, handleSendMessage]);
+  }, [authToken, userProfile?.id, handleSendMessage]);
 
   // Handle when sessions are loaded from sidebar
   // Don't auto-load any session - user must explicitly click to load a chat

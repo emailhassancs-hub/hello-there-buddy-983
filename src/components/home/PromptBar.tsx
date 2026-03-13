@@ -132,8 +132,29 @@ const PromptBar = () => {
           )}
 
           {/* Top row: upload + main input */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center">
             {/* Left: upload */}
+           
+
+            {/* Center: textarea */}
+            <textarea
+              value={prompt}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                const el = e.target;
+                el.style.height = "auto";
+                el.style.height = `${Math.min(el.scrollHeight, 125)}px`;
+              }}
+              placeholder="Describe your asset…"
+              rows={1}
+              style={{ maxHeight: "125px" }}
+              className="flex-1 min-w-0 resize-none bg-transparent px-2 py-2 text-sm md:text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none overflow-y-auto"
+            />
+          </div>
+
+          {/* Second row: suggestions + actions */}
+          <div className="mt-2 flex flex-col gap-3 md:flex-row items-start md:justify-between px-1">
+            {/* Suggestions row */}
             <div className="flex items-center gap-1 flex-shrink-0">
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
@@ -154,20 +175,6 @@ const PromptBar = () => {
                 </TooltipContent>
               </Tooltip>
             </div>
-
-            {/* Center: textarea */}
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your asset…"
-              rows={1}
-              className="flex-1 min-w-0 resize-none bg-transparent px-2 py-2 text-sm md:text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none"
-            />
-          </div>
-
-          {/* Second row: suggestions + actions */}
-          <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-1">
-            {/* Suggestions row */}
             <div className="flex flex-wrap gap-2">
               <SuggestionChips onSelect={(p) => setPrompt(p)} />
             </div>
