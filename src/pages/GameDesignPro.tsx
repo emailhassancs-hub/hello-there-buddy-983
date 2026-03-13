@@ -62,7 +62,7 @@ const GameDesignPro = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate("/app")}
+                onClick={() => navigate("/studio")}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Studio

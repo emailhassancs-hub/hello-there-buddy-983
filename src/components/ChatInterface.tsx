@@ -266,7 +266,7 @@ const ChatInterface = ({
   const adjustTextareaHeight = useCallback(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 140)}px`;
     }
   }, []);
 
@@ -781,135 +781,151 @@ const ChatInterface = ({
               </div>
             </div>
           )}
-          {/* Desktop/Tablet Layout: All in one row */}
-          <div className="hidden sm:flex items-end gap-2">
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <DropdownMenu>
-                <Tooltip delayDuration={200}>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="min-w-lg bg-gray-900 dark:bg-gray-800 border-gray-700 text-white p-2 z-[1000]">
-                    <p>Upload Image</p>
-                  </TooltipContent>
-                </Tooltip>
-                <DropdownMenuContent align="start" className="w-48 bg-white">
-                  <DropdownMenuItem onClick={triggerFileUpload}>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Image
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-shrink-0 h-9 gap-1.5 px-2 rounded-lg hover:bg-muted/50"
-                  >
-                    <img src={toolsIcon} alt="Tools" className="w-5 h-5" />
-                    <span className="text-xs">Tools</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 bg-white">
-                  <DropdownMenuItem onClick={triggerModelUpload}>
-                    <Box className="w-4 h-4 mr-2" />
-                    Model Optimization
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            <Textarea
+          {/* Desktop/Tablet Layout: textarea on top, all icons on bottom row */}
+          <div className="hidden sm:flex flex-col gap-1">
+            {/* Top row: textarea only */}
+            <textarea
               ref={textareaRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                const el = e.target;
+                el.style.height = "auto";
+                el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+              }}
               onKeyPress={handleKeyPress}
               placeholder="Describe your image idea..."
-              className="flex-1 min-w-0 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-y-auto min-h-[46px] max-h-[200px] px-2"
-              disabled={isGenerating}
               rows={1}
+              style={{ maxHeight: "140px" }}
+              className="w-full bg-transparent border-0 outline-none resize-none overflow-y-auto px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isGenerating}
             />
 
-          {/* Response mode toggle: Thinking / Fast */}
-          <div className="flex items-center gap-2 mx-2">
-            <div className="flex items-center rounded-full border border-border bg-muted/40 px-1.5 py-0.5 shadow-inner">
-              <button
-                type="button"
-                onClick={() => setResponseMode("thinking")}
-                className={cn(
-                  "flex items-center justify-center h-7 w-7 rounded-full text-xs transition-all",
-                  responseMode === "thinking"
-                    ? "bg-primary text-primary-foreground shadow-md scale-105"
-                    : "bg-transparent text-muted-foreground hover:bg-muted/60"
-                )}
-                title="Thinking (better quality, slower)"
-              >
-                <Lightbulb className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setResponseMode("fast")}
-                className={cn(
-                  "flex items-center justify-center h-7 w-7 rounded-full text-xs transition-all",
-                  responseMode === "fast"
-                    ? "bg-primary text-primary-foreground shadow-md scale-105"
-                    : "bg-transparent text-muted-foreground hover:bg-muted/60"
-                )}
-                title="Fast (quicker, lighter thinking)"
-              >
-                <Zap className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+            {/* Bottom row: all action icons spread across full width */}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              {/* Left: upload + tools */}
+              <div className="flex items-center gap-1">
+                <DropdownMenu>
+                  <Tooltip delayDuration={200}>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="flex-shrink-0 h-9 w-9 rounded-lg hover:bg-muted/50"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="min-w-lg bg-gray-900 dark:bg-gray-800 border-gray-700 text-white p-2 z-[1000]">
+                      <p>Upload Image</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <DropdownMenuContent align="start" className="w-48 bg-white">
+                    <DropdownMenuItem onClick={triggerFileUpload}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Image
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-          <div className="flex flex-col items-center gap-0.5 ml-1">
-            <span className="text-[10px] font-medium text-muted-foreground">HITL</span>
-            <Button
-              variant={humanInLoop ? "default" : "outline"}
-              size="icon"
-              onClick={() => setHumanInLoop(!humanInLoop)}
-              className={cn(
-                "flex-shrink-0 h-9 w-9 rounded-lg transition-all",
-                humanInLoop ? "bg-primary text-primary-foreground" : "bg-muted/50"
-              )}
-              title={humanInLoop ? "Human in the loop: ON" : "Human in the loop: OFF"}
-            >
-              <User className="w-4 h-4" />
-            </Button>
-          </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-shrink-0 h-9 gap-1.5 px-2 rounded-lg hover:bg-muted/50"
+                    >
+                      <img src={toolsIcon} alt="Tools" className="w-5 h-5" />
+                      <span className="text-xs">Tools</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56 bg-white">
+                    <DropdownMenuItem onClick={triggerModelUpload}>
+                      <Box className="w-4 h-4 mr-2" />
+                      Model Optimization
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-              <Button
-                onClick={handleSend}
-                disabled={!inputValue.trim() || isGenerating || isUploading}
-                size="icon"
-                className="flex-shrink-0 h-9 w-9 rounded-lg"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
+              {/* Right: response mode + HITL + send — all same height, aligned */}
+              <div className="flex items-center gap-1.5">
+                {/* Response mode toggle */}
+                <div className="flex items-center rounded-full border border-border bg-muted/40 px-1 py-0.5 shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => setResponseMode("thinking")}
+                    className={cn(
+                      "flex items-center justify-center h-6 w-6 rounded-full transition-all",
+                      responseMode === "thinking"
+                        ? "bg-primary text-primary-foreground shadow-md scale-105"
+                        : "bg-transparent text-muted-foreground hover:bg-muted/60"
+                    )}
+                    title="Thinking (better quality, slower)"
+                  >
+                    <Lightbulb className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setResponseMode("fast")}
+                    className={cn(
+                      "flex items-center justify-center h-6 w-6 rounded-full transition-all",
+                      responseMode === "fast"
+                        ? "bg-primary text-primary-foreground shadow-md scale-105"
+                        : "bg-transparent text-muted-foreground hover:bg-muted/60"
+                    )}
+                    title="Fast (quicker, lighter thinking)"
+                  >
+                    <Zap className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* HITL */}
+                <Button
+                  variant={humanInLoop ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setHumanInLoop(!humanInLoop)}
+                  className={cn(
+                    "flex-shrink-0 h-7 w-7 rounded-lg transition-all",
+                    humanInLoop ? "bg-primary text-primary-foreground" : "bg-muted/50"
+                  )}
+                  title={humanInLoop ? "Human in the loop: ON" : "Human in the loop: OFF"}
+                >
+                  <User className="w-3.5 h-3.5" />
+                </Button>
+
+                {/* Send */}
+                <Button
+                  onClick={handleSend}
+                  disabled={!inputValue.trim() || isGenerating || isUploading}
+                  size="icon"
+                  className="flex-shrink-0 h-7 w-7 rounded-lg"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Mobile Layout: Input on top, buttons below */}
           <div className="flex sm:hidden flex-col gap-2">
-            <Textarea
+            <textarea
               ref={textareaRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                const el = e.target;
+                el.style.height = "auto";
+                el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+              }}
               onKeyPress={handleKeyPress}
               placeholder="Describe your image idea..."
-              className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none overflow-y-auto min-h-[36px] max-h-[200px] px-2"
-              disabled={isGenerating}
               rows={1}
+              style={{ maxHeight: "140px" }}
+              className="w-full bg-transparent border-0 outline-none resize-none overflow-y-auto px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isGenerating}
             />
             
             <div className="flex items-center justify-between gap-2">
@@ -985,13 +1001,7 @@ const ChatInterface = ({
           </div>
         </div>
 
-        {/* AI Disclaimer Message */}
-        {/* <div className="mt-2 px-2">
-          <p className="text-xs text-muted-foreground text-center">
-           AI-generated content may be inaccurate.
-          </p>
-        </div> */}
-      {/* </div> */}
+      </div>
 
       {/* Image Zoom Dialog */}
       <Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>

@@ -180,7 +180,7 @@ const ProjectCard = ({
   if (isNew) {
     return (
       <button
-        onClick={() => navigate("/app")}
+        onClick={() => navigate("/studio")}
         className="flex flex-col items-center justify-center w-full h-full rounded-lg border-2 border-dashed border-border hover:border-primary/40 bg-background hover:bg-accent/50 transition-colors gap-2"
       >
         <Plus className="w-6 h-6 text-muted-foreground" />
@@ -220,7 +220,7 @@ const ProjectCard = ({
               title="Open"
               onClick={() => {
                 if (id) {
-                  navigate(`/app?projectId=${id}`);
+                  navigate(`/studio?projectId=${id}`);
                 }
               }}
             >

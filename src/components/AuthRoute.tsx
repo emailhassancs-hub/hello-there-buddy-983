@@ -8,9 +8,9 @@ interface AuthRouteProps {
 export const AuthRoute = ({ children }: AuthRouteProps) => {
   const token = localStorage.getItem(LocalStorageKeys.AccessToken);
   
-  // If user is already authenticated, redirect to app
+  // If user is already authenticated, redirect to studio
   if (token) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to="/studio" replace />;
   }
   
   return <>{children}</>;

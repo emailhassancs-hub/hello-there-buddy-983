@@ -17,9 +17,8 @@ export default function PaymentCancelPage() {
           </p>
           
           <div className="space-y-3">
-            <Button onClick={() => navigate('/app')} className="w-full">
-              Return to Dashboard
-            </Button>
+            <Button onClick={() => navigate('/studio')} className="w-full">
+              Return to Dashboard </Button>
             <Button 
               variant="outline" 
               onClick={() => navigate(-1)} 
