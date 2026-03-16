@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, FolderOpen, Pencil, Share2, Trash2, Users } from "lucide-react";
+import { Plus, Pencil, Share2, Trash2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
@@ -76,6 +76,7 @@ const ProjectCard = ({
   const [shareEmail, setShareEmail] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [hasActiveDialog, setHasActiveDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -189,12 +190,22 @@ const ProjectCard = ({
     );
   }
 
+  const handleCardClick = () => {
+    if (id) navigate(`/studio?projectId=${id}`);
+  };
+
   return (
     <>
       <div
-        className="relative rounded-lg border border-border bg-background overflow-hidden group"
+        role="button"
+        tabIndex={0}
+        className="relative rounded-lg border border-border bg-background overflow-hidden group cursor-pointer"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        onClick={() => {
+          if (hasActiveDialog) return;
+          handleCardClick();
+        }}
       >
         {/* Thumbnail */}
         <div className={`relative h-[120px] bg-gradient-to-br ${effectiveGradientFrom} ${effectiveGradientTo}`}>
@@ -211,21 +222,11 @@ const ProjectCard = ({
           </div>
         )}
 
-
           {/* Hover actions */}
           {hovered && (
-            <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center gap-2">
-            <button
-              className="p-1.5 rounded-md bg-background border border-border hover:bg-accent"
-              title="Open"
-              onClick={() => {
-                if (id) {
-                  navigate(`/studio?projectId=${id}`);
-                }
-              }}
+            <div
+              className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center gap-2"
             >
-              <FolderOpen className="w-3.5 h-3.5" />
-            </button>
             {id && (
               <button
                 className="p-1.5 rounded-md bg-background border border-border hover:bg-accent"
@@ -233,17 +234,19 @@ const ProjectCard = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsMembersModalOpen(true);
+                  setHasActiveDialog(true);
                 }}
               >
                 <Users className="w-3.5 h-3.5" />
               </button>
             )}
             {canEdit && (
-              <AlertDialog>
+              <AlertDialog onOpenChange={setHasActiveDialog}>
                 <AlertDialogTrigger asChild>
                   <button
                     className="p-1.5 rounded-md bg-background border border-border hover:bg-accent"
                     title="Rename"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -279,11 +282,12 @@ const ProjectCard = ({
               </AlertDialog>
             )}
             {canEdit && (
-              <AlertDialog>
+              <AlertDialog onOpenChange={setHasActiveDialog}>
                 <AlertDialogTrigger asChild>
                   <button
                     className="p-1.5 rounded-md bg-background border border-border hover:bg-accent"
                     title="Share"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <Share2 className="w-3.5 h-3.5" />
                   </button>
@@ -320,11 +324,12 @@ const ProjectCard = ({
               </AlertDialog>
             )}
               {canDelete && (
-              <AlertDialog>
+              <AlertDialog onOpenChange={setHasActiveDialog}>
                 <AlertDialogTrigger asChild>
                   <button
                     className="p-1.5 rounded-md bg-background border border-border hover:bg-accent text-destructive"
                     title="Delete"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -370,7 +375,10 @@ const ProjectCard = ({
           projectCreatorId={projectCreatorId ?? ""}
           projectId={id}
           open={isMembersModalOpen}
-          onOpenChange={setIsMembersModalOpen}
+          onOpenChange={(open) => {
+            setIsMembersModalOpen(open);
+            setHasActiveDialog(open);
+          }}
           canManageMembers={canEdit}
         />
       )}
