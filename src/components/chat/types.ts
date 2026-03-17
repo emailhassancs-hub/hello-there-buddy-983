@@ -59,6 +59,7 @@ export interface ChatInterfaceProps {
   userEmail?: string;
   sessionId?: string;
   accessToken?: string;
+  isReadOnlySession?: boolean;
 }
 
 export interface ParsedToolResponse {
