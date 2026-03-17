@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Message } from "./types";
 import { Sparkles, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -16,6 +17,13 @@ import {
 } from "../OptimizationForms";
 import { OptimizationInlineForm } from "../OptimizationInlineForm";
 import { ImageWithFallback } from "./ImageWithFallback";
+
+const GENERATING_HINTS = [
+  "Start your next generation while this one finishes. 🚀",
+  "No queues. No waiting. Generate another in parallel. ⚡",
+  "You can generate again while this one renders. 🎨",
+  "This one's cooking. Fire up another. 🔥",
+];
 
 interface AssistantMessageProps {
   message: Message;
@@ -72,6 +80,14 @@ export const AssistantMessage = ({
   // This works for both image and model generation, but exclude optimized-model which has its own placeholder
   const shouldShowImagePlaceholder = isListening && !hasActualContent && message.formType !== "optimized-model";
 
+  const generatingHint = useMemo(() => {
+    if (!shouldShowImagePlaceholder) return "";
+    const seed = message.id
+      ? message.id.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+      : Math.floor(Math.random() * 10_000);
+    return GENERATING_HINTS[seed % GENERATING_HINTS.length];
+  }, [message.id, shouldShowImagePlaceholder]);
+
   return (
     <div className="flex justify-start">
       <div className="max-w-[80%] chat-bubble-enter">
@@ -96,6 +112,11 @@ export const AssistantMessage = ({
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                   <span className="text-xs text-muted-foreground font-medium">Generating ...</span>
+                  {generatingHint && (
+                    <span className="text-[11px] text-muted-foreground text-center max-w-[260px] leading-relaxed">
+                      {generatingHint}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
