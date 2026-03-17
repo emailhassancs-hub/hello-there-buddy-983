@@ -35,11 +35,11 @@ export const UserMessage = ({ message }: UserMessageProps) => {
       {cleanText && (
         <div className="max-w-[80%] p-4 rounded-2xl shadow-soft chat-bubble-enter bg-chat-user-bubble text-chat-user-foreground ml-4">
           <div className="whitespace-pre-wrap">{cleanText}</div>
-          {message.timestamp && (
+          {/* {message.timestamp && (
             <div className="text-xs opacity-70 mt-2">
               {message.timestamp.toLocaleTimeString()}
             </div>
-          )}
+          )} */}
         </div>
       )}
     </div>

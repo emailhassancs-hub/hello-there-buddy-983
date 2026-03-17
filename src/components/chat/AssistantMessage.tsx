@@ -103,7 +103,8 @@ export const AssistantMessage = ({
 
         {/* Render image placeholder when status is listening and no image content exists */}
         {shouldShowImagePlaceholder && (
-          <div className="space-y-2 mt-3">
+          <>
+          <div className="space-y-2 mt-3 mb-2">
             <div className="relative rounded-xl w-[320px] h-[320px] overflow-hidden bg-muted">
               {/* Shimmer overlay */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shine"></div>
@@ -112,15 +113,18 @@ export const AssistantMessage = ({
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                   <span className="text-xs text-muted-foreground font-medium">Generating ...</span>
-                  {generatingHint && (
-                    <span className="text-[11px] text-muted-foreground text-center max-w-[260px] leading-relaxed">
-                      {generatingHint}
-                    </span>
-                  )}
                 </div>
               </div>
+    
             </div>
           </div>
+          {generatingHint && (
+            <span className="prose prose-sm max-w-none text-chat-assistant-foreground">
+              {generatingHint}kuch b
+            </span>
+          )}
+          </>
+          
         )}
 
         {/* Render image content after text - always render if image content exists */}
@@ -159,11 +163,11 @@ export const AssistantMessage = ({
           </div>
         )} */}
 
-        {message.timestamp && (
+        {/* {message.timestamp && (
           <div className="text-xs opacity-70 mt-2">
             {message.timestamp.toLocaleTimeString()}
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
