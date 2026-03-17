@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useUser } from "@/hooks/use-user";
-import { Coins, MoreVertical, LogOut, User, BookOpen, Receipt, Share2 } from "lucide-react";
+import { Coins, MoreVertical, LogOut, User, BookOpen, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -17,17 +17,6 @@ import { CreditUsageModal } from "@/components/credit-usage/CreditUsageModal";
 import { useSearchParams } from "react-router-dom";
 import { useProject } from "@/hooks/use-project";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { apiFetch } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,37 +40,9 @@ export const UserInfo = ({ className, onTutorialClick, collapsed }: UserInfoProp
   const projectId = searchParams.get("projectId");
   const { data: project } = useProject(projectId);
   const isProjectCreator = !!projectId && !!project && project.creatorId === userProfile?.id;
-  const [shareEmail, setShareEmail] = React.useState("");
-  const [isSharing, setIsSharing] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const [isCreditUsageModalOpen, setIsCreditUsageModalOpen] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-
-  const handleShareProject = async () => {
-    if (!projectId || !shareEmail.trim() || isSharing) return;
-
-    try {
-      setIsSharing(true);
-    await apiFetch(`/api/projects/${projectId}/share`, {
-        method: "POST",
-        body: { email: shareEmail.trim() },
-      });
-      toast({
-        title: "Project shared",
-        description: `An email has been sent to ${shareEmail.trim()} to join the project.`,
-      });
-      setShareEmail("");
-    } catch (error: any) {
-      console.error("Share project error:", error);
-      toast({
-        title: "Share failed",
-        description: error?.message || "Unable to share project. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSharing(false);
-    }
-  };
 
   const handleLogout = () => {
     try {
@@ -210,45 +171,6 @@ export const UserInfo = ({ className, onTutorialClick, collapsed }: UserInfoProp
 
   return (
     <div className={cn("p-2 border-t border-border space-y-2 relative", className)}>
-      {isProjectCreator && (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <button className="flex items-center justify-center gap-2 px-2 py-1.5 bg-black rounded-md border border-border relative z-0 w-full hover:bg-black/90 transition-colors cursor-pointer">
-              <Share2 className="h-3.5 w-3.5 text-white" />
-              <span className="text-xs font-medium text-white">Share Project</span>
-            </button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Share project</AlertDialogTitle>
-              <AlertDialogDescription>
-                Enter the email of the user you want to add to this project.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="space-y-2">
-              <Input
-                type="email"
-                value={shareEmail}
-                onChange={(e) => setShareEmail(e.target.value)}
-                placeholder="user@example.com"
-                autoFocus
-              />
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleShareProject();
-                }}
-                className="bg-black text-white hover:bg-black/90"
-              >
-                {isSharing ? "Sharing..." : "Share"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
       <button
         onClick={() => setIsCreditUsageModalOpen(true)}
         className="flex items-center justify-center gap-2 px-2 py-1.5 bg-black rounded-md border border-border relative z-0 w-full hover:bg-black/90 transition-colors cursor-pointer"

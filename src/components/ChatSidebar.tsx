@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu, MoreVertical, Coins, User, BookOpen, LogOut, Home, Users } from "lucide-react";
+import { Plus, Trash2, Edit2, MessageSquare, ChevronLeft, Menu, MoreVertical, Coins, User, BookOpen, LogOut, Home, Users, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -90,6 +90,8 @@ export const ChatSidebar = ({
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null); // Track which dropdown is open
+  const [shareEmail, setShareEmail] = useState("");
+  const [isSharingProject, setIsSharingProject] = useState(false);
   const { toast } = useToast();
   const { data: userProfile } = useUserProfile();
   const { clearUser } = useUser();
@@ -127,6 +129,32 @@ export const ChatSidebar = ({
       });
     } finally {
       setIsSavingProjectName(false);
+    }
+  };
+
+  const handleShareProject = async () => {
+    if (!projectId || !shareEmail.trim() || isSharingProject) return;
+
+    try {
+      setIsSharingProject(true);
+      await apiFetch(`/api/projects/${projectId}/share`, {
+        method: "POST",
+        body: { email: shareEmail.trim() },
+      });
+      toast({
+        title: "Project shared",
+        description: `An email has been sent to ${shareEmail.trim()} to join the project.`,
+      });
+      setShareEmail("");
+    } catch (error: any) {
+      console.error("Share project error:", error);
+      toast({
+        title: "Share failed",
+        description: error?.message || "Unable to share project. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSharingProject(false);
     }
   };
 
@@ -385,6 +413,22 @@ export const ChatSidebar = ({
     }
   };
 
+  const formatDateTime = (timestamp?: string) => {
+    if (!timestamp) return "—";
+    try {
+      return new Date(timestamp).toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    } catch {
+      return timestamp;
+    }
+  };
+
+
   const handleLogout = () => {
     try {
       localStorage.removeItem(LocalStorageKeys.AccessToken);
@@ -606,6 +650,7 @@ export const ChatSidebar = ({
                 </button>
                 {canEditProject && (
                   <>
+                    {/* Rename project */}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <button className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md transition-colors text-left w-full">
@@ -641,6 +686,88 @@ export const ChatSidebar = ({
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+
+                    {/* Share project */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md transition-colors text-left w-full">
+                          <Share2 className="w-4 h-4" />
+                          Share project
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Share project</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Enter the email of the user you want to add to this project.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="space-y-2">
+                          <Input
+                            type="email"
+                            value={shareEmail}
+                            onChange={(e) => setShareEmail(e.target.value)}
+                            placeholder="user@example.com"
+                            autoFocus
+                          />
+                        </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleShareProject();
+                            }}
+                            className="bg-black text-white hover:bg-black/90"
+                          >
+                            {isSharingProject ? "Sharing..." : "Share"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
+                    {/* Project details */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md transition-colors text-left w-full">
+                          <MessageSquare className="w-4 h-4" />
+                          Details
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="max-w-md">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-lg">Project details</AlertDialogTitle>
+                        </AlertDialogHeader>
+                        <div className="mt-2 rounded-xl border bg-card text-sm overflow-hidden">
+                          <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-border/60">
+                            <span className="text-muted-foreground">Owner</span>
+                            <span className="font-medium text-right truncate">
+                              {project?.creator?.name || project?.creator?.email || "—"}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-border/60">
+                            <span className="text-muted-foreground">Created at</span>
+                            <span className="font-medium text-right">
+                              {formatDateTime(project?.createdAt)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4 px-4 py-3">
+                            <span className="text-muted-foreground">Modified</span>
+                            <span className="font-medium text-right">
+                              {formatDateTime(project?.updatedAt)}
+                            </span>
+                          </div>
+                        </div>
+                        <AlertDialogFooter className="mt-3">
+                          <AlertDialogCancel className="ml-auto rounded-full px-4">
+                            Close
+                          </AlertDialogCancel>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
+                    {/* Members */}
                     <button
                       onClick={() => setIsMembersModalOpen(true)}
                       className="flex items-center gap-2 px-2 py-1.5 text-sm text-foreground hover:bg-accent rounded-md transition-colors text-left"
