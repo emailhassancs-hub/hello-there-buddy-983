@@ -120,7 +120,7 @@ export const AssistantMessage = ({
           </div>
           {generatingHint && (
             <span className="prose prose-sm max-w-none text-chat-assistant-foreground">
-              {generatingHint}kuch b
+              {generatingHint}
             </span>
           )}
           </>
