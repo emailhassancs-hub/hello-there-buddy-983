@@ -12,9 +12,9 @@ const suggestions = [
       "A futuristic sci-fi space station interior, neon lighting, zero-gravity, volumetric fog, cinematic",
   },
   {
-    label: "Seamless Texture",
+    label: "Fantasy Wizard",
     prompt:
-      "Seamless tileable mossy stone wall, worn surface, dark fantasy, 2K resolution, PBR maps ready",
+      "2D wizard character, full body, fantasy art style, detailed robes, staff, magical aura, game-ready asset, plain background",
   },
   {
     label: "Low-poly Prop",

@@ -69,6 +69,8 @@ const Index = () => {
   const [workflowResults, setWorkflowResults] = useState<ChainResults | null>(null);
   const [isWorkflowLoading, setIsWorkflowLoading] = useState(false);
   const chainSSERef = useRef<EventSource | null>(null);
+
+  const [currentSessionOwnerId, setCurrentSessionOwnerId] = useState<string | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1392,6 +1394,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
       }
 
       const userId = sessionUserId || userProfile?.id;
+      setCurrentSessionOwnerId(userId || null);
       const projectId = searchParams.get("projectId");
       
       const params = new URLSearchParams();
@@ -1840,6 +1843,9 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
               userEmail={userProfile?.email || extractEmailFromToken(authToken)}
               sessionId={sessionId || undefined}
               accessToken={authToken || undefined}
+              isReadOnlySession={
+                !!currentSessionOwnerId && currentSessionOwnerId !== userProfile?.id
+              }
             />
           </ErrorBoundary>
         </ResizablePanel>

@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Send, Sparkles, BookOpen, Plus, Upload, FileText, X, Box, User, Lightbulb, Zap } from "lucide-react";
+import { Send, Sparkles, Plus, Upload, X, Box, User, Lightbulb, Zap } from "lucide-react";
 import toolsIcon from "@/assets/tools-icon.png";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -38,6 +38,7 @@ const ChatInterface = ({
   userEmail,
   sessionId,
   accessToken,
+  isReadOnlySession,
 }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState("");
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
@@ -613,9 +614,6 @@ const ChatInterface = ({
       {/* Header */}
       <div className="flex items-center justify-between gap-3 p-6 border-b glass shadow-soft">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary dark:bg-white">
-            <BookOpen className="w-6 h-6 text-primary-foreground dark:text-black" />
-          </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold text-foreground dark:text-white">Rapid Assets Studio</h2>
@@ -710,6 +708,7 @@ const ChatInterface = ({
       </div>
 
       {/* Input Area */}
+      {!isReadOnlySession && (
       <div className="p-6 border-t glass">
         <input
           ref={fileInputRef}
@@ -794,7 +793,7 @@ const ChatInterface = ({
                 el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
               }}
               onKeyPress={handleKeyPress}
-              placeholder="Describe your image idea..."
+              placeholder="Describe your asset idea..."
               rows={1}
               style={{ maxHeight: "140px" }}
               className="w-full bg-transparent border-0 outline-none resize-none overflow-y-auto px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -921,7 +920,7 @@ const ChatInterface = ({
                 el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
               }}
               onKeyPress={handleKeyPress}
-              placeholder="Describe your image idea..."
+              placeholder="Describe your asset idea..."
               rows={1}
               style={{ maxHeight: "140px" }}
               className="w-full bg-transparent border-0 outline-none resize-none overflow-y-auto px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -1002,6 +1001,7 @@ const ChatInterface = ({
         </div>
 
       </div>
+      )}
 
       {/* Image Zoom Dialog */}
       <Dialog open={!!zoomedImage} onOpenChange={() => setZoomedImage(null)}>
