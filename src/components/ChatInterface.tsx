@@ -18,11 +18,15 @@ import { ToolConfirmationUI } from "./chat/ToolConfirmationUI";
 import { useFileUpload } from "./chat/useFileUpload";
 
 const WELCOME_MESSAGES = [
-  "Chat with me",
-  "I will help you generate and edit images of your choice",
-  "You can upload your image and I will segment the image for you or remove the background",
-  "You can edit the image however you like, you can ask me the add or remove a certain object or maybe change its colour",
-  "I will enhance your prompt for better image generation or generate the prompt from your image"
+  "What shall we create today?",
+  "Generate images from any idea",
+  "Edit or recolor any image",
+  "Merge two images seamlessly",
+  "Turn your images into 3D models",
+  "Edit and refine your 3D models",
+  "Optimize models for any platform",
+  "Remove backgrounds, segment objects, upscale",
+  "Describe it roughly, I'll craft the perfect prompt"
 ];
 
 const ChatInterface = ({
