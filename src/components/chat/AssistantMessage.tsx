@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Message } from "./types";
-import { Sparkles, ChevronDown } from "lucide-react";
+import { Sparkles, ChevronDown, Box, ZoomIn, Wand2, Settings, Scissors } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cleanImageTags, isImageUrl, parseToolResponse, is3DModelTool } from "./utils";
@@ -91,9 +91,11 @@ export const AssistantMessage = ({
   return (
     <div className="flex justify-start">
       <div className="max-w-[80%] chat-bubble-enter">
-        <div className="flex items-center gap-1.5 mb-2">
-          <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs font-bold text-muted-foreground">Rapid Assets Studio</span>
+        <div className="flex items-center gap-1.5 mb-2.5">
+          <div className="w-5 h-5 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-2.5 h-2.5 text-primary" />
+          </div>
+          <span className="text-[11px] font-semibold text-primary/70 tracking-wide">Rapid Assets Studio</span>
         </div>
 
         {/* Render text content first if it's not just an image URL */}
@@ -105,26 +107,25 @@ export const AssistantMessage = ({
         {shouldShowImagePlaceholder && (
           <>
           <div className="space-y-2 mt-3 mb-2">
-            <div className="relative rounded-xl w-[320px] h-[320px] overflow-hidden bg-muted">
-              {/* Shimmer overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shine"></div>
+            <div className="relative rounded-xl w-[320px] h-[320px] overflow-hidden shimmer-card gen-active border border-border/40">
               {/* Loading spinner and text */}
               <div className="absolute inset-0 flex items-center justify-center z-10">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                  <span className="text-xs text-muted-foreground font-medium">Generating ...</span>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="relative w-10 h-10">
+                    <div className="absolute inset-0 border-[3px] border-primary/15 rounded-full"></div>
+                    <div className="absolute inset-0 border-[3px] border-transparent border-t-primary rounded-full animate-spin"></div>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium tracking-wide">Generating…</span>
                 </div>
               </div>
-    
             </div>
           </div>
           {generatingHint && (
-            <span className="prose prose-sm max-w-none text-chat-assistant-foreground">
+            <span className="text-xs text-muted-foreground/80 leading-relaxed">
               {generatingHint}
             </span>
           )}
           </>
-          
         )}
 
         {/* Render image content after text - always render if image content exists */}
@@ -135,6 +136,11 @@ export const AssistantMessage = ({
             onImageZoom={onImageZoom}
             onModelSelect={onModelSelect}
           />
+        )}
+
+        {/* Suggestion pills — shown when generation completes */}
+        {hasActualContent && isCompleted && (
+          <SuggestionPills toolName={message.toolName || ""} />
         )}
 
         {/* Render tool response collapsible - only if not listening */}
@@ -172,6 +178,59 @@ export const AssistantMessage = ({
     </div>
   );
 };
+
+// ── Suggestion pills ────────────────────────────────────────────────────────
+
+type Pill = { icon: React.ReactNode; label: string; query: string };
+
+const getSuggestions = (toolName: string): Pill[] => {
+  const tn = toolName.toLowerCase();
+  if (tn.includes("background_remove")) {
+    return [
+      { icon: <Box className="w-3 h-3" />, label: "Convert to 3D", query: "Convert this image to a 3D model" },
+      { icon: <ZoomIn className="w-3 h-3" />, label: "Upscale", query: "Upscale this image to higher resolution" },
+    ];
+  }
+  if (tn.includes("upscal")) {
+    return [
+      { icon: <Wand2 className="w-3 h-3" />, label: "Edit image", query: "Edit this image" },
+      { icon: <Box className="w-3 h-3" />, label: "Convert to 3D", query: "Convert this image to a 3D model" },
+    ];
+  }
+  if (tn.includes("3d") || tn.includes("model")) {
+    return [
+      { icon: <Settings className="w-3 h-3" />, label: "Optimize for games", query: "Optimize this 3D model for game use" },
+    ];
+  }
+  // Default: after image generation / editing
+  return [
+    { icon: <Scissors className="w-3 h-3" />, label: "Remove background", query: "Remove the background from this image" },
+    { icon: <ZoomIn className="w-3 h-3" />, label: "Upscale", query: "Upscale this image to higher resolution" },
+    { icon: <Box className="w-3 h-3" />, label: "Convert to 3D", query: "Convert this image to a 3D model" },
+    { icon: <Wand2 className="w-3 h-3" />, label: "Edit image", query: "Edit this image" },
+  ];
+};
+
+const SuggestionPills = ({ toolName }: { toolName: string }) => {
+  const pills = getSuggestions(toolName);
+
+  const handleClick = (query: string) => {
+    window.dispatchEvent(new CustomEvent("suggestionSelected", { detail: { query } }));
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-3">
+      {pills.map((p, i) => (
+        <button key={i} className="suggestion-pill" onClick={() => handleClick(p.query)}>
+          {p.icon}
+          {p.label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// ── Tool response collapsible ────────────────────────────────────────────────
 
 interface ToolResponseCollapsibleProps {
   toolName: string;

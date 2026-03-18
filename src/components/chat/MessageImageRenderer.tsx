@@ -46,7 +46,7 @@ export const MessageImageRenderer = ({
         <img
           src={previewUrl}
           alt="3D Model Preview"
-          className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-80 transition-opacity"
+          className="rounded-xl max-w-[320px] h-auto cursor-pointer gen-image-card border border-border/30"
           style={{ marginTop: '8px' }}
           onClick={() => onModelSelect?.(message.model_url!, previewUrl, workflow)}
         />
@@ -80,11 +80,16 @@ export const MessageImageRenderer = ({
           <img
             src={message.thumbnail_url}
             alt="3D Model Preview"
-            className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-80 transition-opacity"
+            className="rounded-xl max-w-[320px] h-auto cursor-pointer gen-image-card border border-border/30"
             style={{ marginTop: '8px' }}
             onClick={() => onModelSelect?.(message.model_url!, message.thumbnail_url!, workflow)}
           />
-          <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-success/10 text-success border border-success/20 tracking-wide">
+              3D
+            </span>
+            <p className="text-xs text-muted-foreground">Click to open in 3D viewer</p>
+          </div>
         </div>
       );
     }
@@ -104,11 +109,16 @@ export const MessageImageRenderer = ({
             <img
               src={parsed.thumbnail_url}
               alt="3D Model Preview"
-              className="rounded-xl max-w-[320px] h-auto cursor-pointer hover:opacity-80 transition-opacity"
+              className="rounded-xl max-w-[320px] h-auto cursor-pointer gen-image-card border border-border/30"
               style={{ marginTop: '8px' }}
               onClick={() => onModelSelect?.(parsed.model_url!, parsed.thumbnail_url!, workflow)}
             />
-            <p className="text-xs text-muted-foreground italic">Click thumbnail to view 3D model</p>
+            <div className="flex items-center gap-2 mt-1">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-success/10 text-success border border-success/20 tracking-wide">
+              3D
+            </span>
+            <p className="text-xs text-muted-foreground">Click to open in 3D viewer</p>
+          </div>
           </div>
         );
       }
@@ -123,7 +133,7 @@ export const MessageImageRenderer = ({
         <ImageWithFallback
           src={message.thumbnail_url}
           alt={message.prompt || message.jobId || 'Generated thumbnail'}
-          className="rounded-xl max-w-[320px] h-auto"
+          className="rounded-xl max-w-[320px] h-auto gen-image-card border border-border/30"
           style={{ marginTop: '8px' }}
           onImageClick={onImageZoom}
         />
@@ -141,7 +151,7 @@ export const MessageImageRenderer = ({
         <ImageWithFallback
           src={message.image_path}
           alt={message.prompt || message.jobId || 'Generated image'}
-          className="rounded-xl max-w-[320px] h-auto"
+          className="rounded-xl max-w-[320px] h-auto gen-image-card border border-border/30"
           style={{ marginTop: '8px' }}
           onImageClick={onImageZoom}
         />
@@ -163,7 +173,7 @@ export const MessageImageRenderer = ({
         <ImageWithFallback
           src={message.img_url}
           alt={message.prompt || 'Generated image'}
-          className="rounded-xl max-w-[320px] h-auto"
+          className="rounded-xl max-w-[320px] h-auto gen-image-card border border-border/30"
           style={{ marginTop: '8px' }}
           onImageClick={onImageZoom}
         />
@@ -191,7 +201,7 @@ export const MessageImageRenderer = ({
             }}
             onImageClick={onImageZoom}
           />
-          <p className="text-xs text-muted-foreground italic mt-2">Click to zoom</p>
+          <p className="text-xs text-muted-foreground/60 mt-1.5">Click to enlarge</p>
         </div>
       );
     }
@@ -206,7 +216,7 @@ export const MessageImageRenderer = ({
             <ImageWithFallback
               src={parsed.thumbnail_url}
               alt={parsed.prompt || parsed.job_id || 'Generated thumbnail'}
-              className="rounded-xl max-w-[320px] h-auto"
+              className="rounded-xl max-w-[320px] h-auto gen-image-card border border-border/30"
               style={{ marginTop: '8px' }}
               onImageClick={onImageZoom}
             />
@@ -224,7 +234,7 @@ export const MessageImageRenderer = ({
             <ImageWithFallback
               src={parsed.image_path}
               alt={parsed.prompt || parsed.job_id || 'Generated image'}
-              className="rounded-xl max-w-[320px] h-auto"
+              className="rounded-xl max-w-[320px] h-auto gen-image-card border border-border/30"
               style={{ marginTop: '8px' }}
               onImageClick={onImageZoom}
             />
@@ -244,7 +254,7 @@ export const MessageImageRenderer = ({
             <ImageWithFallback
               src={parsed.img_url}
               alt={parsed.filename || 'Generated image'}
-              className="rounded-xl max-w-[320px] h-auto"
+              className="rounded-xl max-w-[320px] h-auto gen-image-card border border-border/30"
               style={{ marginTop: '8px' }}
               onImageClick={onImageZoom}
             />

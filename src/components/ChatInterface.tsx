@@ -116,6 +116,18 @@ const ChatInterface = ({
     };
   }, [addImageUrl, toast]);
 
+  // Listen for suggestion pill clicks from AssistantMessage
+  useEffect(() => {
+    const handleSuggestionSelected = (event: CustomEvent<{ query: string }>) => {
+      setInputValue(event.detail.query);
+      setTimeout(() => textareaRef.current?.focus(), 50);
+    };
+    window.addEventListener('suggestionSelected', handleSuggestionSelected as EventListener);
+    return () => {
+      window.removeEventListener('suggestionSelected', handleSuggestionSelected as EventListener);
+    };
+  }, []);
+
   // Filter and clean messages for rendering
   const filteredMessages = useMemo(() => {
     return filterMessages(messages);
@@ -618,29 +630,29 @@ const ChatInterface = ({
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 p-6 border-b glass shadow-soft">
-        <div className="flex items-center gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-foreground dark:text-white">Rapid Assets Studio</h2>
-              <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-primary/10 text-primary border border-primary/20">
-                Beta
-              </span>
-            </div>
-            {/* <p className="text-sm text-muted-foreground dark:text-white/70">The Agent Engine</p> */}
+      <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border/50 bg-card/60 backdrop-blur-sm flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[14px] font-semibold tracking-tight text-foreground">Rapid Assets Studio</h2>
+            <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded bg-primary/10 text-primary border border-primary/20">
+              Beta
+            </span>
           </div>
         </div>
       </div>
 
       {/* Messages Area */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 space-y-8 glass scrollbar-hide">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-5 scrollbar-hide">
         {filteredMessages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-            <div className="p-4 rounded-full bg-primary shadow-soft">
-              <Sparkles className="w-8 h-8 text-primary-foreground" />
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-5 px-6">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Sparkles className="w-7 h-7 text-primary" />
             </div>
             <div className={`transition-opacity duration-500 ${isVisible ? "opacity-100" : "opacity-0"}`}>
-              <p className="text-chat-assistant-foreground text-lg max-w-md font-medium">
+              <p className="text-foreground/80 text-[15px] max-w-sm font-medium leading-relaxed tracking-tight">
                 {WELCOME_MESSAGES[currentMessageIndex]}
               </p>
             </div>
@@ -695,16 +707,17 @@ const ChatInterface = ({
 
         {isGenerating && (
           <div className="flex justify-start">
-            <div className="bg-chat-assistant-bubble text-chat-assistant-foreground p-4 rounded-2xl shadow-soft border border-border/20 mr-4">
-              <div className="flex items-center space-x-2">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-primary rounded-full typing-indicator"></div>
-                  <div className="w-2 h-2 bg-primary rounded-full typing-indicator" style={{ animationDelay: "0.2s" }}></div>
-                  <div className="w-2 h-2 bg-primary rounded-full typing-indicator" style={{ animationDelay: "0.4s" }}></div>
+            <div className="flex items-center gap-2.5 bg-card border border-border/60 px-4 py-2.5 rounded-2xl rounded-tl-sm">
+              <div className="w-5 h-5 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-3 h-3 text-primary" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  <div className="w-1.5 h-1.5 bg-primary/60 rounded-full typing-indicator"></div>
+                  <div className="w-1.5 h-1.5 bg-primary/60 rounded-full typing-indicator" style={{ animationDelay: "0.2s" }}></div>
+                  <div className="w-1.5 h-1.5 bg-primary/60 rounded-full typing-indicator" style={{ animationDelay: "0.4s" }}></div>
                 </div>
-                <span className="text-sm shimmer-text">
-                  Thinking...
-                </span>
+                <span className="text-xs text-muted-foreground">Thinking…</span>
               </div>
             </div>
           </div>
@@ -715,7 +728,7 @@ const ChatInterface = ({
 
       {/* Input Area */}
       {!isReadOnlySession && (
-      <div className="p-6 border-t glass">
+      <div className="px-4 py-3.5 border-t border-border/50 bg-card/80 backdrop-blur-sm flex-shrink-0">
         <input
           ref={fileInputRef}
           type="file"
@@ -769,8 +782,8 @@ const ChatInterface = ({
 
         <div
           className={cn(
-            "glass border rounded-2xl p-2 shadow-soft relative transition-colors",
-            isDragging ? "border-primary border-2 border-dashed bg-primary/5" : "border-border"
+            "bg-secondary/40 border rounded-2xl p-3 relative transition-all duration-200 studio-input",
+            isDragging ? "border-primary border-2 border-dashed bg-primary/5" : "border-border/60 hover:border-border"
           )}
           onDragEnter={handleDragEnter}
           onDragOver={handleDragOver}
@@ -855,35 +868,37 @@ const ChatInterface = ({
                 </DropdownMenu>
               </div>
 
-              {/* Right: response mode + HITL + send — all same height, aligned */}
+              {/* Right: response mode + HITL + send */}
               <div className="flex items-center gap-1.5">
                 {/* Response mode toggle */}
-                <div className="flex items-center rounded-full border border-border bg-muted/40 px-1 py-0.5 shadow-inner">
+                <div className="flex items-center rounded-lg border border-border/60 bg-secondary/60 p-0.5 gap-0.5">
                   <button
                     type="button"
                     onClick={() => setResponseMode("thinking")}
                     className={cn(
-                      "flex items-center justify-center h-6 w-6 rounded-full transition-all",
+                      "flex items-center gap-1 h-6 px-2.5 rounded-md text-[11px] font-medium transition-all",
                       responseMode === "thinking"
-                        ? "bg-primary text-primary-foreground shadow-md scale-105"
-                        : "bg-transparent text-muted-foreground hover:bg-muted/60"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-transparent text-muted-foreground hover:text-foreground"
                     )}
                     title="Thinking (better quality, slower)"
                   >
                     <Lightbulb className="w-3 h-3" />
+                    <span>Think</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setResponseMode("fast")}
                     className={cn(
-                      "flex items-center justify-center h-6 w-6 rounded-full transition-all",
+                      "flex items-center gap-1 h-6 px-2.5 rounded-md text-[11px] font-medium transition-all",
                       responseMode === "fast"
-                        ? "bg-primary text-primary-foreground shadow-md scale-105"
-                        : "bg-transparent text-muted-foreground hover:bg-muted/60"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-transparent text-muted-foreground hover:text-foreground"
                     )}
                     title="Fast (quicker, lighter thinking)"
                   >
                     <Zap className="w-3 h-3" />
+                    <span>Fast</span>
                   </button>
                 </div>
 
@@ -893,8 +908,10 @@ const ChatInterface = ({
                   size="icon"
                   onClick={() => setHumanInLoop(!humanInLoop)}
                   className={cn(
-                    "flex-shrink-0 h-7 w-7 rounded-lg transition-all",
-                    humanInLoop ? "bg-primary text-primary-foreground" : "bg-muted/50"
+                    "flex-shrink-0 h-7 w-7 rounded-lg transition-all border",
+                    humanInLoop
+                      ? "bg-primary text-primary-foreground border-primary/50 shadow-[0_0_8px_rgba(124,90,246,0.3)]"
+                      : "bg-transparent border-border/60 text-muted-foreground hover:border-primary/40 hover:text-primary"
                   )}
                   title={humanInLoop ? "Human in the loop: ON" : "Human in the loop: OFF"}
                 >
@@ -906,7 +923,7 @@ const ChatInterface = ({
                   onClick={handleSend}
                   disabled={!inputValue.trim() || isGenerating || isUploading}
                   size="icon"
-                  className="flex-shrink-0 h-7 w-7 rounded-lg"
+                  className="flex-shrink-0 h-8 w-8 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-25 disabled:cursor-not-allowed transition-all shadow-[0_2px_12px_rgba(124,90,246,0.35)] disabled:shadow-none"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </Button>
