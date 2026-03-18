@@ -39,10 +39,17 @@ export function useProjects(options?: UseProjectsOptions) {
 
   return useQuery<Project[]>({
     queryKey,
-    queryFn: () =>
-      apiFetch<Project[]>(`/api/projects${queryString}`, {
-        method: "GET",
-      }),
+    queryFn: async () => {
+      const res = await apiFetch<Project[] | { projects?: Project[] }>(
+        `/api/projects${queryString}`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) return res;
+      if (res && typeof res === "object" && Array.isArray((res as any).projects)) {
+        return (res as any).projects;
+      }
+      return [];
+    },
     enabled,
     staleTime: 0,
     refetchOnMount: "always",
