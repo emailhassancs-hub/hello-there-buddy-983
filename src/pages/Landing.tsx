@@ -1,12 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Check, Zap } from "lucide-react";
+import { Sparkles, Image, Wand2, Eraser, ZoomIn, Box, Settings2, ArrowRight, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// Comment out night theme logic on landing page, just keep the day/white one
-// import { ThemeToggle } from "@/components/ThemeToggle";
 
-// Artwork images for masonry background - using diverse AI art styles
 const artworkColumns = [
   [
     "https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?w=400&h=500&fit=crop",
@@ -40,35 +37,13 @@ const artworkColumns = [
   ],
 ];
 
-// Workflow carousel items
 const workflowItems = [
-  {
-    image:
-      "https://resources.rapidassets.ai/api/v1/image-editing/2d_prop.webp",
-    label: "2D Prop Generation",
-  },
-  {
-    image: "https://resources.rapidassets.ai/api/v1/image-editing/ColorChanger.webp",
-    label: "Color Changer",
-  },
-  {
-    image:
-      "https://resources.rapidassets.ai/api/v1/image-editing/character_gen.webp",
-    label: "Character Generation",
-  },
-  {
-    image:
-      "https://resources.rapidassets.ai/api/v1/image-editing/turnaround.webp",
-    label: "Character Turnarounds",
-  },
-  {
-    image: "https://resources.rapidassets.ai/api/v1/image-editing/sketch.webp",
-    label: "Color Image",
-  },
-  {
-    image: "https://resources.rapidassets.ai/api/v1/image-editing/ui.webp",
-    label: "Design UI",
-  },
+  { image: "https://resources.rapidassets.ai/api/v1/image-editing/2d_prop.webp", label: "2D Prop Generation" },
+  { image: "https://resources.rapidassets.ai/api/v1/image-editing/ColorChanger.webp", label: "Color Changer" },
+  { image: "https://resources.rapidassets.ai/api/v1/image-editing/character_gen.webp", label: "Character Generation" },
+  { image: "https://resources.rapidassets.ai/api/v1/image-editing/turnaround.webp", label: "Character Turnarounds" },
+  { image: "https://resources.rapidassets.ai/api/v1/image-editing/sketch.webp", label: "Color Image" },
+  { image: "https://resources.rapidassets.ai/api/v1/image-editing/ui.webp", label: "Design UI" },
 ];
 
 const tools = [
@@ -80,111 +55,68 @@ const tools = [
   { icon: Settings2, label: "3D Optimization", description: "Production ready assets" },
 ];
 
-const pricingTiers = [
-  {
-    name: "Starter",
-    price: "$19",
-    period: "/month",
-    description: "Perfect for individuals",
-    features: ["100 image generations", "50 3D models", "Basic editing tools", "Email support"],
-  },
-  {
-    name: "Pro",
-    price: "$49",
-    period: "/month",
-    description: "For creative professionals",
-    features: ["Unlimited generations", "Unlimited 3D models", "Advanced editing", "Priority support"],
-    popular: true,
-  },
-  {
-    name: "Enterprise",
-    price: "$199",
-    period: "/month",
-    description: "For teams and studios",
-    features: ["Everything in Pro", "Team collaboration", "Custom models", "Dedicated support", "SLA guarantee"],
-  },
-];
-
-// Image arrays for cycling in feature sections
-const imageGenerationImages = [
-  "https://resources.rapidassets.ai/api/v1/image-editing/ship.webp?w=800&h=600&fit=crop",
-  "https://resources.rapidassets.ai/api/v1/image-editing/alien.webp?w=800&h=600&fit=crop",
-];
-
-const imageEditingImages = [
-  "https://resources.rapidassets.ai/api/v1/image-editing/flying_cat.webp?w=800&h=600&fit=crop",
-  "https://resources.rapidassets.ai/api/v1/image-editing/elf.webp?w=800&h=600&fit=crop",
-];
-
-const model3DImages = [
-  "https://resources.rapidassets.ai/api/v1/image-editing/potion.webp?w=800&h=600&fit=crop",
-  "https://resources.rapidassets.ai/api/v1/image-editing/hammer.webp?w=800&h=600&fit=crop",
-];
-
-// Scrollable storytelling content
 const storyContent = [
   {
-    id: "image-generation",
     title: "Image Generation",
     subtitle: "Infinite Styles, Endless Possibilities",
-    description:
-      "Generate concept art, characters, environments, and marketing visuals in any style. From photorealistic renders to stylized illustrations, our AI adapts to your creative vision and brings ideas to life instantly.",
+    description: "Generate concept art, characters, environments, and marketing visuals in any style. From photorealistic renders to stylized illustrations.",
+    images: [
+      "https://resources.rapidassets.ai/api/v1/image-editing/ship.webp?w=800&h=600&fit=crop",
+      "https://resources.rapidassets.ai/api/v1/image-editing/alien.webp?w=800&h=600&fit=crop",
+    ],
   },
   {
-    id: "image-editing",
     title: "Image Editing",
     subtitle: "Transform & Enhance",
-    description:
-      "Edit images with precision using AI-powered tools. Remove backgrounds instantly, upscale to 4x resolution, enhance details, and merge more than two images — all with simple commands.",
+    description: "Edit images with precision using AI-powered tools. Remove backgrounds instantly, upscale to 4x resolution, enhance details.",
+    images: [
+      "https://resources.rapidassets.ai/api/v1/image-editing/flying_cat.webp?w=800&h=600&fit=crop",
+      "https://resources.rapidassets.ai/api/v1/image-editing/elf.webp?w=800&h=600&fit=crop",
+    ],
   },
   {
-    id: "3d-generation",
-    title: "3D Model Generation & Optimization",
+    title: "3D Model Generation",
     subtitle: "Production Ready 3D Assets",
-    description:
-      "Create and optimize 3D models for games and creative projects. Generate from text or images, optimize topology, and export production ready assets for any game engine.",
-    image: "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop",
+    description: "Create and optimize 3D models for games and creative projects. Generate from text or images, optimize topology, and export.",
+    images: [
+      "https://resources.rapidassets.ai/api/v1/image-editing/potion.webp?w=800&h=600&fit=crop",
+      "https://resources.rapidassets.ai/api/v1/image-editing/hammer.webp?w=800&h=600&fit=crop",
+    ],
   },
 ];
 
 const Landing = () => {
   const navigate = useNavigate();
-  const [imageGenIndex, setImageGenIndex] = useState(0);
-  const [imageEditIndex, setImageEditIndex] = useState(0);
-  const [model3DIndex, setModel3DIndex] = useState(0);
-  const [isImageGenHovered, setIsImageGenHovered] = useState(false);
-  const [isImageEditHovered, setIsImageEditHovered] = useState(false);
-  const [isModel3DHovered, setIsModel3DHovered] = useState(false);
+  const [demoPrompt, setDemoPrompt] = useState("");
+  const [hoveredSection, setHoveredSection] = useState<number | null>(null);
+  const [imageIndices, setImageIndices] = useState([0, 0, 0]);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
 
-  // Cycle through images only when hovering - first image waits 3 seconds before switching
+  // Image cycling on hover
   useEffect(() => {
-    if (!isImageGenHovered) return;
+    if (hoveredSection === null) return;
     const timeout = setTimeout(() => {
-      setImageGenIndex((prev) => (prev + 1) % imageGenerationImages.length);
+      setImageIndices((prev) => {
+        const next = [...prev];
+        next[hoveredSection] = (next[hoveredSection] + 1) % storyContent[hoveredSection].images.length;
+        return next;
+      });
     }, 3000);
     return () => clearTimeout(timeout);
-  }, [isImageGenHovered, imageGenIndex]);
+  }, [hoveredSection, imageIndices]);
 
-  useEffect(() => {
-    if (!isImageEditHovered) return;
-    const timeout = setTimeout(() => {
-      setImageEditIndex((prev) => (prev + 1) % imageEditingImages.length);
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [isImageEditHovered, imageEditIndex]);
-
-  useEffect(() => {
-    if (!isModel3DHovered) return;
-    const timeout = setTimeout(() => {
-      setModel3DIndex((prev) => (prev + 1) % model3DImages.length);
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [isModel3DHovered, model3DIndex]);
+  const handleDemoCreate = () => {
+    // Per spec: clicking Create on landing opens auth modal / redirects to login
+    if (demoPrompt.trim()) {
+      navigate(`/login?demo_prompt=${encodeURIComponent(demoPrompt.trim())}`);
+    } else {
+      navigate("/login");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      {/* Header */}
+      {/* Header — per spec: Logo left, Sign In + Get Started Free right */}
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -195,54 +127,34 @@ const Landing = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-primary" />
             <span className="font-bold text-xl">Rapid Assets</span>
-            <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded bg-primary/10 text-primary border border-primary/20">
-              Beta
-            </span>
           </div>
-          <div className="flex items-center gap-4">
-            {/* Comment out night theme logic on landing page, just keep the day/white one */}
-            {/* <ThemeToggle /> */}
-            <Button onClick={() => navigate("/home")} className="gap-2">
-              Get Started
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/login")}
+              className="text-sm"
+            >
+              Sign In
+            </Button>
+            <Button onClick={() => navigate("/signup")} className="gap-2 text-sm">
+              Get Started Free
               <ArrowRight className="w-4 h-4" />
             </Button>
-            <a
-              href="https://discord.gg/HcBmbYxpet"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Join our Discord"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-4 bg-white text-black hover:bg-black/5 transition-colors"
-            >
-              <img
-                src="https://img.icons8.com/ios-glyphs/30/000000/discord-logo.png"
-                alt="Discord"
-                className="h-5 w-5"
-              />
-            </a>
           </div>
         </div>
       </motion.header>
 
-      {/* Hero Section with Masonry Background */}
+      {/* Hero Section — per spec: "What do you want to create?" with demo prompt */}
       <section className="relative min-h-screen pt-16 overflow-hidden">
         {/* Masonry Background */}
-        <div className="absolute inset-0 flex gap-3 px-3 opacity-50">
+        <div className="absolute inset-0 flex gap-3 px-3 opacity-40">
           {artworkColumns.map((column, colIndex) => (
             <div key={colIndex} className="flex-1 flex flex-col gap-3">
               <motion.div
                 className="flex flex-col gap-3"
-                animate={{
-                  y: colIndex % 2 === 0 ? [0, -1000] : [-1000, 0],
-                }}
-                transition={{
-                  y: {
-                    duration: 30 + colIndex * 5,
-                    repeat: Infinity,
-                    ease: "linear",
-                  },
-                }}
+                animate={{ y: colIndex % 2 === 0 ? [0, -1000] : [-1000, 0] }}
+                transition={{ y: { duration: 30 + colIndex * 5, repeat: Infinity, ease: "linear" } }}
               >
-                {/* Duplicate images for seamless loop */}
                 {[...column, ...column, ...column].map((src, imgIndex) => (
                   <div key={imgIndex} className="relative rounded-xl overflow-hidden bg-muted shadow-lg">
                     <img src={src} alt="" className="w-full h-auto object-cover" loading="lazy" />
@@ -253,216 +165,111 @@ const Landing = () => {
           ))}
         </div>
 
-        {/* Gradient Overlays - lighter for more visibility */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/50 to-background/90 pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-transparent to-background/70 pointer-events-none" />
 
         {/* Hero Content */}
         <div className="relative z-10 flex items-center justify-center min-h-screen px-6">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-3xl mx-auto w-full">
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-center"
+              className="text-center mb-10"
             >
-              <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-                Your Imagination,{" "}
-                <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  Supercharged by AI
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-4">
+                What do you want to{" "}
+                <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                  create?
                 </span>
               </h1>
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="px-5 py-2.5 rounded-full bg-background/40 border border-primary/20 backdrop-blur-md shadow-lg">
-                  <span className="text-lg md:text-xl font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent inline-flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-primary" />
-                    Powered by The Agent Engine
-                  </span>
-                </div>
-              </div>
-              <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
-                AI for production grade visuals and 3D assets.
+              <p className="text-lg md:text-xl text-muted-foreground">
+                AI images, 3D models, and creative workflows — in one place.
               </p>
-              <Button size="lg" onClick={() => navigate("/home")} className="text-lg px-8 py-6 gap-2">
-                Start Creating
-                <Sparkles className="w-5 h-5" />
-              </Button>
+            </motion.div>
+
+            {/* Demo prompt bar */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="w-full max-w-2xl mx-auto"
+            >
+              <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-3 shadow-card">
+                <textarea
+                  value={demoPrompt}
+                  onChange={(e) => setDemoPrompt(e.target.value)}
+                  placeholder="Try: a cinematic portrait of an astronaut at sunset"
+                  rows={1}
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none resize-none"
+                />
+                <Button onClick={handleDemoCreate} className="shrink-0 gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Create
+                </Button>
+              </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Feature Sections - Alternating Layout */}
+      {/* Feature Sections */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-6 space-y-24">
-          {/* Image Generation - Image Left, Text Right */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-            className="grid md:grid-cols-2 gap-12 items-center"
-            onMouseEnter={() => setIsImageGenHovered(true)}
-            onMouseLeave={() => setIsImageGenHovered(false)}
-          >
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]">
-              <AnimatePresence mode="popLayout">
-                <motion.img
-                  key={imageGenIndex}
-                  src={imageGenerationImages[imageGenIndex]}
-                  alt={storyContent[0].title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ opacity: 0, scale: 1 }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1.08,
-                    transition: {
-                      opacity: { duration: 0.6, ease: "easeOut" },
-                      scale: { duration: 4, ease: "linear" },
-                    },
-                  }}
-                  exit={{
-                    opacity: 0,
-                    transition: { duration: 0.6, ease: "easeIn" },
-                  }}
-                />
-              </AnimatePresence>
-              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
-            </div>
-            <div className="text-center md:text-left">
-              <span className="text-sm font-medium text-primary uppercase tracking-wider">
-                {storyContent[0].subtitle}
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">{storyContent[0].title}</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[0].description}</p>
-            </div>
-          </motion.div>
-
-          {/* Image Editing - Text Left, Image Right */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-            className="grid md:grid-cols-2 gap-12 items-center"
-            onMouseEnter={() => setIsImageEditHovered(true)}
-            onMouseLeave={() => setIsImageEditHovered(false)}
-          >
-            <div className="text-center md:text-left order-2 md:order-1">
-              <span className="text-sm font-medium text-primary uppercase tracking-wider">
-                {storyContent[1].subtitle}
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">{storyContent[1].title}</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[1].description}</p>
-            </div>
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] order-1 md:order-2">
-              <AnimatePresence mode="popLayout">
-                <motion.img
-                  key={imageEditIndex}
-                  src={imageEditingImages[imageEditIndex]}
-                  alt={storyContent[1].title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ opacity: 0, scale: 1 }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1.08,
-                    transition: {
-                      opacity: { duration: 0.6, ease: "easeOut" },
-                      scale: { duration: 4, ease: "linear" },
-                    },
-                  }}
-                  exit={{
-                    opacity: 0,
-                    transition: { duration: 0.6, ease: "easeIn" },
-                  }}
-                />
-              </AnimatePresence>
-              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-            className="grid md:grid-cols-2 gap-12 items-center"
-            onMouseEnter={() => setIsModel3DHovered(true)}
-            onMouseLeave={() => setIsModel3DHovered(false)}
-          >
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border bg-muted shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)]">
-              <AnimatePresence mode="popLayout">
-                <motion.img
-                  key={model3DIndex}
-                  src={model3DImages[model3DIndex]}
-                  alt={storyContent[2].title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ opacity: 0, scale: 1 }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1.08,
-                    transition: {
-                      opacity: { duration: 0.6, ease: "easeOut" },
-                      scale: { duration: 4, ease: "linear" },
-                    },
-                  }}
-                  exit={{
-                    opacity: 0,
-                    transition: { duration: 0.6, ease: "easeIn" },
-                  }}
-                />
-              </AnimatePresence>
-              <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
-            </div>
-            <div className="text-center md:text-left">
-              <span className="text-sm font-medium text-primary uppercase tracking-wider">
-                {storyContent[2].subtitle}
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">{storyContent[2].title}</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">{storyContent[2].description}</p>
-            </div>
-          </motion.div>
+          {storyContent.map((section, sIndex) => {
+            const isReversed = sIndex % 2 !== 0;
+            return (
+              <motion.div
+                key={section.title}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.6 }}
+                className="grid md:grid-cols-2 gap-12 items-center"
+                onMouseEnter={() => setHoveredSection(sIndex)}
+                onMouseLeave={() => setHoveredSection(null)}
+              >
+                <div className={`relative aspect-[4/3] rounded-2xl overflow-hidden border border-border bg-muted shadow-card ${isReversed ? "md:order-2" : ""}`}>
+                  <AnimatePresence mode="popLayout">
+                    <motion.img
+                      key={imageIndices[sIndex]}
+                      src={section.images[imageIndices[sIndex]]}
+                      alt={section.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1, scale: 1.05, transition: { opacity: { duration: 0.6 }, scale: { duration: 4, ease: "linear" } } }}
+                      exit={{ opacity: 0, transition: { duration: 0.6 } }}
+                    />
+                  </AnimatePresence>
+                </div>
+                <div className={`text-center md:text-left ${isReversed ? "md:order-1" : ""}`}>
+                  <span className="text-sm font-medium text-primary uppercase tracking-wider">{section.subtitle}</span>
+                  <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">{section.title}</h2>
+                  <p className="text-lg text-muted-foreground leading-relaxed">{section.description}</p>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
-      {/* Workflow Carousel Section */}
+      {/* Workflow Carousel */}
       <section className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">Try Different Workflows</h2>
             <p className="text-xl text-muted-foreground">Explore the creative possibilities</p>
           </motion.div>
 
-          <div
-            className="overflow-hidden"
-            onMouseEnter={() => setIsCarouselHovered(true)}
-            onMouseLeave={() => setIsCarouselHovered(false)}
-          >
-            <div
-              className="flex gap-4 animate-scroll-left"
-              style={{
-                width: "fit-content",
-                animationPlayState: isCarouselHovered ? "paused" : "running",
-              }}
-            >
-              {/* Duplicate items for seamless loop */}
+          <div className="overflow-hidden" onMouseEnter={() => setIsCarouselHovered(true)} onMouseLeave={() => setIsCarouselHovered(false)}>
+            <div className="flex gap-4 animate-scroll-left" style={{ width: "fit-content", animationPlayState: isCarouselHovered ? "paused" : "running" }}>
               {[...workflowItems, ...workflowItems].map((item, index) => (
-                <div key={index} className="flex-shrink-0 w-[280px] md:w-[320px] lg:w-[350px]">
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-background group cursor-pointer">
-                    <img
-                      src={item.image}
-                      alt={item.label}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
+                <div key={index} className="flex-shrink-0 w-[280px] md:w-[320px]">
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-card group cursor-pointer">
+                    <img src={item.image} alt={item.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <span className="inline-block px-4 py-2 bg-background/80 border border-black/10 text-black text-sm font-medium rounded-full backdrop-blur-md shadow-lg">
+                      <span className="inline-block px-3 py-1.5 bg-card/80 text-foreground text-sm font-medium rounded-full backdrop-blur-md border border-border">
                         {item.label}
                       </span>
                     </div>
@@ -477,13 +284,7 @@ const Landing = () => {
       {/* Tools Section */}
       <section className="py-20 bg-muted/50">
         <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">Powerful Tools</h2>
             <p className="text-xl text-muted-foreground">Everything you need to create amazing content</p>
           </motion.div>
@@ -496,7 +297,7 @@ const Landing = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group p-6 bg-background border border-border rounded-2xl hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
+                className="group p-6 bg-card border border-border rounded-2xl hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
               >
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                   <tool.icon className="w-6 h-6 text-primary" />
@@ -509,29 +310,16 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* Pricing CTA */}
       <section className="py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">Pricing</h2>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center py-16"
-          >
-            <div className="inline-flex items-center justify-center px-8 py-4 rounded-full bg-muted border border-border">
-              <span className="text-2xl md:text-3xl font-semibold text-muted-foreground">Coming Soon</span>
-            </div>
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">Start Creating Today</h2>
+            <p className="text-xl text-muted-foreground mb-8">Free to start. No credit card required.</p>
+            <Button size="lg" onClick={() => navigate("/signup")} className="text-lg px-8 py-6 gap-2">
+              Get Started Free
+              <Sparkles className="w-5 h-5" />
+            </Button>
           </motion.div>
         </div>
       </section>
