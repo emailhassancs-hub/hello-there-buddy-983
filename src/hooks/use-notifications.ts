@@ -14,8 +14,10 @@ export function useNotifications(enabled: boolean = true) {
   return useQuery<NotificationDto[]>({
     queryKey: notificationsQueryKey,
     queryFn: async () => {
-      const data = await apiFetch<NotificationDto[]>("/notifications", { method: "GET" });
-      return data || [];
+      const data = await apiFetch<any>("/notifications", { method: "GET" });
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.notifications)) return data.notifications;
+      return [];
     },
     enabled,
     staleTime: 30_000,
