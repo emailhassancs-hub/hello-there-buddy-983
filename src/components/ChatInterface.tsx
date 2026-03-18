@@ -450,11 +450,13 @@ const ChatInterface = ({
         description: "Getting upload credentials",
       });
 
+      const projectId = new URLSearchParams(window.location.search).get("projectId");
       const signedUrlResponse = await fetch(`${apiUrl}/api/model-optimization/get-signed-url`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`
+          "Authorization": `Bearer ${authToken}`,
+          ...(projectId ? { "x-project-id": projectId } : {}),
         },
         body: JSON.stringify({
           model_name: file.name,

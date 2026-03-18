@@ -148,7 +148,7 @@ async function optimizeMultipleModels(optimizations: OptimizationRequest[]): Pro
 }
 
 async function uploadModel(file: File, modelName: string): Promise<any> {
-
+  const projectIdFromUrl = new URLSearchParams(window.location.search).get("projectId");
 
   try {
     const res = await apiFetch<any>(`/api/model-optimization/get-signed-url`, {
@@ -156,6 +156,9 @@ async function uploadModel(file: File, modelName: string): Promise<any> {
       body: { 
         model_name: modelName, 
         filename: file.name 
+      },
+      headers: {
+        ...(projectIdFromUrl ? { "x-project-id": projectIdFromUrl } : {}),
       },
     });
     

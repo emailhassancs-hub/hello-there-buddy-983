@@ -1716,7 +1716,8 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
-                  "Authorization": `Bearer ${currentToken}`
+                  "Authorization": `Bearer ${currentToken}`,
+                  ...(projectIdFromUrl ? { "x-project-id": projectIdFromUrl } : {}),
                 },
                 body: JSON.stringify({
                   model_name: file.name,
