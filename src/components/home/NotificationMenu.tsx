@@ -29,7 +29,8 @@ const NotificationMenu = () => {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications via React Query (this will be prefetched on /home too)
-  const { data: notifications = [], isLoading } = useNotifications(true);
+  const { data: notificationsData = [], isLoading } = useNotifications(true);
+  const notifications = Array.isArray(notificationsData) ? notificationsData : [];
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const markAllRead = useMarkAllNotificationsRead();
 

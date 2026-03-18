@@ -29,10 +29,12 @@ export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const data = await apiFetch<NotificationDto[]>("/notifications/mark-all-read", {
+      const data = await apiFetch<any>("/notifications/mark-all-read", {
         method: "POST",
       });
-      return data || [];
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.notifications)) return data.notifications;
+      return [];
     },
     onSuccess: (data) => {
       // Prefer server response, but ensure UI reflects read state immediately.
