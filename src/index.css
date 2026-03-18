@@ -69,6 +69,7 @@
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
+    --sidebar-bg: 0 0% 98%;
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -153,6 +154,7 @@
     --glass-blur: 24px;
 
     /* Sidebar — #141418 */
+    --sidebar-bg: 240 9% 9%;
     --sidebar-background: 240 9% 9%;
     --sidebar-foreground: 220 13% 91%;
     --sidebar-primary: 258 88% 66%;

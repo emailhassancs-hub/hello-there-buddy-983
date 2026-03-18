@@ -21,14 +21,19 @@ import PaymentSuccessPage from "./pages/payment/PaymentSuccess";
 import PaymentCancelPage from "./pages/payment/PaymentCancel";
 import Landing from "./pages/Landing";
 import CreditUsageHistoryPage from "./pages/CreditUsageHistory";
-import Home from "./components/home/Home"
-import Projects from "./components/home/Projects"
+import Home from "./components/home/Home";
+import Projects from "./components/home/Projects";
+import ImagePage from "./pages/ImageGeneration";
+import EditPage from "./pages/EditPage";
+import ThreeDPage from "./pages/ThreeDPage";
+import AssetsPage from "./pages/AssetsPage";
+import WorkflowPage from "./pages/WorkflowPage";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -63,7 +68,47 @@ const App = () => (
               path="/projects"
               element={
                 <ProtectedRoute>
-                  <Projects/>
+                  <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/image"
+              element={
+                <ProtectedRoute>
+                  <ImagePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/edit"
+              element={
+                <ProtectedRoute>
+                  <EditPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/3d"
+              element={
+                <ProtectedRoute>
+                  <ThreeDPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assets"
+              element={
+                <ProtectedRoute>
+                  <AssetsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/workflow"
+              element={
+                <ProtectedRoute>
+                  <WorkflowPage />
                 </ProtectedRoute>
               }
             />
