@@ -51,7 +51,7 @@ const Index = () => {
   const [modelRefreshTrigger, setModelRefreshTrigger] = useState(0);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [activeJobIds, setActiveJobIds] = useState<string[]>([]);
-  const optimizationPollIntervalsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const optimizationPollIntervalsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTutorialOnboarding, setShowTutorialOnboarding] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
