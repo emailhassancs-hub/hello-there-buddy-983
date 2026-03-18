@@ -153,6 +153,7 @@
     --glass-blur: 24px;
 
     /* Sidebar — #141418 */
+    --sidebar-bg: 240 9% 9%;
     --sidebar-background: 240 9% 9%;
     --sidebar-foreground: 220 13% 91%;
     --sidebar-primary: 258 88% 66%;
