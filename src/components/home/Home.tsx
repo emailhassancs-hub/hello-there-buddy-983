@@ -1,20 +1,20 @@
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import HeroSection from "@/components/home/HeroSection";
-import FeatureDiscoveryStrip from "@/components/home/FeatureDiscoveryStrip";
-import WorkflowShowcase from "@/components/home/WorkflowShowcase";
+import WhatsNewCarousel from "@/components/home/WhatsNewCarousel";
+import AllFeaturesHub from "@/components/home/AllFeaturesHub";
+import ModelQuickstart from "@/components/home/ModelQuickstart";
 import RecentCreations from "@/components/home/RecentCreations";
-import PromptBar from "@/components/home/PromptBar";
+import ProjectsSection from "@/components/home/ProjectsSection";
 
 const Home = () => {
   return (
     <SidebarLayout>
-      <div className="pb-[160px]">
-        <HeroSection />
-        <FeatureDiscoveryStrip />
-        <WorkflowShowcase />
-        <RecentCreations />
-      </div>
-      <PromptBar />
+      <HeroSection />
+      <WhatsNewCarousel />
+      <AllFeaturesHub />
+      <ModelQuickstart />
+      <RecentCreations />
+      <ProjectsSection />
     </SidebarLayout>
   );
 };
