@@ -87,7 +87,7 @@ const TopBar = () => {
       {/* Right group */}
       <div className="flex items-center gap-2">
         <button
-          onClick={() => navigate("/pricing")}
+          onClick={() => navigate("/usage")}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
         >
           <Zap className="w-3 h-3" />
@@ -119,19 +119,34 @@ const TopBar = () => {
 
                 {/* Menu items */}
                 <div className="py-1">
-                  <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors">
+                  <button
+                    onClick={() => { navigate("/usage"); setAvatarOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors"
+                  >
                     <Settings className="w-3.5 h-3.5" /> Profile & Settings
                   </button>
-                  <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors">
+                  <button
+                    onClick={() => { navigate("/usage"); setAvatarOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors"
+                  >
                     <CreditCard className="w-3.5 h-3.5" /> Billing & Credits
                   </button>
-                  <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors">
+                  <button
+                    onClick={() => { window.open("https://docs.rapidassets.ai/api", "_blank"); setAvatarOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors"
+                  >
                     <Key className="w-3.5 h-3.5" /> API Keys
                   </button>
-                  <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors">
+                  <button
+                    onClick={() => { window.open("https://docs.rapidassets.ai", "_blank"); setAvatarOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors"
+                  >
                     <HelpCircle className="w-3.5 h-3.5" /> Help Center
                   </button>
-                  <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors">
+                  <button
+                    onClick={() => { navigate("/home"); setAvatarOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-white/5 transition-colors"
+                  >
                     <Newspaper className="w-3.5 h-3.5" /> What's New
                   </button>
                 </div>

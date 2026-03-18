@@ -1,20 +1,25 @@
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { GitBranch, Plus, Play } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const workflowTemplates = [
-  { name: "Prompt → Image → 3D", steps: 3, description: "Generate an image then convert to 3D" },
-  { name: "Image → Remove BG → 3D", steps: 3, description: "Clean background then create 3D model" },
-  { name: "Prompt → Image → Upscale → Edit", steps: 4, description: "Full creative pipeline" },
+  { name: "Prompt → Image → 3D", steps: 3, description: "Generate an image then convert to 3D", prompt: "Generate an image and convert it to a 3D model" },
+  { name: "Image → Remove BG → 3D", steps: 3, description: "Clean background then create 3D model", prompt: "Remove the background from this image and convert it to a 3D model" },
+  { name: "Prompt → Image → Upscale → Edit", steps: 4, description: "Full creative pipeline", prompt: "Generate an image, upscale it, then help me edit it" },
 ];
 
 const WorkflowPage = () => {
+  const navigate = useNavigate();
   return (
     <SidebarLayout>
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-xl font-bold text-foreground">Workflows</h1>
-          <button className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+          <button
+            onClick={() => navigate("/studio")}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
             <Plus className="w-3.5 h-3.5" /> Build your own
           </button>
         </div>
@@ -34,7 +39,10 @@ const WorkflowPage = () => {
                 </div>
                 <h3 className="text-sm font-medium text-foreground mb-1">{wf.name}</h3>
                 <p className="text-xs text-muted-foreground mb-4">{wf.description}</p>
-                <button className="flex items-center gap-1.5 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => navigate(`/studio?initial_prompt=${encodeURIComponent(wf.prompt)}`)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                >
                   <Play className="w-3 h-3" /> Try this workflow
                 </button>
               </div>

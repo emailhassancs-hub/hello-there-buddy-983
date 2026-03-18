@@ -1,9 +1,11 @@
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { FolderOpen, Image, Box } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AssetsPage = () => {
   const [filter, setFilter] = useState<"all" | "images" | "3d">("all");
+  const navigate = useNavigate();
 
   return (
     <SidebarLayout>
@@ -41,10 +43,16 @@ const AssetsPage = () => {
           <p className="text-base text-foreground font-medium mb-1">No assets yet</p>
           <p className="text-sm text-muted-foreground mb-6">Images and 3D models you generate will appear here</p>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 text-xs font-medium border border-border rounded-lg text-foreground hover:bg-white/5 transition-colors">
+            <button
+              onClick={() => navigate("/image")}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-medium border border-border rounded-lg text-foreground hover:bg-white/5 transition-colors"
+            >
               <Image className="w-4 h-4" /> Create Image
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 text-xs font-medium border border-border rounded-lg text-foreground hover:bg-white/5 transition-colors">
+            <button
+              onClick={() => navigate("/3d")}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-medium border border-border rounded-lg text-foreground hover:bg-white/5 transition-colors"
+            >
               <Box className="w-4 h-4" /> Create 3D
             </button>
           </div>
