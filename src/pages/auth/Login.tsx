@@ -76,6 +76,11 @@ export default function LoginPage() {
     }
   }
   
+  const handleDevBypass = () => {
+    localStorage.setItem("dev_bypass_auth", "true");
+    window.location.href = "/home";
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -117,6 +122,12 @@ export default function LoginPage() {
           </div>
           <AuthForm mode="signin" onSubmit={handleSignin} />
         </AuthCard>
+        <button
+          onClick={handleDevBypass}
+          className="mt-4 w-full text-xs text-muted-foreground hover:text-foreground border border-dashed border-border rounded-lg py-2 transition-colors"
+        >
+          🔓 Dev Bypass — Skip Login
+        </button>
       </div>
     </div>
   )
