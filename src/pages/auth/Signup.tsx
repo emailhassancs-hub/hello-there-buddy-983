@@ -24,6 +24,11 @@ export default function SignupPage() {
     }
   }
   
+  const handleDevBypass = () => {
+    localStorage.setItem("dev_bypass_auth", "true");
+    window.location.href = "/studio";
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -38,6 +43,12 @@ export default function SignupPage() {
                   Sign in
                 </Link>
               </div>
+              <button
+                onClick={handleDevBypass}
+                className="w-full text-xs text-muted-foreground border border-dashed border-border rounded-md py-2 hover:bg-muted transition-colors"
+              >
+                Dev Bypass — Skip Signup
+              </button>
             </div>
           }
         >
