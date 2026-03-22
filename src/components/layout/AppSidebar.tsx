@@ -11,6 +11,18 @@ import {
   Sparkles,
   Settings,
   FolderOpen,
+  LayoutGrid,
+} from "lucide-react";
+  Image,
+  Box,
+  Wand2,
+  ZoomIn,
+  GitBranch,
+  Wrench,
+  Users,
+  Sparkles,
+  Settings,
+  FolderOpen,
 } from "lucide-react";
 import {
   Tooltip,
