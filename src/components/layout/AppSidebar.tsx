@@ -39,6 +39,7 @@ const navItems = [
   { icon: ZoomIn, label: "Upscale", tooltip: "Upscale Image", path: "/studio" },
   { icon: GitBranch, label: "Workflow", tooltip: "Workflows", path: "/workflow" },
   { icon: Wrench, label: "Tools", tooltip: "All Tools", path: "/studio" },
+  { icon: LayoutGrid, label: "Gallery", tooltip: "Examples Gallery", path: "/examples" },
   { icon: Users, label: "Community", tooltip: "Community", path: "/home" },
 ];
 
