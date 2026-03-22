@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { galleryItems, type GalleryCardType } from "./gallery-items";
+import { galleryItems, imageItems, threeDItems, editingItems, type GalleryCardType } from "./gallery-items";
 
 const filterTabs = [
   { id: "all", label: "All" },
@@ -44,7 +44,11 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
 
   const filtered = activeFilter === "all"
     ? galleryItems
-    : galleryItems.filter((item) => item.type === activeFilter);
+    : activeFilter === "image"
+      ? imageItems
+      : activeFilter === "3d"
+        ? threeDItems
+        : editingItems;
 
   return (
     <section className="px-8 lg:px-16 py-12">
