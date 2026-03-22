@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { galleryItems, type GalleryCardType } from "./gallery-items";
+import { galleryItems, imageItems, threeDItems, editingItems, type GalleryCardType } from "./gallery-items";
 
 const filterTabs = [
   { id: "all", label: "All" },
