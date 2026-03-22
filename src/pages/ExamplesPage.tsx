@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import {
@@ -85,34 +85,81 @@ const ImageTile = ({ item, idx }: { item: typeof imageGenItems[0]; idx: number }
   );
 };
 
-// ── Editing Tile ─────────────────────────────────────────────
-const EditingTile = ({ item, idx }: { item: typeof imageEditItems[0]; idx: number }) => (
-  <div className="group break-inside-avoid relative overflow-hidden block cursor-pointer border-[0.5px] border-white/[0.04] rounded-none"
-    style={{ animationDelay: `${idx * 40}ms` }}>
-    {/* Before/After split */}
-    <div className="relative flex w-full">
-      <div className="w-1/2 overflow-hidden relative">
-        <img src={item.before} alt="Before" className="w-[200%] block object-cover transition-transform duration-[360ms] ease-out group-hover:scale-[1.035]" loading="lazy" />
+// ── Editing Tile (with draggable slider) ─────────────────────
+const EditingTile = ({ item, idx }: { item: typeof imageEditItems[0]; idx: number }) => {
+  const [sliderPos, setSliderPos] = useState(50);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
+  const updatePos = useCallback((clientX: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const pct = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    setSliderPos(pct);
+  }, []);
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    dragging.current = true;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    updatePos(e.clientX);
+  }, [updatePos]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragging.current) return;
+    updatePos(e.clientX);
+  }, [updatePos]);
+
+  const onPointerUp = useCallback(() => {
+    dragging.current = false;
+  }, []);
+
+  return (
+    <div className="group break-inside-avoid relative overflow-hidden block cursor-pointer border-[0.5px] border-white/[0.04] rounded-none"
+      style={{ animationDelay: `${idx * 40}ms` }}>
+      {/* Before/After slider */}
+      <div
+        ref={containerRef}
+        className="relative w-full select-none touch-none"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+      >
+        {/* BEFORE image (full width, bottom layer) */}
+        <img src={item.before} alt="Before" className="w-full block" loading="lazy" />
+        {/* AFTER image (clipped from right) */}
+        <div
+          className="absolute inset-0 overflow-hidden"
+          style={
+            item.isBackgroundRemove
+              ? { clipPath: `inset(0 0 0 ${sliderPos}%)`, background: "repeating-conic-gradient(#2a2a35 0% 25%, #1a1a20 0% 50%) 0 0 / 16px 16px" }
+              : { clipPath: `inset(0 0 0 ${sliderPos}%)` }
+          }
+        >
+          <img src={item.after} alt="After" className="w-full block" loading="lazy" />
+        </div>
+        {/* Divider line */}
+        <div className="absolute top-0 h-full w-[2px] bg-white/60 z-[6] pointer-events-none" style={{ left: `${sliderPos}%`, transform: 'translateX(-50%)' }} />
+        {/* Handle */}
+        <div
+          className="absolute top-1/2 z-[7] w-7 h-7 rounded-full bg-white border-2 border-[#7C5AF6] -translate-x-1/2 -translate-y-1/2 cursor-grab flex items-center justify-center"
+          style={{ left: `${sliderPos}%` }}
+        >
+          <span className="text-[10px] text-[#7C5AF6] font-bold select-none">⇔</span>
+        </div>
+        {/* Labels */}
+        <span className="absolute top-[7px] left-[7px] font-sans text-[9px] font-bold px-[7px] py-[2px] rounded-full bg-black/55 border border-white/20 text-white/80 tracking-[0.06em] z-[5]">BEFORE</span>
+        <span className="absolute top-[7px] right-[7px] font-sans text-[9px] font-bold px-[7px] py-[2px] rounded-full bg-[rgba(124,90,246,0.35)] border border-[rgba(124,90,246,0.6)] text-[#e9d5ff] tracking-[0.06em] z-[5]">AFTER</span>
       </div>
-      <div className={`w-1/2 overflow-hidden relative ${item.isBackgroundRemove ? "" : ""}`}
-        style={item.isBackgroundRemove ? { background: "repeating-conic-gradient(#2a2a35 0% 25%, #1a1a20 0% 50%) 0 0 / 16px 16px" } : undefined}>
-        <img src={item.after} alt="After" className="w-[200%] block object-cover -ml-[100%] transition-transform duration-[360ms] ease-out group-hover:scale-[1.035]" loading="lazy" />
+      {/* Always-visible technique badge */}
+      <div className="absolute bottom-[9px] left-[9px] z-[7]">
+        <Pill color={techPill(item.technique)}>{item.technique}</Pill>
       </div>
-      {/* Divider */}
-      <div className="absolute left-1/2 top-0 w-[1.5px] h-full bg-white/35 -translate-x-1/2 z-[6]" />
-      {/* Labels */}
-      <span className="absolute top-[7px] left-[7px] font-sans text-[9px] font-bold px-[7px] py-[2px] rounded-full bg-black/55 border border-white/20 text-white/80 tracking-[0.06em] z-[5]">BEFORE</span>
-      <span className="absolute top-[7px] right-[7px] font-sans text-[9px] font-bold px-[7px] py-[2px] rounded-full bg-[rgba(124,90,246,0.35)] border border-[rgba(124,90,246,0.6)] text-[#e9d5ff] tracking-[0.06em] z-[5]">AFTER</span>
+      <Overlay label={item.label} prompt={item.prompt}
+        badges={<Pill color={techPill(item.technique)}>{item.technique}</Pill>}
+      />
     </div>
-    {/* Always-visible technique badge */}
-    <div className="absolute bottom-[9px] left-[9px] z-[7]">
-      <Pill color={techPill(item.technique)}>{item.technique}</Pill>
-    </div>
-    <Overlay label={item.label} prompt={item.prompt}
-      badges={<Pill color={techPill(item.technique)}>{item.technique}</Pill>}
-    />
-  </div>
-);
+  );
+};
 
 // ── 3D Tile ──────────────────────────────────────────────────
 const ThreeDTile = ({ item, idx, type }: {
