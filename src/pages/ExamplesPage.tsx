@@ -50,8 +50,8 @@ const Overlay = ({ label, prompt, badges, button }: {
 }) => (
   <div className="absolute inset-0 flex flex-col justify-end p-[13px] pt-[14px] opacity-0 group-hover:opacity-100 transition-opacity duration-[220ms] pointer-events-none group-hover:pointer-events-auto z-10"
     style={{ background: "linear-gradient(to top, rgba(6,4,14,0.92) 0%, rgba(6,4,14,0.30) 45%, transparent 70%)" }}>
-    <p className="font-[Syne] text-xs font-bold text-white leading-tight line-clamp-2 mb-1.5">{label}</p>
-    <p className="font-[DM_Sans] text-[10.5px] font-light italic text-white/65 leading-[1.45] line-clamp-2 mb-2">{prompt}</p>
+    <p className="font-sans text-xs font-bold text-white leading-tight line-clamp-2 mb-1.5">{label}</p>
+    <p className="font-sans text-[10.5px] font-light italic text-white/65 leading-[1.45] line-clamp-2 mb-2">{prompt}</p>
     <div className="flex flex-wrap gap-[5px]">{badges}</div>
     {button}
   </div>
@@ -101,8 +101,8 @@ const EditingTile = ({ item, idx }: { item: typeof imageEditItems[0]; idx: numbe
       {/* Divider */}
       <div className="absolute left-1/2 top-0 w-[1.5px] h-full bg-white/35 -translate-x-1/2 z-[6]" />
       {/* Labels */}
-      <span className="absolute top-[7px] left-[7px] font-[DM_Sans] text-[9px] font-bold px-[7px] py-[2px] rounded-full bg-black/55 border border-white/20 text-white/80 tracking-[0.06em] z-[5]">BEFORE</span>
-      <span className="absolute top-[7px] right-[7px] font-[DM_Sans] text-[9px] font-bold px-[7px] py-[2px] rounded-full bg-[rgba(124,90,246,0.35)] border border-[rgba(124,90,246,0.6)] text-[#e9d5ff] tracking-[0.06em] z-[5]">AFTER</span>
+      <span className="absolute top-[7px] left-[7px] font-sans text-[9px] font-bold px-[7px] py-[2px] rounded-full bg-black/55 border border-white/20 text-white/80 tracking-[0.06em] z-[5]">BEFORE</span>
+      <span className="absolute top-[7px] right-[7px] font-sans text-[9px] font-bold px-[7px] py-[2px] rounded-full bg-[rgba(124,90,246,0.35)] border border-[rgba(124,90,246,0.6)] text-[#e9d5ff] tracking-[0.06em] z-[5]">AFTER</span>
     </div>
     {/* Always-visible technique badge */}
     <div className="absolute bottom-[9px] left-[9px] z-[7]">
@@ -135,7 +135,7 @@ const ThreeDTile = ({ item, idx, type }: {
         <div className="absolute bottom-[9px] left-[9px] w-9 h-9 rounded-[5px] border-[1.5px] border-white/25 overflow-hidden z-[5]">
           <img src={item.srcThumb} alt="Source" className="w-full h-full object-cover" />
         </div>
-        <span className="absolute bottom-[10px] left-[52px] font-[DM_Sans] text-[8.5px] font-semibold text-white/50 tracking-[0.05em] uppercase z-[5]">SOURCE</span>
+        <span className="absolute bottom-[10px] left-[52px] font-sans text-[8.5px] font-semibold text-white/50 tracking-[0.05em] uppercase z-[5]">SOURCE</span>
       </>
     )}
     <Overlay label={item.label} prompt={item.prompt}
@@ -147,7 +147,7 @@ const ThreeDTile = ({ item, idx, type }: {
 // ── Section Label ────────────────────────────────────────────
 const SectionLabel = ({ title, count }: { title: string; count: number }) => (
   <div className="flex items-baseline gap-3 px-6 sm:px-12 pt-9 pb-0">
-    <span className="font-[Syne] text-[11px] font-bold tracking-[0.14em] uppercase text-[#6b6880]">{title}</span>
+    <span className="font-sans text-[11px] font-bold tracking-[0.14em] uppercase text-[#6b6880]">{title}</span>
     <span className="text-[10px] px-2 py-[2px] rounded-full bg-[rgba(124,90,246,0.14)] border border-[rgba(124,90,246,0.28)] text-[#A78BFA]">
       {count} examples
     </span>
@@ -169,19 +169,19 @@ const ExamplesPage = () => {
           <div className="absolute bottom-0 left-0 w-[360px] h-[360px] pointer-events-none" style={{ background: "radial-gradient(circle, rgba(20,184,166,0.07) 0%, transparent 70%)" }} />
 
           {/* Eyebrow */}
-          <div className="relative z-10 inline-flex items-center gap-[7px] font-[Syne] text-[10px] font-semibold tracking-[0.14em] uppercase text-[#A78BFA] bg-[rgba(124,90,246,0.10)] border border-[rgba(124,90,246,0.28)] rounded-full px-[13px] py-[5px]">
+          <div className="relative z-10 inline-flex items-center gap-[7px] font-sans text-[10px] font-semibold tracking-[0.14em] uppercase text-[#A78BFA] bg-[rgba(124,90,246,0.10)] border border-[rgba(124,90,246,0.28)] rounded-full px-[13px] py-[5px]">
             <span className="w-[5px] h-[5px] rounded-full bg-[#22C55E] animate-[livePulse_2s_ease-in-out_infinite]" />
             Game AI Studio — Gallery
           </div>
 
           {/* H1 */}
-          <h1 className="relative z-10 font-[Syne] text-[clamp(32px,5vw,52px)] font-extrabold leading-[1.08] tracking-[-0.02em] text-[#E8E6F0] mt-[18px] max-w-[600px]">
+          <h1 className="relative z-10 font-sans text-[clamp(32px,5vw,52px)] font-extrabold leading-[1.08] tracking-[-0.02em] text-[#E8E6F0] mt-[18px] max-w-[600px]">
             Real outputs.<br />
             <span className="text-[#6b6880]">Every pixel generated by AI.</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="relative z-10 font-[DM_Sans] text-[15px] font-light text-[#6b6880] leading-[1.65] mt-3 max-w-[480px]">
+          <p className="relative z-10 font-sans text-[15px] font-light text-[#6b6880] leading-[1.65] mt-3 max-w-[480px]">
             Browse 47 real generations from our pipeline — images, edits, and 3D models created with a single prompt or image.
           </p>
         </div>
@@ -192,7 +192,7 @@ const ExamplesPage = () => {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`font-[DM_Sans] text-[12.5px] font-medium px-[18px] py-[7px] rounded-full border transition-all duration-[140ms] ${
+              className={`font-sans text-[12.5px] font-medium px-[18px] py-[7px] rounded-full border transition-all duration-[140ms] ${
                 activeTab === t.id
                   ? "bg-[#7C5AF6] border-[#7C5AF6] text-white"
                   : "bg-transparent border-[#252530] text-[#6b6880] hover:border-[#A78BFA] hover:text-[#E8E6F0]"
@@ -201,7 +201,7 @@ const ExamplesPage = () => {
               {t.icon} {t.label} <span className="opacity-75 text-[10px] ml-1">{t.count}</span>
             </button>
           ))}
-          <button onClick={() => navigate("/image")} className="ml-auto font-[DM_Sans] text-xs text-[#A78BFA] hover:underline hidden sm:inline">
+          <button onClick={() => navigate("/image")} className="ml-auto font-sans text-xs text-[#A78BFA] hover:underline hidden sm:inline">
             View in studio →
           </button>
         </div>
@@ -247,9 +247,9 @@ const ExamplesPage = () => {
 
         {/* Footer CTA */}
         <div className="text-center px-6 sm:px-12 py-20 border-t border-[#252530] mt-12">
-          <p className="font-[Syne] text-[11px] font-bold tracking-[0.1em] uppercase text-[#7C5AF6]">GET STARTED</p>
-          <h2 className="font-[Syne] text-2xl md:text-[32px] font-bold text-[#E8E6F0] mt-3">Build your first game asset today</h2>
-          <p className="font-[DM_Sans] text-[15px] text-[#6b6880] mt-3">No design experience needed. Just type a prompt.</p>
+          <p className="font-sans text-[11px] font-bold tracking-[0.1em] uppercase text-[#7C5AF6]">GET STARTED</p>
+          <h2 className="font-sans text-2xl md:text-[32px] font-bold text-[#E8E6F0] mt-3">Build your first game asset today</h2>
+          <p className="font-sans text-[15px] text-[#6b6880] mt-3">No design experience needed. Just type a prompt.</p>
           <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
             <button onClick={() => navigate("/image")} className="px-7 py-3 bg-[#7C5AF6] text-white text-[15px] font-semibold rounded-lg hover:bg-[#6D4AE8] transition-colors">
               ✦ Generate Images →
