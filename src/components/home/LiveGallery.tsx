@@ -175,23 +175,27 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
               {/* EDITING CARD */}
               {item.type === "editing" && (
                 <>
-                  <div className="relative overflow-hidden flex" style={{ height: 180 }}>
-                    <div className="w-1/2 relative overflow-hidden">
+                  <div className="relative overflow-hidden flex md:flex" style={{ height: 180 }}>
+                    <div className="w-1/2 relative overflow-hidden hidden md:block">
                       <img src={item.beforeUrl} alt="Before" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-                      <span className="absolute top-2 left-2 text-[10px] uppercase font-medium px-2 py-0.5 rounded" style={{ background: "rgba(0,0,0,0.7)", color: "white" }}>
+                      <span className="absolute top-2 left-2 text-[10px] uppercase font-medium px-2 py-0.5 rounded" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>
                         BEFORE
                       </span>
                     </div>
-                    <div className="w-px shrink-0" style={{ background: "white" }} />
-                    <div className="w-1/2 relative overflow-hidden">
+                    <div className="w-px shrink-0 hidden md:block" style={{ background: "white" }} />
+                    <div className="w-full md:w-1/2 relative overflow-hidden" style={
+                      item.isBackgroundRemove
+                        ? { background: "repeating-conic-gradient(#2a2a35 0% 25%, #1e1e25 0% 50%) 0 0 / 16px 16px" }
+                        : undefined
+                    }>
                       <img src={item.afterUrl} alt="After" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-                      <span className="absolute top-2 right-2 text-[10px] uppercase font-medium px-2 py-0.5 rounded" style={{ background: "rgba(0,0,0,0.7)", color: "#A78BFA" }}>
+                      <span className="absolute top-2 right-2 text-[10px] uppercase font-medium px-2 py-0.5 rounded" style={{ background: "rgba(124,90,246,0.35)", color: "#E9D5FF" }}>
                         AFTER
                       </span>
                     </div>
                     {/* Hover */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-1">
-                      <span className="text-xs italic text-white">{item.prompt}</span>
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-1 px-3">
+                      <span className="text-xs italic text-white text-center">{item.prompt}</span>
                       <button
                         onClick={(e) => { e.stopPropagation(); if (item.prompt) onTryPrompt(item.prompt); }}
                         className="mt-1 text-[11px] font-medium px-3 py-1 rounded-full"
