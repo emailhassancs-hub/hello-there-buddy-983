@@ -1,20 +1,33 @@
+import { useState, useCallback } from "react";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import HeroSection from "@/components/home/HeroSection";
 import WhatsNewCarousel from "@/components/home/WhatsNewCarousel";
-import AllFeaturesHub from "@/components/home/AllFeaturesHub";
-import ModelQuickstart from "@/components/home/ModelQuickstart";
-import RecentCreations from "@/components/home/RecentCreations";
-import ProjectsSection from "@/components/home/ProjectsSection";
+import LiveGallery from "@/components/home/LiveGallery";
+import WorkflowShowcase from "@/components/home/WorkflowShowcase";
+import FooterCTA from "@/components/home/FooterCTA";
 
 const Home = () => {
+  const [heroPrompt, setHeroPrompt] = useState("");
+  const [pulsePrompt, setPulsePrompt] = useState(false);
+
+  const handleTryPrompt = useCallback((prompt: string) => {
+    setHeroPrompt(prompt);
+    setPulsePrompt(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => setPulsePrompt(false), 800);
+  }, []);
+
   return (
     <SidebarLayout>
-      <HeroSection />
+      <HeroSection
+        promptValue={heroPrompt}
+        onPromptChange={setHeroPrompt}
+        pulsePrompt={pulsePrompt}
+      />
       <WhatsNewCarousel />
-      <AllFeaturesHub />
-      <ModelQuickstart />
-      <RecentCreations />
-      <ProjectsSection />
+      <LiveGallery onTryPrompt={handleTryPrompt} />
+      <WorkflowShowcase />
+      <FooterCTA />
     </SidebarLayout>
   );
 };
