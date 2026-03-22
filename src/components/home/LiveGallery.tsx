@@ -144,7 +144,20 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
                     <span className="absolute top-2 left-2 text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.4)", color: "#2DD4BF" }}>
                       GLB
                     </span>
+                    <span className="absolute top-2 right-2 text-[10px] font-medium px-2 py-0.5 rounded-full" style={
+                      item.generationType === "IMAGE_TO_3D"
+                        ? { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)", color: "#FCD34D" }
+                        : { background: "rgba(124,90,246,0.15)", border: "1px solid rgba(124,90,246,0.4)", color: "#A78BFA" }
+                    }>
+                      {item.generationType === "IMAGE_TO_3D" ? "IMG→3D" : "TEXT→3D"}
+                    </span>
                     <span className="absolute bottom-2 right-2 text-sm" style={{ color: "#6B7280" }}>↻</span>
+                    {item.generationType === "IMAGE_TO_3D" && item.sourceImageUrl && (
+                      <div className="absolute bottom-2 left-2 flex items-center gap-1">
+                        <img src={item.sourceImageUrl} alt="Source" className="w-6 h-6 rounded object-cover" style={{ border: "1px solid #3D3D4D" }} />
+                        <span className="text-[9px] font-medium" style={{ color: "#FCD34D" }}>IMG→3D</span>
+                      </div>
+                    )}
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-2">
                       <span className="text-sm font-medium text-white">{item.label}</span>
