@@ -28,6 +28,7 @@ import EditPage from "./pages/EditPage";
 import ThreeDPage from "./pages/ThreeDPage";
 import AssetsPage from "./pages/AssetsPage";
 import WorkflowPage from "./pages/WorkflowPage";
+import ExamplesPage from "./pages/ExamplesPage";
 
 const queryClient = new QueryClient();
 
@@ -125,6 +126,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CreditUsageHistoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/examples"
+              element={
+                <ProtectedRoute>
+                  <ExamplesPage />
                 </ProtectedRoute>
               }
             />
