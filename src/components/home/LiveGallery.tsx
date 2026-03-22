@@ -44,7 +44,11 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
 
   const filtered = activeFilter === "all"
     ? galleryItems
-    : galleryItems.filter((item) => item.type === activeFilter);
+    : activeFilter === "image"
+      ? imageItems
+      : activeFilter === "3d"
+        ? threeDItems
+        : editingItems;
 
   return (
     <section className="px-8 lg:px-16 py-12">
