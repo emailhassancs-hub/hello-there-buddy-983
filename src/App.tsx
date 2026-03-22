@@ -130,6 +130,14 @@ const App = () => (
               }
             />
             <Route
+              path="/examples"
+              element={
+                <ProtectedRoute>
+                  <ExamplesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/"
               element={
                 <Landing />
