@@ -239,7 +239,7 @@ const ExamplesPage = () => {
             <>
               <SectionLabel title="Image → 3D Generation" count={12} />
               <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5" style={{ columnGap: 0 }}>
-                {image3DItems.map((item, i) => <ThreeDTile key={item.id} item={item} idx={i} type="IMG→3D" srcThumb={(item as any).srcThumb} />)}
+                {image3DItems.map((item, i) => <ThreeDTile key={item.id} item={item} idx={i} type="IMG→3D" />)}
               </div>
             </>
           )}
