@@ -35,10 +35,13 @@ axiosInstance.interceptors.response.use(
   (error) => {
     const status = error?.response?.status
     if (status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem(LocalStorageKeys.AccessToken)
-      localStorage.removeItem(LocalStorageKeys.User)
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login'
+      const devBypass = localStorage.getItem('dev_bypass_auth')
+      if (!devBypass) {
+        localStorage.removeItem(LocalStorageKeys.AccessToken)
+        localStorage.removeItem(LocalStorageKeys.User)
+        if (!window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login'
+        }
       }
     }
     return Promise.reject(error)
