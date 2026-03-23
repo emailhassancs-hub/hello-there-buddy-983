@@ -34,7 +34,8 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status
-    if (status === 401 && typeof window !== 'undefined') {
+    const isAuthEndpoint = error?.config?.url?.startsWith('/auth/')
+    if (status === 401 && typeof window !== 'undefined' && !isAuthEndpoint) {
       localStorage.removeItem(LocalStorageKeys.AccessToken)
       localStorage.removeItem(LocalStorageKeys.User)
       localStorage.removeItem('dev_bypass_auth')
