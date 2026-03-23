@@ -12,7 +12,7 @@ const FooterCTA = () => {
       }}
     >
       {/* Transparent — background image shows through */}
-      <div className="relative z-10 max-w-2xl mx-auto">
+      <div className="relative z-10 max-w-2xl mx-auto rounded-2xl p-8 lg:p-12" style={{ background: "rgba(13,13,16,0.65)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(61,61,77,0.4)" }}>
         <span className="text-[11px] font-medium uppercase tracking-widest" style={{ color: "#7C5AF6" }}>
           GET STARTED
         </span>

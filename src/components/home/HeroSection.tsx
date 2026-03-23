@@ -32,7 +32,7 @@ const HeroSection = ({ promptValue, onPromptChange, pulsePrompt }: HeroSectionPr
 
       <div className="relative z-10 max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-12">
         {/* LEFT COLUMN */}
-        <div className="flex-1 lg:max-w-[55%] lg:pr-12">
+        <div className="flex-1 lg:max-w-[55%] lg:pr-12 rounded-2xl p-6 lg:p-8" style={{ background: "rgba(13,13,16,0.65)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(61,61,77,0.4)" }}>
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}>
             <span
               className="inline-block text-[11px] font-medium px-3.5 py-1.5 rounded-full"
