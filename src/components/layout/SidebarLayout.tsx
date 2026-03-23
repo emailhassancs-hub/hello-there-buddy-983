@@ -7,12 +7,23 @@ interface SidebarLayoutProps {
 
 const SidebarLayout = ({ children }: SidebarLayoutProps) => {
   return (
-    <div className="min-h-screen bg-background">
-      <AppSidebar />
-      <TopBar />
-      <main className="ml-[54px] mt-[52px] min-h-[calc(100vh-52px)] overflow-y-auto">
-        {children}
-      </main>
+    <div
+      className="min-h-screen bg-background"
+      style={{
+        backgroundImage: "url('/images/landing-bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      <div className="min-h-screen bg-background/85 backdrop-blur-sm">
+        <AppSidebar />
+        <TopBar />
+        <main className="ml-[54px] mt-[52px] min-h-[calc(100vh-52px)] overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 };
