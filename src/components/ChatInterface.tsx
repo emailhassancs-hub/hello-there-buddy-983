@@ -628,7 +628,7 @@ const ChatInterface = ({
   );
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-transparent">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border/50 bg-card/60 backdrop-blur-sm flex-shrink-0">
         <div className="flex items-center gap-2.5">

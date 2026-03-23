@@ -532,7 +532,7 @@ export const ChatSidebar = ({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 h-full bg-sidebar-bg border-r border-sidebar-border flex flex-col items-center py-4 gap-4">
+      <div className="w-12 h-full bg-black/50 backdrop-blur-md border-r border-white/10 flex flex-col items-center py-4 gap-4">
         <Button
           variant="ghost"
           size="icon"
@@ -626,7 +626,7 @@ export const ChatSidebar = ({
   }
 
   return (
-    <div className="w-[14%] h-full bg-sidebar-bg border-r border-sidebar-border flex flex-col shadow-soft">
+    <div className="w-[14%] h-full bg-black/50 backdrop-blur-md border-r border-white/10 flex flex-col shadow-soft">
       {/* Project Name Accordion */}
       {projectName && (
         <Accordion type="single" collapsible className="border-b border-sidebar-border">
