@@ -51,9 +51,8 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
         : editingItems;
 
   return (
-    <section className="px-8 lg:px-16 py-12">
+    <section className="px-4 md:px-6 lg:px-10 xl:px-12 py-12">
       {/* HEADER */}
-      <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
           <div>
             <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: "#6B7280" }}>
@@ -94,11 +93,11 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
         </div>
 
         {/* MASONRY GRID */}
-        <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2">
+        <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 gap-3">
           {filtered.map((item, i) => (
             <div
               key={item.id}
-              className="break-inside-avoid mb-2 rounded-xl overflow-hidden cursor-pointer group transition-all duration-200"
+              className="break-inside-avoid mb-3 rounded-xl overflow-hidden cursor-pointer group transition-all duration-200"
               style={{
                 background: "#1E1E25",
                 border: "1px solid transparent",
@@ -179,7 +178,7 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
               {/* EDITING CARD */}
               {item.type === "editing" && (
                 <>
-                  <div className="relative overflow-hidden flex md:flex" style={{ height: 180 }}>
+                  <div className="relative overflow-hidden flex md:flex" style={{ height: 220 }}>
                     <div className="w-1/2 relative overflow-hidden hidden md:block">
                       <img src={item.beforeUrl} alt="Before" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
                       <span className="absolute top-2 left-2 text-[10px] uppercase font-medium px-2 py-0.5 rounded" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>
@@ -238,7 +237,6 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
           >
             Explore all examples →
           </button>
-        </div>
       </div>
     </section>
   );
