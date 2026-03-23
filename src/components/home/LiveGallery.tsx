@@ -51,9 +51,9 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
         : editingItems;
 
   return (
-    <section className="px-8 lg:px-16 py-12">
+    <section className="px-4 md:px-6 lg:px-10 xl:px-12 py-12">
       {/* HEADER */}
-      <div className="max-w-7xl mx-auto">
+      <div>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
           <div>
             <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: "#6B7280" }}>
