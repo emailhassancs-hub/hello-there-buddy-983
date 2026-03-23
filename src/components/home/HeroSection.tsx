@@ -28,8 +28,7 @@ const HeroSection = ({ promptValue, onPromptChange, pulsePrompt }: HeroSectionPr
       className="relative overflow-hidden"
       style={{ padding: "80px 40px 64px" }}
     >
-      {/* Global image sits behind this page via SidebarLayout */}
-      <div className="absolute inset-0 pointer-events-none bg-background/45" />
+      {/* Transparent — background image shows through from SidebarLayout */}
 
       <div className="relative z-10 max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-12">
         {/* LEFT COLUMN */}
