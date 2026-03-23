@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 const modes = [
   { id: "assist", label: "✦ Assist", placeholder: "Ask anything — create images, 3D models, or get ideas…" },
@@ -52,7 +53,7 @@ const CreationWidget = ({ promptValue, onPromptChange, pulsePrompt }: CreationWi
 
   const currentMode = modes.find((m) => m.id === activeMode)!;
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!currentPrompt.trim()) return;
     const encoded = encodeURIComponent(currentPrompt.trim());
     switch (activeMode) {
@@ -66,9 +67,24 @@ const CreationWidget = ({ promptValue, onPromptChange, pulsePrompt }: CreationWi
         navigate("/edit");
         break;
       case "assist":
-      default:
-        navigate(`/studio?prompt=${encoded}`);
+      default: {
+        setIsSubmitting(true);
+        try {
+          const project = await apiFetch<{ id: string }>("/api/projects", {
+            method: "POST",
+            body: { name: currentPrompt.trim().slice(0, 60) || "New Project" },
+          });
+          const params = new URLSearchParams();
+          params.set("projectId", project.id);
+          params.set("initial_prompt", currentPrompt.trim());
+          navigate(`/studio?${params.toString()}`);
+        } catch (error: any) {
+          console.error("Failed to create project:", error);
+        } finally {
+          setIsSubmitting(false);
+        }
         break;
+      }
     }
   };
 
