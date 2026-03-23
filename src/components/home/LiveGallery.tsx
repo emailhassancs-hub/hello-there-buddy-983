@@ -128,11 +128,11 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
                       </button>
                     </div>
                   </div>
-                  <div className="p-3 flex items-center justify-between">
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={modelBadgeStyle(item.model || "")}>
+                  <div className="px-2 py-1.5 flex items-center justify-between">
+                    <span className="text-[9px] font-medium px-1.5 py-px rounded-full" style={modelBadgeStyle(item.model || "")}>
                       {item.model}
                     </span>
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#2A2A35", border: "1px solid #3D3D4D", color: "#9CA3AF" }}>
+                    <span className="text-[9px] font-medium px-1.5 py-px rounded-full" style={{ background: "#2A2A35", border: "1px solid #3D3D4D", color: "#9CA3AF" }}>
                       {item.ratio}
                     </span>
                   </div>
