@@ -1621,7 +1621,9 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
   };
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden max-h-screen">
+    <div className="flex h-screen overflow-hidden max-h-screen relative" style={{ backgroundImage: "url('/images/landing-bg.png')", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
+      {/* Dark overlay so content stays readable */}
+      <div className="absolute inset-0 bg-background/90 pointer-events-none z-0" />
       {/* First-time onboarding modal, controlled by backend flag - calls API */}
       {showOnboarding && (
         <OnboardingModal
@@ -1815,6 +1817,8 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         }}
       />
       
+      {/* Main content above background overlay */}
+      <div className="relative z-10 flex h-full w-full overflow-hidden">
       {/* Chat Sidebar */}
       <ChatSidebar
         currentSessionId={sessionId}
@@ -1992,6 +1996,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      </div>
     </div>
   );
 };
