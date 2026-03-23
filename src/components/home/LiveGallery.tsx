@@ -94,7 +94,7 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
         </div>
 
         {/* MASONRY GRID */}
-        <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-2">
+        <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 gap-3">
           {filtered.map((item, i) => (
             <div
               key={item.id}
