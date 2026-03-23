@@ -1623,7 +1623,7 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
   return (
     <div className="flex h-screen overflow-hidden max-h-screen relative" style={{ backgroundImage: "url('/images/landing-bg.png')", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
       {/* Dark overlay so content stays readable */}
-      <div className="absolute inset-0 bg-background/90 pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-black/50 pointer-events-none z-0" />
       {/* First-time onboarding modal, controlled by backend flag - calls API */}
       {showOnboarding && (
         <OnboardingModal
