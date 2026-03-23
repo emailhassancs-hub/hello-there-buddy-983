@@ -146,27 +146,12 @@ const Landing = () => {
 
       {/* Hero Section — per spec: "What do you want to create?" with demo prompt */}
       <section className="relative min-h-screen pt-16 overflow-hidden">
-        {/* Masonry Background */}
-        <div className="absolute inset-0 flex gap-3 px-3 opacity-40">
-          {artworkColumns.map((column, colIndex) => (
-            <div key={colIndex} className="flex-1 flex flex-col gap-3">
-              <motion.div
-                className="flex flex-col gap-3"
-                animate={{ y: colIndex % 2 === 0 ? [0, -1000] : [-1000, 0] }}
-                transition={{ y: { duration: 30 + colIndex * 5, repeat: Infinity, ease: "linear" } }}
-              >
-                {[...column, ...column, ...column].map((src, imgIndex) => (
-                  <div key={imgIndex} className="relative rounded-xl overflow-hidden bg-muted shadow-lg">
-                    <img src={src} alt="" className="w-full h-auto object-cover" loading="lazy" />
-                  </div>
-                ))}
-              </motion.div>
-            </div>
-          ))}
-        </div>
-
-        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/50 to-background/90 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-transparent to-background/70 pointer-events-none" />
+        {/* Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/images/landing-bg.png')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-background/90 pointer-events-none" />
 
         {/* Hero Content */}
         <div className="relative z-10 flex items-center justify-center min-h-screen px-6">
