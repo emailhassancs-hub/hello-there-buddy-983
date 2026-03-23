@@ -17,7 +17,7 @@ const SidebarLayout = ({ children }: SidebarLayoutProps) => {
         backgroundRepeat: "no-repeat",
       }}
     >
-      <div className="min-h-screen bg-background/85 backdrop-blur-sm">
+      <div className="min-h-screen">
         <AppSidebar />
         <TopBar />
         <main className="ml-[54px] mt-[52px] min-h-[calc(100vh-52px)] overflow-y-auto">

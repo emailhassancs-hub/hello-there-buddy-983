@@ -11,7 +11,7 @@ const FooterCTA = () => {
         padding: "80px 64px",
       }}
     >
-      <div className="absolute inset-0 pointer-events-none bg-background/45" />
+      {/* Transparent — background image shows through */}
       <div className="relative z-10 max-w-2xl mx-auto">
         <span className="text-[11px] font-medium uppercase tracking-widest" style={{ color: "#7C5AF6" }}>
           GET STARTED
