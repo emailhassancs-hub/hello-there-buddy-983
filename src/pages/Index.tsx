@@ -1622,8 +1622,6 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
 
   return (
     <div className="flex h-screen overflow-hidden max-h-screen relative" style={{ backgroundImage: "url('/images/landing-bg.png')", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
-      {/* Dark overlay so content stays readable */}
-      <div className="absolute inset-0 bg-black/50 pointer-events-none z-0" />
       {/* First-time onboarding modal, controlled by backend flag - calls API */}
       {showOnboarding && (
         <OnboardingModal
@@ -1862,13 +1860,13 @@ const handleWorkflowChain = useCallback((chain: WorkflowChainData) => {
         <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
           <div className="flex flex-col h-full overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-              <div className="relative flex items-center border-b bg-black/40 backdrop-blur-sm">
+              <div className="relative flex items-center border-b bg-transparent">
                 <button
                   onClick={() => {
                     const container = document.querySelector('.tabs-scroll-container');
                     if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
                   }}
-                  className="absolute left-0 z-10 h-14 px-2 bg-black/40 hover:bg-black/60 transition-colors"
+                  className="absolute left-0 z-10 h-14 px-2 bg-transparent hover:bg-white/10 transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
