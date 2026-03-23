@@ -53,7 +53,6 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
   return (
     <section className="px-4 md:px-6 lg:px-10 xl:px-12 py-12">
       {/* HEADER */}
-      <div>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
           <div>
             <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: "#6B7280" }}>
