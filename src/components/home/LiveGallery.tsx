@@ -98,7 +98,7 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
           {filtered.map((item, i) => (
             <div
               key={item.id}
-              className="break-inside-avoid mb-2 rounded-xl overflow-hidden cursor-pointer group transition-all duration-200"
+              className="break-inside-avoid mb-3 rounded-xl overflow-hidden cursor-pointer group transition-all duration-200"
               style={{
                 background: "#1E1E25",
                 border: "1px solid transparent",
