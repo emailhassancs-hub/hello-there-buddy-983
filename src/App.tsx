@@ -194,7 +194,7 @@ const App = () => (
               }
             />
             <Route
-              path="/oauth-success"
+              path="/auth/oauth-success"
               element={<OAuthSuccessPage />}
             />
             <Route
