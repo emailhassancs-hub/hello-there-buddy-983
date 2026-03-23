@@ -50,10 +50,10 @@ const AppSidebar = () => {
 
       {/* Main nav */}
       <nav className="flex-1 flex flex-col items-center gap-0.5 w-full px-[6px]">
-        {navItems.map((item) => {
+        {navItems.map((item, index) => {
           const active = isActive(item.path);
           return (
-            <Tooltip key={item.path} delayDuration={400}>
+            <Tooltip key={`${item.label}-${index}`} delayDuration={400}>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => navigate(item.path)}
