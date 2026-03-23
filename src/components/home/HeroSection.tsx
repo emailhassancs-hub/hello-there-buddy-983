@@ -28,24 +28,8 @@ const HeroSection = ({ promptValue, onPromptChange, pulsePrompt }: HeroSectionPr
       className="relative overflow-hidden"
       style={{ padding: "80px 40px 64px" }}
     >
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: "radial-gradient(ellipse at center, #1A0F2E 0%, #0D0D10 70%)",
-      }} />
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: "linear-gradient(rgba(124,90,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(124,90,246,0.04) 1px, transparent 1px)",
-        backgroundSize: "40px 40px",
-        opacity: 0.6,
-      }} />
-      {/* Orbs */}
-      <div className="absolute pointer-events-none" style={{
-        width: 600, height: 600, top: -100, right: -100,
-        background: "radial-gradient(circle, rgba(124,90,246,0.12) 0%, transparent 70%)",
-      }} />
-      <div className="absolute pointer-events-none" style={{
-        width: 400, height: 400, bottom: -50, left: -50,
-        background: "radial-gradient(circle, rgba(20,184,166,0.08) 0%, transparent 70%)",
-      }} />
+      {/* Global image sits behind this page via SidebarLayout */}
+      <div className="absolute inset-0 pointer-events-none bg-background/45" />
 
       <div className="relative z-10 max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-12">
         {/* LEFT COLUMN */}
