@@ -179,7 +179,7 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
               {/* EDITING CARD */}
               {item.type === "editing" && (
                 <>
-                  <div className="relative overflow-hidden flex md:flex" style={{ height: 180 }}>
+                  <div className="relative overflow-hidden flex md:flex" style={{ height: 220 }}>
                     <div className="w-1/2 relative overflow-hidden hidden md:block">
                       <img src={item.beforeUrl} alt="Before" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
                       <span className="absolute top-2 left-2 text-[10px] uppercase font-medium px-2 py-0.5 rounded" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>

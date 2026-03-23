@@ -47,7 +47,7 @@ const HeroSection = ({ promptValue, onPromptChange, pulsePrompt }: HeroSectionPr
         background: "radial-gradient(circle, rgba(20,184,166,0.08) 0%, transparent 70%)",
       }} />
 
-      <div className="relative z-10 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+      <div className="relative z-10 max-w-[1600px] mx-auto flex flex-col lg:flex-row items-center gap-12">
         {/* LEFT COLUMN */}
         <div className="flex-1 lg:max-w-[55%] lg:pr-12">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}>
