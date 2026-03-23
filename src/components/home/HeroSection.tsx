@@ -26,7 +26,7 @@ const HeroSection = ({ promptValue, onPromptChange, pulsePrompt }: HeroSectionPr
   return (
     <section
       className="relative overflow-hidden"
-      style={{ padding: "80px 64px 64px" }}
+      style={{ padding: "80px 40px 64px" }}
     >
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none" style={{
