@@ -6,27 +6,30 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const token = localStorage.getItem(LocalStorageKeys.AccessToken);
   const devBypass = localStorage.getItem("dev_bypass_auth");
 
-  if (devBypass && !token) {
-    const devToken = "dev-bypass-token";
-    localStorage.setItem(LocalStorageKeys.AccessToken, devToken);
+  if (devBypass) {
+    const existing = localStorage.getItem(LocalStorageKeys.AccessToken);
+    if (!existing) {
+      localStorage.setItem(LocalStorageKeys.AccessToken, "dev-bypass-token");
+    }
     if (!localStorage.getItem(LocalStorageKeys.User)) {
       localStorage.setItem(
         LocalStorageKeys.User,
         JSON.stringify({ name: "Dev User", email: "dev@local.test" })
       );
     }
-    (window as any).authToken = devToken;
+    // Always ensure window.authToken is set for components that check it
+    (window as any).authToken = localStorage.getItem(LocalStorageKeys.AccessToken);
+    return <>{children}</>;
   }
 
-  const effectiveToken = localStorage.getItem(LocalStorageKeys.AccessToken);
-
-  if (!effectiveToken && !devBypass) {
+  const token = localStorage.getItem(LocalStorageKeys.AccessToken);
+  if (!token) {
     return <Navigate to="/login" replace />;
   }
 
+  (window as any).authToken = token;
   return <>{children}</>;
 };
 
