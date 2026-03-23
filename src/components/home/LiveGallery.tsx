@@ -53,7 +53,7 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
   return (
     <section className="px-4 md:px-6 lg:px-10 xl:px-12 py-12">
       {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 rounded-xl p-4 lg:p-6" style={{ background: "rgba(13,13,16,0.65)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(61,61,77,0.4)" }}>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 rounded-xl p-4 lg:p-6" style={{ background: "rgba(13,13,16,0.35)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", border: "1px solid rgba(61,61,77,0.25)" }}>
           <div>
             <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: "#6B7280" }}>
               WHAT OUR PLATFORM CREATES
