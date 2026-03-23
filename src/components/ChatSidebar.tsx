@@ -501,7 +501,7 @@ export const ChatSidebar = ({
                   <MoreVertical className="w-3.5 h-3.5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 bg-white">
+              <DropdownMenuContent align="end" className="w-40 bg-sidebar-bg border-sidebar-border">
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
@@ -532,7 +532,7 @@ export const ChatSidebar = ({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 h-full bg-background border-r border-border flex flex-col items-center py-4 gap-4">
+      <div className="w-12 h-full bg-sidebar-bg border-r border-sidebar-border flex flex-col items-center py-4 gap-4">
         <Button
           variant="ghost"
           size="icon"
@@ -588,10 +588,10 @@ export const ChatSidebar = ({
                 <p className="text-xs font-medium">{userProfile.name || "User"}</p>
               </TooltipContent>
             </Tooltip>
-            <DropdownMenuContent align="end" className="w-40 !z-[9999] bg-white ml-2" side="right" sideOffset={5}>
+            <DropdownMenuContent align="end" className="w-40 !z-[9999] bg-sidebar-bg border-sidebar-border ml-2" side="right" sideOffset={5}>
               <DropdownMenuItem
                 onClick={() => setIsProfileModalOpen(true)}
-                className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+                className="cursor-pointer text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <User className="h-4 w-4 mr-2" />
                 Profile
@@ -599,7 +599,7 @@ export const ChatSidebar = ({
               {onTutorialClick && (
                 <DropdownMenuItem
                   onClick={onTutorialClick}
-                  className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+                  className="cursor-pointer text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
                   <BookOpen className="h-4 w-4 mr-2" />
                   Tutorial
@@ -607,7 +607,7 @@ export const ChatSidebar = ({
               )}
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="cursor-pointer text-black hover:bg-gray-800 hover:text-white"
+                className="cursor-pointer text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -626,10 +626,10 @@ export const ChatSidebar = ({
   }
 
   return (
-    <div className="w-[14%] h-full bg-gray-100 border-r flex flex-col shadow-soft">
+    <div className="w-[14%] h-full bg-sidebar-bg border-r border-sidebar-border flex flex-col shadow-soft">
       {/* Project Name Accordion */}
       {projectName && (
-        <Accordion type="single" collapsible className="border-b glass">
+        <Accordion type="single" collapsible className="border-b border-sidebar-border">
           <AccordionItem value="project" className="border-none">
             <AccordionTrigger className="px-2 py-2 hover:no-underline">
               <h3
@@ -783,7 +783,7 @@ export const ChatSidebar = ({
         </Accordion>
       )}
       {/* Header */}
-      <div className="p-2 border-b glass flex items-center justify-between">
+      <div className="p-2 border-b border-sidebar-border flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <MessageSquare className="w-3.5 h-3.5 dark:text-white" />
           <h2 className="font-semibold text-xs dark:text-white">Chats</h2>
@@ -842,7 +842,7 @@ export const ChatSidebar = ({
       </ScrollArea>
 
       {/* New Chat Button - Bottom */}
-      <div className="p-2 border-t border-border">
+      <div className="p-2 border-t border-sidebar-border">
         <Button
           onClick={onNewChat}
           className="w-full gap-1.5 h-7 text-xs"
