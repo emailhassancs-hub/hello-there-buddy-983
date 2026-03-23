@@ -29,7 +29,7 @@ const WorkflowShowcase = () => {
   return (
     <section className="px-8 lg:px-16 py-12">
       <div className="max-w-7xl mx-auto">
-        <div className="rounded-xl p-4 lg:p-6 mb-6 inline-block" style={{ background: "rgba(13,13,16,0.65)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(61,61,77,0.4)" }}>
+        <div className="rounded-xl p-4 lg:p-6 mb-6 inline-block" style={{ background: "rgba(13,13,16,0.35)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", border: "1px solid rgba(61,61,77,0.25)" }}>
           <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: "#6B7280" }}>
             CREATE WITH WORKFLOWS
           </span>
