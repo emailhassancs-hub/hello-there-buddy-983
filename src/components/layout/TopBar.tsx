@@ -23,7 +23,7 @@ const TopBar = () => {
   };
 
   return (
-    <header className="fixed top-0 left-[54px] right-0 h-[52px] bg-background border-b border-border z-40 flex items-center justify-between px-4">
+    <header className="fixed top-0 left-[54px] right-0 h-[52px] bg-background z-40 flex items-center justify-between px-4">
       {/* Left group */}
       <div className="flex items-center gap-3">
         <span className="font-bold text-sm text-foreground">Rapid Assets</span>
