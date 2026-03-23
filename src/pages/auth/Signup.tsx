@@ -4,6 +4,7 @@ import { AuthForm } from "@/components/auth/auth-form"
 import { SocialAuth } from "@/components/auth/social-auth"
 import { signup } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
+import { LocalStorageKeys } from "@/enums/localstorage"
 
 export default function SignupPage() {
   const { toast } = useToast()
