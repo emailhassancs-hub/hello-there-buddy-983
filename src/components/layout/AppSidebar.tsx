@@ -39,7 +39,7 @@ const AppSidebar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-[54px] bg-sidebar-bg border-r border-border z-50 flex flex-col items-center py-3 gap-1">
+    <aside className="fixed left-0 top-0 bottom-0 w-[54px] bg-sidebar-bg z-50 flex flex-col items-center py-3 gap-1">
       {/* Logo */}
       <button
         onClick={() => navigate("/home")}
