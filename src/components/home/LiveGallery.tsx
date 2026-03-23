@@ -238,7 +238,6 @@ const LiveGallery = ({ onTryPrompt }: LiveGalleryProps) => {
           >
             Explore all examples →
           </button>
-        </div>
       </div>
     </section>
   );
